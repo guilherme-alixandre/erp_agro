@@ -1,0 +1,90 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" version="28.2.5">
+  <diagram name="Página-1" id="4m1h2J9_3kxu_mCokEEo">
+    <mxGraphModel dx="1426" dy="743" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-1" value="" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="294" y="20" width="580" height="1630" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-11" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-3" target="XvOg3OVLaR3daWdY0Reo-7" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-3" target="XvOg3OVLaR3daWdY0Reo-8" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-3" value="&lt;span id=&quot;docs-internal-guid-0bc1ebb5-7fff-2a48-52ed-dcad3393dd78&quot;&gt;&lt;span style=&quot;font-size: 12pt; font-family: &amp;quot;Times New Roman&amp;quot;, serif; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre-wrap;&quot;&gt;Cuidador&lt;/span&gt;&lt;/span&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="60" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-16" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-6" target="XvOg3OVLaR3daWdY0Reo-14" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="680.0000000000068" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-18" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-6" target="XvOg3OVLaR3daWdY0Reo-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-25" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-6" target="XvOg3OVLaR3daWdY0Reo-23" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-28" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-6" target="XvOg3OVLaR3daWdY0Reo-26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-31" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-6" target="XvOg3OVLaR3daWdY0Reo-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-6" value="Administrador" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1070" y="635" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-7" value="Cadastrar Animal" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="350" y="40" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-8" value="Cadastrar Lote" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="350" y="140" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-13" target="XvOg3OVLaR3daWdY0Reo-14" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-30" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-13" target="XvOg3OVLaR3daWdY0Reo-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-13" value="&lt;span id=&quot;docs-internal-guid-0bc1ebb5-7fff-2a48-52ed-dcad3393dd78&quot;&gt;&lt;span style=&quot;font-size: 12pt; font-family: &amp;quot;Times New Roman&amp;quot;, serif; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre-wrap;&quot;&gt;Cuidador Chefe&lt;/span&gt;&lt;/span&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="240" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-14" value="Cadastrar Setor" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="540" y="300" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-17" value="Criar Metas Para Setor" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="710" y="230" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-21" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-19" target="XvOg3OVLaR3daWdY0Reo-20" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-19" value="&lt;span id=&quot;docs-internal-guid-0bc1ebb5-7fff-2a48-52ed-dcad3393dd78&quot;&gt;&lt;span style=&quot;font-size: 12pt; font-family: &amp;quot;Times New Roman&amp;quot;, serif; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre-wrap;&quot;&gt;Chefe de Almox.&lt;/span&gt;&lt;/span&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="485" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-20" value="Cadastrar Insumos" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="350" y="485" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-24" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-22" target="XvOg3OVLaR3daWdY0Reo-23" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-27" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="XvOg3OVLaR3daWdY0Reo-22" target="XvOg3OVLaR3daWdY0Reo-26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-22" value="&lt;span id=&quot;docs-internal-guid-0bc1ebb5-7fff-2a48-52ed-dcad3393dd78&quot;&gt;&lt;span style=&quot;font-size: 12pt; font-family: &amp;quot;Times New Roman&amp;quot;, serif; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre-wrap;&quot;&gt;Cuidador Chefe&lt;/span&gt;&lt;/span&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="665" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-23" value="Cadastrar Fornecedor e Comprador" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="540" y="615" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-26" value="Registrar Consumo de Insumos" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="540" y="720" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="XvOg3OVLaR3daWdY0Reo-29" value="Gerar Relatório de rentabilidade" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="540" y="390" width="140" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
