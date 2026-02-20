@@ -56,6 +56,10 @@ Se você já tem o Git instalado:
     git clone [https://github.com/SEU_USUARIO/nome-do-repositorio.git](https://github.com/SEU_USUARIO/nome-do-repositorio.git)
     ```
 
+### Obs: Pode adquirir o link da url em "Code"
+
+<img width="1300" height="763" alt="image" src="https://github.com/user-attachments/assets/d10b9bf9-35bf-4391-89ef-05032500c32d" />
+
 ---
 
 ## Como Executar
