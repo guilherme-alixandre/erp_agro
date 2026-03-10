@@ -11,6 +11,7 @@
 	<groupId>br.com.gado</groupId>
 	<artifactId>gado-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
 	<name>GADO Backend</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
@@ -20,6 +21,13 @@
 	<developers>
 		<developer/>
 	</developers>
+	<modules>
+		<module>gado-domain</module>
+		<module>gado-application</module>
+		<module>gado-infrastructure</module>
+		<module>gado-api</module>
+		<module>gado-persistence</module>
+	</modules>
 	<scm>
 		<connection/>
 		<developerConnection/>
