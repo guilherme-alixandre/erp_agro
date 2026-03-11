@@ -26,7 +26,6 @@
 		<module>gado-application</module>
 		<module>gado-infrastructure</module>
 		<module>gado-api</module>
-		<module>gado-persistence</module>
 	</modules>
 	<scm>
 		<connection/>
