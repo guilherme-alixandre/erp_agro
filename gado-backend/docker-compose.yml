@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres-gado:
+    image: postgres:15-alpine
+    container_name: gado-db
+    restart: always
+    environment:
+      POSTGRES_DB: gado_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5432:5432"
+    volumes:
+      - gado-db-data:/var/lib/postgresql/data
+
+volumes:
+  gado-db-data:
