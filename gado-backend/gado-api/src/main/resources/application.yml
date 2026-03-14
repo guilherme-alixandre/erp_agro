@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/gado_db
+    url: jdbc:postgresql://localhost:5433/gado_db
     username: admin
     password: 12345
     driver-class-name: org.postgresql.Driver
