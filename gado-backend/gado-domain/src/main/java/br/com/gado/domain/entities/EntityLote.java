@@ -1,4 +1,4 @@
-package br.com.gado.infrastructure.persistence.entities;
+package br.com.gado.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;

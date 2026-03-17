@@ -1,4 +1,4 @@
-package br.com.gado.infrastructure.persistence.entities;
+package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.ESexoAnimal;
 import br.com.gado.domain.enums.EStatusAnimal;
