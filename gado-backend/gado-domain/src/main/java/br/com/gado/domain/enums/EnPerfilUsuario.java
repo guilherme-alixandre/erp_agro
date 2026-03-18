@@ -3,7 +3,7 @@ package br.com.gado.domain.enums;
 import lombok.Getter;
 
 @Getter
-public enum EPerfilUsuario {
+public enum EnPerfilUsuario {
     // adicionar conforme for lembrando e precisando
     GERENTE("Gerente"),
     CASEIRO("Caseiro"),
@@ -11,7 +11,7 @@ public enum EPerfilUsuario {
 
     private final String perfil;
 
-    EPerfilUsuario(String perfil){
+    EnPerfilUsuario(String perfil){
         this.perfil = perfil;
     }
 }
