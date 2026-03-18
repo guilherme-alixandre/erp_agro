@@ -25,9 +25,21 @@
         </dependency>
 
         <dependency>
+            <groupId>br.com.gado</groupId>
+            <artifactId>gado-infrastructure</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>br.com.gado</groupId>
+            <artifactId>gado-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
