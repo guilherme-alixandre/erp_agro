@@ -19,7 +19,7 @@ public class ETransacao {
     @JoinColumn(name = "parceiro_id")
     private EParceiro parceiro;
 
-    // necessário, depois explico, ligado com EntityLote
+    // necessário, depois explico, ligado com ELote
     @ManyToOne
     @JoinColumn(name = "lote_id")
     private ELote lote;

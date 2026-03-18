@@ -1,37 +1,23 @@
-package br.com.gado.domain.entities;
+package br.com.gado.dto;
 
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
-import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
-
-@Entity
 @Data
-public class EAnimal {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class AnimalDto {
 
+    // talvez eu tenha que ter um unique = true
     private String codigoBrinco;
     private String nome;
+    private String cor;
     private LocalDateTime dataNascimento;
     private Double pesoAtual;
     private String raca;
-    private String cor;
     private String tamanho;
-
-    @Enumerated(EnumType.STRING)
     private EnSexoAnimal sexo;
-
-    @Enumerated(EnumType.STRING)
     private EnStatusAnimal status;
-
-    // no banco vai ficar o "pessoa_id"
-    @ManyToOne
-    @JoinColumn(name = "pessoa_id")
-    private EUsuario usuarioId;
-
+    private Long usuario_id;
 }
