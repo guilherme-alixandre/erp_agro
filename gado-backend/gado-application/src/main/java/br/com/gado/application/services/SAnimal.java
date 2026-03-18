@@ -36,6 +36,7 @@ public class SAnimal {
         return response;
     }
 
+    @Transactional
     public String cadastraAnimal(AnimalDto animal){
         try{
             EAnimal novoAnimal = new EAnimal();
@@ -64,7 +65,6 @@ public class SAnimal {
         }
     }
 
-    // esse @ é porque o meu delete é personalisado, sem isso o spring reclama
     @Transactional
     public String deletaAnimal(String brinco){
         Optional<EAnimal> animal = animalInterface.findByCodigoBrinco(brinco);
@@ -77,6 +77,7 @@ public class SAnimal {
 
     }
 
+    @Transactional
     public String alteraAnimal(String brinco, AnimalDto dto){
         Optional<EAnimal> animalOptional = animalInterface.findByCodigoBrinco(brinco);
 
