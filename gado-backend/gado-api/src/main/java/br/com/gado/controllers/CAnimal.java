@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/animais")
 public class CAnimal {
 
     private final SAnimal animalService;
@@ -17,22 +17,22 @@ public class CAnimal {
     }
 
 
-    @GetMapping("/animais/{brinco}")
+    @GetMapping("/{brinco}")
     public Map<String, Object> getAnimal(@PathVariable String brinco){
         return animalService.buscarPorBrinco(brinco);
     }
 
-    @PostMapping("/animais")
+    @PostMapping("/")
     public String postAnimal(@RequestBody AnimalDto animal){
         return animalService.cadastraAnimal(animal);
     }
 
-    @DeleteMapping("/animais/{brinco}")
+    @DeleteMapping("/{brinco}")
     public String deleteAnimal(@PathVariable String brinco){
         return animalService.deletaAnimal(brinco);
     }
 
-    @PutMapping("/animais/{brinco}")
+    @PutMapping("/{brinco}")
     public String putAnimal(@PathVariable String brinco,
                             @RequestBody AnimalDto animal)
     {
