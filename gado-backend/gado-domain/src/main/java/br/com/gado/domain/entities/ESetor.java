@@ -1,12 +1,12 @@
 package br.com.gado.domain.entities;
 
-import br.com.gado.domain.enums.ETipoSetor;
+import br.com.gado.domain.enums.EnTipoSetor;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Data
-public class EntitySetor {
+public class ESetor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,6 +18,6 @@ public class EntitySetor {
     private Double metaArrobaAbate;
 
     @Enumerated(EnumType.STRING)
-    private ETipoSetor setor;
+    private EnTipoSetor setor;
 
 }

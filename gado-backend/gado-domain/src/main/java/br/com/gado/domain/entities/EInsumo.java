@@ -1,12 +1,12 @@
 package br.com.gado.domain.entities;
 
-import br.com.gado.domain.enums.ETipoInsumo;
+import br.com.gado.domain.enums.EnTipoInsumo;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Data
-public class EntityInsumo {
+public class EInsumo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,10 +17,10 @@ public class EntityInsumo {
 
     @ManyToOne
     @JoinColumn(name = "parceiro_id")
-    private EntityParceiro parceiro;
+    private EParceiro parceiro;
 
     @Enumerated(EnumType.STRING)
-    private ETipoInsumo tipo;
+    private EnTipoInsumo tipo;
 
     // fazer depois o unidade_medida pq não lembro pra que isso
 

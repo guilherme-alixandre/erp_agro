@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EntityTransacao {
+public class ETransacao {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,11 +17,11 @@ public class EntityTransacao {
 
     @ManyToOne
     @JoinColumn(name = "parceiro_id")
-    private EntityParceiro parceiro;
+    private EParceiro parceiro;
 
     // necessário, depois explico, ligado com EntityLote
     @ManyToOne
     @JoinColumn(name = "lote_id")
-    private EntityLote lote;
+    private ELote lote;
 
 }

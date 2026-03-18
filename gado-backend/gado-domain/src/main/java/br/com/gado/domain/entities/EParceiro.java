@@ -1,6 +1,6 @@
 package br.com.gado.domain.entities;
 
-import br.com.gado.domain.enums.EPerfilUsuario;
+import br.com.gado.domain.enums.EnTipoParceiro;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -8,19 +8,18 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EntityUsuario {
+public class EParceiro {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
-    // criarei classe email ainda
-    private String email;
-    private String senha;
+    private String CPF_CNPJ;
+    private String endereco;
+    private String telefone;
+    private LocalDateTime dataCadastro;
 
     @Enumerated(EnumType.STRING)
-    private EPerfilUsuario perfil;
-
-    private LocalDateTime dataCadastro;
+    private EnTipoParceiro tipo;
 
 }

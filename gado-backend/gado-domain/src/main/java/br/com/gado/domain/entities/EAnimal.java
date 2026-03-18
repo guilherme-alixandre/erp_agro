@@ -1,7 +1,7 @@
 package br.com.gado.domain.entities;
 
-import br.com.gado.domain.enums.ESexoAnimal;
-import br.com.gado.domain.enums.EStatusAnimal;
+import br.com.gado.domain.enums.EnSexoAnimal;
+import br.com.gado.domain.enums.EnStatusAnimal;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EntityAnimal {
+public class EAnimal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,15 +24,15 @@ public class EntityAnimal {
     private String tamanho;
 
     @Enumerated(EnumType.STRING)
-    private ESexoAnimal sexo;
+    private EnSexoAnimal sexo;
 
     @Enumerated(EnumType.STRING)
-    private EStatusAnimal status;
+    private EnStatusAnimal status;
 
     // no banco vai ficar o "pessoa_id"
     // por estar carregando um entity, a gente chama ele com esse nome horrível por agora
     @ManyToOne
     @JoinColumn(name = "pessoa_id")
-    private EntityUsuario pessoaQueCadastrou;
+    private EUsuario usuario_id;
 
 }

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Entity
 @Data
-public class EntityLote {
+public class ELote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,9 +18,9 @@ public class EntityLote {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private EntityUsuario usuario;
+    private EUsuario usuario;
 
     @OneToMany(mappedBy = "lote")
-    private List<EntityTransacao> transacoes = new ArrayList<>();
+    private List<ETransacao> transacoes = new ArrayList<>();
 
 }
