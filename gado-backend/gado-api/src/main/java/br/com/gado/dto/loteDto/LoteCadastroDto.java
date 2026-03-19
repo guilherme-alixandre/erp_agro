@@ -1,4 +1,4 @@
-package br.com.gado.dto;
+package br.com.gado.dto.loteDto;
 
 import lombok.Data;
 
