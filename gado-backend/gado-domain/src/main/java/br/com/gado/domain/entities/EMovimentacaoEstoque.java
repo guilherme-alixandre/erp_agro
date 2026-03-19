@@ -2,10 +2,12 @@ package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.EnTipoMovimentacaoEstoque;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.util.Date;
 
 @Entity
+@Data
 public class EMovimentacaoEstoque {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

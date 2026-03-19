@@ -3,10 +3,12 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnStatusDespesa;
 import br.com.gado.domain.enums.EnTipoDespesa;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.util.Date;
 
 @Entity
+@Data
 public class ERegistroFinanceiro {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

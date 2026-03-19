@@ -33,5 +33,4 @@ public class EAnimal {
     @ManyToOne
     @JoinColumn(name = "pessoa_id")
     private EUsuario usuarioId;
-
 }

@@ -51,10 +51,10 @@ public class SAnimal {
             novoAnimal.setSexo(animal.getSexo());
             novoAnimal.setStatus(animal.getStatus());
 
-            EUsuario usuario = usuarioInterface.findById(animal.getUsuario_id())
+            EUsuario usuario = usuarioInterface.findById(animal.getUsuarioId())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-            novoAnimal.setUsuario(usuario);
+            novoAnimal.setUsuarioId(usuario);
 
             animalInterface.save(novoAnimal);
 

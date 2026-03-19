@@ -19,5 +19,5 @@ public class AnimalDto {
     private String tamanho;
     private EnSexoAnimal sexo;
     private EnStatusAnimal status;
-    private Long usuario_id;
+    private Long usuarioId;
 }
