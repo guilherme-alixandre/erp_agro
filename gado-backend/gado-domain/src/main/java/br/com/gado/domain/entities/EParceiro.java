@@ -8,10 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EParceiro {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EParceiro extends EAbstract{
 
     private String nome;
     private String CPF_CNPJ;

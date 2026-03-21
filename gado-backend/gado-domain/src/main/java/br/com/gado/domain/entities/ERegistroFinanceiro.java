@@ -9,10 +9,7 @@ import java.util.Date;
 
 @Entity
 @Data
-public class ERegistroFinanceiro {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ERegistroFinanceiro extends EAbstract{
 
     private String descricao;
 

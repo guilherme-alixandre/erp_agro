@@ -10,10 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EAnimal {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EAnimal extends EAbstract{
 
     private String codigoBrinco;
     private String nome;

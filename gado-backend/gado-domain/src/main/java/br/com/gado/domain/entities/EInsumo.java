@@ -6,10 +6,7 @@ import lombok.Data;
 
 @Entity
 @Data
-public class EInsumo {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EInsumo extends EAbstract{
 
     private String nome;
     private Double estoqueMinimo;
