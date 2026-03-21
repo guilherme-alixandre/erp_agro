@@ -4,10 +4,12 @@ import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EAnimal extends EAbstract{

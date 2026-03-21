@@ -3,7 +3,9 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoInsumo;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EInsumo extends EAbstract{

@@ -3,7 +3,9 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoSetor;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class ESetor extends EAbstract{

@@ -3,9 +3,11 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EUsuario extends EAbstract{

@@ -3,9 +3,11 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoOcorrencia;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EOcorrenciaAnimal extends EAbstract{

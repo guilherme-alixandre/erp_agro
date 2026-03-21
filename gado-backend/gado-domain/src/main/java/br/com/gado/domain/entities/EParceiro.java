@@ -3,9 +3,11 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoParceiro;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EParceiro extends EAbstract{

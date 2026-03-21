@@ -19,10 +19,8 @@ public class EAbstract {
     private EnStatus status = EnStatus.A;
 
     @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
     @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 }
