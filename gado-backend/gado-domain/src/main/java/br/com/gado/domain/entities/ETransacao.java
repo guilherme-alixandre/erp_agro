@@ -7,10 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class ETransacao {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ETransacao extends EAbstract{
 
     private LocalDateTime data;
     private Double valor;

@@ -8,10 +8,7 @@ import java.util.Date;
 
 @Entity
 @Data
-public class EMovimentacaoEstoque {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EMovimentacaoEstoque extends EAbstract{
 
     @Enumerated(EnumType.STRING)
     private EnTipoMovimentacaoEstoque EnTipoMovimentacaoEstoque;

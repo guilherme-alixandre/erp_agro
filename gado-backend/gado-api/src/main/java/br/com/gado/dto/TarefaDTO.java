@@ -1,15 +1,17 @@
 package br.com.gado.dto;
 
+import br.com.gado.domain.entities.EAbstract;
 import br.com.gado.domain.entities.EListasTarefas;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
-public class TarefaDTO {
-    private Long id;
+public class TarefaDTO extends AbstractDTO{
+
     private String descricao;
-    private LocalDateTime dataLimite;
-    private boolean status;
+    private Date dataLimite;
+    private boolean statusConclusao;
     private EListasTarefas lista;
 }

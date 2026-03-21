@@ -8,10 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class EUsuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EUsuario extends EAbstract{
 
     private String nome;
     // criarei classe email ainda

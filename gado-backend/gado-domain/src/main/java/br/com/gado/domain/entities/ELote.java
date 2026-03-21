@@ -8,10 +8,7 @@ import java.util.List;
 
 @Entity
 @Data
-public class ELote {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ELote extends EAbstract{
 
     private String descricao;
     private String racaPredominante;

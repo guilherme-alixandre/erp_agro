@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class AnimalDto {
+public class AnimalDto extends AbstractDTO {
 
     // talvez eu tenha que ter um unique = true
     private String codigoBrinco;

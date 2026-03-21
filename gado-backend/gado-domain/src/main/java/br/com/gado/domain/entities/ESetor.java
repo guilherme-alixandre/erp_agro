@@ -6,10 +6,7 @@ import lombok.Data;
 
 @Entity
 @Data
-public class ESetor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ESetor extends EAbstract{
 
     private String nome;
     private int capacidadeMaxima;

@@ -7,14 +7,11 @@ import java.util.Date;
 
 @Entity
 @Data
-public class ETarefa {
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long Id;
+public class ETarefa extends EAbstract{
 
    private String descricao;
    private Date dataLimite;
-   private boolean status;
+   private boolean statusConclusao;
 
    @ManyToOne
    @JoinColumn(name = "lista_tarefa_id")
