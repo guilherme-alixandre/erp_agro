@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public class EUsuario extends EAbstract{
 
     private String nome;
-    // criarei classe email ainda
     private String email;
     private String senha;
 
