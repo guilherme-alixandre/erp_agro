@@ -26,7 +26,7 @@ public class EAnimal extends EAbstract{
     private EnSexoAnimal sexo;
 
     @Enumerated(EnumType.STRING)
-    private EnStatusAnimal status;
+    private EnStatusAnimal statusAnimal;
 
     // no banco vai ficar o "pessoa_id"
     @ManyToOne

@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SAnimal;
-import br.com.gado.dto.AnimalDto;
+import br.com.gado.application.dto.AnimalDto;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

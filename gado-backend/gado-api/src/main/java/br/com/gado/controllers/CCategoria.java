@@ -1,19 +1,16 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SCategoria;
-import br.com.gado.dto.CategoriaDTO;
+import br.com.gado.application.dto.CategoriaDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/categoria")
 public class CCategoria {
 
-    private final SCategoria categoriaService;
-
-    public CCategoria(SCategoria categoriaService) {
-        this.categoriaService = categoriaService;
-    }
-
+    @Autowired
+    private SCategoria categoriaService;
 
     @GetMapping("/{categoriaId}")
     public CategoriaDTO getCategoria(@PathVariable Long categoriaId){

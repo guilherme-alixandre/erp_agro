@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class EParceiro extends EAbstract{
 
     private String nome;
-    private String CPF_CNPJ;
+    private String cpfCnpj;
     private String endereco;
     private String telefone;
     private LocalDateTime dataCadastro;

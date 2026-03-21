@@ -1,8 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SLote;
-import br.com.gado.dto.loteDto.LoteCadastroDto;
-import br.com.gado.dto.loteDto.LotePutDto;
+import br.com.gado.application.dto.loteDto.LoteCadastroDto;
+import br.com.gado.application.dto.loteDto.LotePutDto;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

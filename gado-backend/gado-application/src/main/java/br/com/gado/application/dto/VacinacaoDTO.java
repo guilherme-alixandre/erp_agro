@@ -1,4 +1,4 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.entities.EInsumo;
 import br.com.gado.domain.entities.ELote;

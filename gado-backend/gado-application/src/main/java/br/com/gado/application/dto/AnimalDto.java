@@ -1,11 +1,13 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class AnimalDto extends AbstractDTO {
 
@@ -18,6 +20,6 @@ public class AnimalDto extends AbstractDTO {
     private String raca;
     private String tamanho;
     private EnSexoAnimal sexo;
-    private EnStatusAnimal status;
+    private EnStatusAnimal statusAnimal;
     private Long usuarioId;
 }

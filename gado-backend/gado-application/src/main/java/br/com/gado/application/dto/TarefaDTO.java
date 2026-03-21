@@ -1,10 +1,8 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
-import br.com.gado.domain.entities.EAbstract;
 import br.com.gado.domain.entities.EListasTarefas;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data

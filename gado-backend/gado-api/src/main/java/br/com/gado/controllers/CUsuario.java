@@ -1,8 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SUsuario;
-import br.com.gado.dto.usuarioDto.UsuarioCadastroDto;
-import br.com.gado.dto.usuarioDto.UsuarioPutDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

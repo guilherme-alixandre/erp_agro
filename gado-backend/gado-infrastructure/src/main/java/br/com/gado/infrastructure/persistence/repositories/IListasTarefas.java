@@ -8,6 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface IListasTarefas extends JpaRepository<EListasTarefas, Long> {
-    Optional<IListasTarefas> findByListaTerafaId(Long id);
-    void deleteByListaTerafaId(Long id);
+    void deleteById(Long id);
 }

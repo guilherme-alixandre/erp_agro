@@ -2,15 +2,17 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EListasTarefas;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.ListasTarefasDTO;
+import br.com.gado.application.dto.ListasTarefasDTO;
 import br.com.gado.infrastructure.persistence.repositories.IListasTarefas;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.reactive.TransactionalOperator;
+
+
 
 @Service
 public class SListasTarefas {
@@ -18,12 +20,11 @@ public class SListasTarefas {
     private static final Logger log = LoggerFactory.getLogger(SListasTarefas.class);
     private final IListasTarefas listasTarefasInterface;
     private final ModelMapper modelMapper;
-    private final TransactionalOperator transactionalOperator;
 
-    public SListasTarefas(IListasTarefas listasTarefas, TransactionalOperator transactionalOperator) {
+    @Autowired
+    public SListasTarefas(IListasTarefas listasTarefas, ModelMapper modelMapper) {
         this.listasTarefasInterface = listasTarefas;
-        this.modelMapper = new ModelMapper();
-        this.transactionalOperator = transactionalOperator;
+        this.modelMapper = modelMapper;
     }
 
     @Transactional
@@ -40,7 +41,7 @@ public class SListasTarefas {
     @Transactional
     public ListasTarefasDTO buscarListaDeTarefasPorId(Long listaId) {
         EListasTarefas listaTarefaEntitye = (EListasTarefas) this.listasTarefasInterface
-                .findByListaTerafaId(listaId)
+                .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(listaTarefaEntitye, ListasTarefasDTO.class);
     }
@@ -48,7 +49,7 @@ public class SListasTarefas {
     @Transactional
     public ListasTarefasDTO atualizarListaDeTarefasPorId(ListasTarefasDTO listaParaAtualizar, Long listaId) {
         EListasTarefas existingEntitye = (EListasTarefas) this.listasTarefasInterface
-                .findByListaTerafaId(listaId)
+                .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -70,7 +71,7 @@ public class SListasTarefas {
     @Transactional
     public boolean excluirListaDeTarefas(Long listaId) {
         EListasTarefas listaParaExcluir = (EListasTarefas) this.listasTarefasInterface
-                .findByListaTerafaId(listaId)
+                .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         listaParaExcluir.setStatus(EnStatus.I);

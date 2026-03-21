@@ -1,10 +1,12 @@
 package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EParceiro;
-import br.com.gado.dto.parcerioDto.ParceiroCadastroDto;
-import br.com.gado.dto.parcerioDto.ParceiroPutDto;
+import br.com.gado.application.dto.parcerioDto.ParceiroCadastroDto;
+import br.com.gado.application.dto.parcerioDto.ParceiroPutDto;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,16 +17,16 @@ import java.util.Optional;
 @Service
 public class SParceiro {
 
-    private final IParceiro parceiroInterface;
+    @Autowired
+    private IParceiro parceiroInterface;
 
-    public SParceiro(IParceiro parceiroInterface){
-        this.parceiroInterface = parceiroInterface;
-    }
+    @Autowired
+    private ModelMapper modelMapper;
 
 
     public Map<String, Object> buscaPorCPF_CNPJ(String cpf_cnpj){
         Map<String, Object> response = new HashMap<>();
-        Optional<EParceiro> parceiroOptional = parceiroInterface.findByCPF_CNPJ(cpf_cnpj);
+        Optional<EParceiro> parceiroOptional = parceiroInterface.findByCpfCnpj(cpf_cnpj);
 
         if(parceiroOptional.isEmpty()){
             response.put("Erro", "nenhum parceiro encontrado com esse cpf/cnpj");
@@ -38,17 +40,12 @@ public class SParceiro {
 
     @Transactional
     public String cadastra(ParceiroCadastroDto dto){
-        boolean existe = parceiroInterface.existsByCPF_CNPJ(dto.getCPF_CNPJ());
+        boolean existe = parceiroInterface.existsByCpfCnpj(dto.getCPF_CNPJ());
         if(existe){
             return "Parceiro já existe no sistema";
         }
 
-        EParceiro parceiro = new EParceiro();
-        parceiro.setNome(dto.getNome());
-        parceiro.setTipo(dto.getTipo());
-        parceiro.setEndereco(dto.getEndereco());
-        parceiro.setCPF_CNPJ(dto.getCPF_CNPJ());
-        parceiro.setTelefone(dto.getTelefone());
+        EParceiro parceiro = modelMapper.map(dto, EParceiro.class);
         parceiro.setDataCadastro(LocalDateTime.now());
 
         parceiroInterface.save(parceiro);
@@ -57,12 +54,12 @@ public class SParceiro {
 
     @Transactional
     public String deleta(String cpf_cnpj){
-        if(!parceiroInterface.existsByCPF_CNPJ(cpf_cnpj)){
+        if(!parceiroInterface.existsByCpfCnpj(cpf_cnpj)){
             return "Esse cpf/cnpj não existe no banco de dados";
         }
 
         try{
-            parceiroInterface.deleteByCPF_CNPJ(cpf_cnpj);
+            parceiroInterface.deleteByCpfCnpj(cpf_cnpj);
             return "Parceiro deletado com sucesso";
         }
         catch (Exception e) {
@@ -72,27 +69,13 @@ public class SParceiro {
 
     @Transactional
     public String altera(String cpf_cnpj, ParceiroPutDto dto){
-        Optional<EParceiro> parceiroOptional = parceiroInterface.findByCPF_CNPJ(cpf_cnpj);
+        Optional<EParceiro> parceiroOptional = parceiroInterface.findByCpfCnpj(cpf_cnpj);
         if(parceiroOptional.isEmpty()){
             return "Parceiro não existe no sistema";
         }
 
         EParceiro parceiro = parceiroOptional.get();
-        if(dto.getNome() != null){
-            parceiro.setNome(dto.getNome());
-        }
-
-        if(dto.getTelefone() != null){
-            parceiro.setTelefone(dto.getTelefone());
-        }
-
-        if(dto.getTipo() != null){
-            parceiro.setTipo(dto.getTipo());
-        }
-
-        if(dto.getEndereco() != null){
-            parceiro.setEndereco(dto.getEndereco());
-        }
+        modelMapper.map(dto, parceiro);
 
         parceiroInterface.save(parceiro);
         return "Parceiro atualizado";
