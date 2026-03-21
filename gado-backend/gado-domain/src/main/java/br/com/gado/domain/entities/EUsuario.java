@@ -14,7 +14,6 @@ public class EUsuario {
     private Long id;
 
     private String nome;
-    // criarei classe email ainda
     private String email;
     private String senha;
 
