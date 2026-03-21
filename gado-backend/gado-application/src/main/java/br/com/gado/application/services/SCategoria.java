@@ -1,7 +1,6 @@
 package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.ECategoria;
-import br.com.gado.domain.entities.EListasTarefas;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.dto.CategoriaDTO;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
@@ -19,12 +18,10 @@ public class SCategoria {
     private static final Logger log = LoggerFactory.getLogger(SCategoria.class);
     private final ICategoria categoriaInterface;
     private final ModelMapper modelMapper;
-    private final TransactionalOperator transactionalOperator;
 
     public SCategoria(ICategoria categoriaInterface, TransactionalOperator transactionalOperator) {
         this.categoriaInterface = categoriaInterface;
         this.modelMapper = new ModelMapper();
-        this.transactionalOperator = transactionalOperator;
     }
 
     @Transactional
