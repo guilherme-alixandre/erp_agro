@@ -4,10 +4,11 @@ import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
-
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class EAnimal extends EAbstract{
@@ -24,7 +25,7 @@ public class EAnimal extends EAbstract{
     private EnSexoAnimal sexo;
 
     @Enumerated(EnumType.STRING)
-    private EnStatusAnimal status;
+    private EnStatusAnimal statusAnimal;
 
     // no banco vai ficar o "pessoa_id"
     @ManyToOne

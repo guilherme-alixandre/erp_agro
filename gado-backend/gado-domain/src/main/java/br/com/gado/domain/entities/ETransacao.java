@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Data
 public class ETransacao extends EAbstract{
 
-    private LocalDateTime data;
+    private Date data;
     private Double valor;
 
     @ManyToOne

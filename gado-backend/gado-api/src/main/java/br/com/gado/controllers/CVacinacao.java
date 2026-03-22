@@ -1,8 +1,6 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.STarefa;
 import br.com.gado.application.services.SVacinacao;
-import br.com.gado.dto.TarefaDTO;
 import br.com.gado.dto.VacinacaoDTO;
 import org.springframework.web.bind.annotation.*;
 
