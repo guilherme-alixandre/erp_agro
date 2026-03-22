@@ -8,7 +8,6 @@ import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
-
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Data

@@ -48,7 +48,7 @@ public class SVacinacao {
         vacinacao.setInsumoRelacionado(novaVacinacao.getInsumoRelacionado());
 
         try {
-            EVacinacao vaciacaoSalva = modelMapper.map(novaVacinacao, EVacinacao.class);
+            EVacinacao vaciacaoSalva = this.vacinacaoInterface.save(vacinacao);
             return modelMapper.map(vaciacaoSalva, VacinacaoDTO.class);
         } catch (Exception e) {
             log.error("Erro ao criar registro de vacinação: {}", e.getMessage(), e);

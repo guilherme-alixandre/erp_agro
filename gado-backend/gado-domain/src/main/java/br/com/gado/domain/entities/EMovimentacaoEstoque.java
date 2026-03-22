@@ -19,15 +19,7 @@ public class EMovimentacaoEstoque extends EAbstract{
     private Date dataMovimentacao;
 
     @ManyToOne
-    @JoinColumns({
-            // O 'name' é o nome da coluna na tabela movimentacao_estoque [cite: 84]
-            // O 'referencedColumnName' é o nome da coluna na tabela lote
-            @JoinColumn(name = "lote_id", referencedColumnName = "id"),
-
-            // O 'name' é o nome da coluna na tabela movimentacao_estoque [cite: 85]
-            // O 'referencedColumnName' é o nome da coluna na tabela lote (que é a FK de usuario)
-            @JoinColumn(name = "lote_usuario_id", referencedColumnName = "usuario_id")
-    })
+    @JoinColumn(name = "lote_id")
     private ELote loteId;
 
     @ManyToOne

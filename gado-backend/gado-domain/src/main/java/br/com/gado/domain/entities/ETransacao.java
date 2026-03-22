@@ -5,13 +5,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class ETransacao extends EAbstract{
 
-    private LocalDateTime data;
+    private Date data;
     private Double valor;
 
     @ManyToOne

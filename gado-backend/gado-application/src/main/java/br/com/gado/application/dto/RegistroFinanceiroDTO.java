@@ -1,36 +1,23 @@
-package br.com.gado.domain.entities;
+package br.com.gado.dto;
 
+import br.com.gado.domain.entities.ECategoria;
+import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatusDespesa;
 import br.com.gado.domain.enums.EnTipoDespesa;
-import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
-@EqualsAndHashCode(callSuper = true)
-@Entity
 @Data
-public class ERegistroFinanceiro extends EAbstract{
+public class RegistroFinanceiroDTO extends AbstractDTO {
 
     private String descricao;
-
-    @Enumerated(EnumType.STRING)
     private EnTipoDespesa tipoDespesa;
-
     private Double valor;
-
     private Date dataVencimento;
     private Date dataPagamento;
-
-    @Enumerated(EnumType.STRING)
     private EnStatusDespesa statusDespesa;
 
-    @ManyToOne
-    @JoinColumn(name = "categoria_id")
     private ECategoria categoriaId;
-
-    @ManyToOne
-    @JoinColumn(name = "pessoa_id")
     private EUsuario usuarioId;
 }
