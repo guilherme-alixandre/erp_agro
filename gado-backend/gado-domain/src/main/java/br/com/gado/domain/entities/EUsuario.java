@@ -3,18 +3,17 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "usuario")
 @Data
-public class EUsuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EUsuario extends EAbstract{
 
     private String nome;
-    // criarei classe email ainda
     private String email;
     private String senha;
 

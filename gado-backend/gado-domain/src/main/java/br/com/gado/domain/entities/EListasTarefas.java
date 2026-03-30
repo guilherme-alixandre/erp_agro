@@ -1,16 +1,14 @@
 package br.com.gado.domain.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "listas_tarefas")
 @Data
-public class EListasTarefas {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+public class EListasTarefas extends EAbstract{
 
     private String nomeLista;
 }

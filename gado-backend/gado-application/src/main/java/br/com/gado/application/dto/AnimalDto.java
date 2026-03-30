@@ -1,13 +1,15 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class AnimalDto {
+public class AnimalDto extends AbstractDTO {
 
     // talvez eu tenha que ter um unique = true
     private String codigoBrinco;
@@ -18,6 +20,5 @@ public class AnimalDto {
     private String raca;
     private String tamanho;
     private EnSexoAnimal sexo;
-    private EnStatusAnimal status;
-    private Long usuarioId;
+    private EnStatusAnimal statusAnimal;
 }

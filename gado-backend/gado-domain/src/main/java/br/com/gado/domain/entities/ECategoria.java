@@ -4,16 +4,13 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "categoria")
 @Data
-public class ECategoria {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+public class ECategoria extends EAbstract{
 
-    @NotBlank(message = "A categoria deve ter um nome/sigla para indentificação.")
-    @Size(min = 1, max = 30, message = "A categoria deve ter entre 2 e 30 caracteres.")
-    @Column(columnDefinition = "TEXT")
     private String categoria;
 }

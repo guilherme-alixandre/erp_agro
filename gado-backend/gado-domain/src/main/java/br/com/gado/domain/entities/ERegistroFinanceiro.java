@@ -4,15 +4,15 @@ import br.com.gado.domain.enums.EnStatusDespesa;
 import br.com.gado.domain.enums.EnTipoDespesa;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "registro_financeiro")
 @Data
-public class ERegistroFinanceiro {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ERegistroFinanceiro extends EAbstract{
 
     private String descricao;
 
@@ -29,9 +29,9 @@ public class ERegistroFinanceiro {
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")
-    private ECategoria categoria_id;
+    private ECategoria categoriaId;
 
     @ManyToOne
     @JoinColumn(name = "pessoa_id")
-    private EUsuario usuario_id;
+    private EUsuario usuarioId;
 }

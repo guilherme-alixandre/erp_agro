@@ -2,16 +2,16 @@ package br.com.gado.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "lote")
 @Data
-public class ELote {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ELote extends EAbstract{
 
     private String descricao;
     private String racaPredominante;

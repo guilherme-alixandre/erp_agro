@@ -2,11 +2,13 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EUsuario;
-import br.com.gado.dto.loteDto.LoteCadastroDto;
-import br.com.gado.dto.loteDto.LotePutDto;
+import br.com.gado.application.dto.loteDto.LoteCadastroDto;
+import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -16,13 +18,14 @@ import java.util.Optional;
 @Service
 public class SLote {
 
-    private final ILote loteInterface;
-    private final IUsuario usuarioInterface;
+    @Autowired
+    private ILote loteInterface;
 
-    public SLote(ILote loteInterface, IUsuario usuarioInterface){
-        this.loteInterface = loteInterface;
-        this.usuarioInterface = usuarioInterface;
-    }
+    @Autowired
+    private IUsuario usuarioInterface;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
 
     public Map<String, Object> buscaPorid(Long id){
@@ -42,17 +45,13 @@ public class SLote {
 
     @Transactional
     public String cadastra(LoteCadastroDto dto){
-        ELote lote = new ELote();
-
         Optional<EUsuario> usuarioOptional = usuarioInterface.findById(dto.getUsuario_id());
         if(usuarioOptional.isEmpty()){
             return "Nenhum usuário com esse id foi encontrado";
         }
 
-        lote.setDescricao(dto.getDescricao());
-        lote.setRacaPredominante(dto.getRacaPredominante());
+        ELote lote = modelMapper.map(dto, ELote.class);
         lote.setUsuario(usuarioOptional.get());
-
         loteInterface.save(lote);
         return "lote criado com sucesso";
     }
@@ -82,14 +81,7 @@ public class SLote {
         }
 
         ELote lote = loteOptional.get();
-        if(dto.getDescricao() != null){
-            lote.setDescricao(dto.getDescricao());
-        }
-
-        if(dto.getRacaPredominante() != null){
-            lote.setRacaPredominante(dto.getRacaPredominante());
-        }
-
+        modelMapper.map(dto, lote);
         loteInterface.save(lote);
         return "lote alterado com sucesso";
     }

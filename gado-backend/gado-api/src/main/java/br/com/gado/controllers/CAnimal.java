@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SAnimal;
-import br.com.gado.dto.AnimalDto;
+import br.com.gado.application.dto.AnimalDto;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,9 +22,11 @@ public class CAnimal {
         return animalService.buscarPorBrinco(brinco);
     }
 
-    @PostMapping("/")
-    public String postAnimal(@RequestBody AnimalDto animal){
-        return animalService.cadastraAnimal(animal);
+    @PostMapping("/usuarios/{email}")
+    public String postAnimal(@PathVariable String email,
+                             @RequestBody AnimalDto animal)
+    {
+        return animalService.cadastraAnimal(email, animal);
     }
 
     @DeleteMapping("/{brinco}")

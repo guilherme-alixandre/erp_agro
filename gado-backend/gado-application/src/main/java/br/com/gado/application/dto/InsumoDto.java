@@ -1,10 +1,10 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.enums.EnTipoInsumo;
 import lombok.Data;
 
 @Data
-public class InsumoDto {
+public class InsumoDto extends AbstractDTO {
 
     private String nome;
     private Double estoqueMinimo;

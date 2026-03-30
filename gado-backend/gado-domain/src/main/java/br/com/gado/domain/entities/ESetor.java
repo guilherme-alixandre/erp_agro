@@ -3,13 +3,13 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoSetor;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "setor")
 @Data
-public class ESetor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ESetor extends EAbstract{
 
     private String nome;
     private int capacidadeMaxima;
