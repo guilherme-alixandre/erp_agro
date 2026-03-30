@@ -1,8 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SOcorrenciaAnimal;
-import br.com.gado.dto.MovimentacaoEstoqueDTO;
-import br.com.gado.dto.OcorrenciaAnimalDTO;
+import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
+import br.com.gado.application.dto.OcorrenciaAnimalDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

@@ -1,14 +1,13 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EParceiro;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class TrasacaoDTO extends AbstractDTO {
 

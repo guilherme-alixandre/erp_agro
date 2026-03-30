@@ -9,6 +9,7 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "ocorrencia_animal")
 @Data
 public class EOcorrenciaAnimal extends EAbstract{
 

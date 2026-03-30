@@ -40,14 +40,14 @@ public class SAnimal {
     }
 
     @Transactional
-    public String cadastraAnimal(AnimalDto animal){
+    public String cadastraAnimal(String email, AnimalDto animal){
         try{
             EAnimal novoAnimal = modelMapper.map(animal, EAnimal.class);
 
-            EUsuario usuario = usuarioInterface.findById(animal.getUsuarioId())
+            EUsuario usuario = usuarioInterface.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-            novoAnimal.setUsuarioId(usuario);
+            novoAnimal.setUsuario(usuario);
             animalInterface.save(novoAnimal);
 
             return "animal cadastrado";

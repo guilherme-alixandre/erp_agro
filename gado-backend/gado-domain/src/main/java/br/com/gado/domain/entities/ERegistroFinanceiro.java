@@ -10,6 +10,7 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "registro_financeiro")
 @Data
 public class ERegistroFinanceiro extends EAbstract{
 

@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "unidade_medida")
 @Data
 public class EUnidadeMedida extends EAbstract{
 

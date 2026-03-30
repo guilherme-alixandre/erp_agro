@@ -2,7 +2,7 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EMovimentacaoEstoque;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.MovimentacaoEstoqueDTO;
+import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import br.com.gado.infrastructure.persistence.repositories.IMovimentacaoEstoque;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -45,14 +45,14 @@ public class SMovimentacaoEstoque {
 
     public MovimentacaoEstoqueDTO buscarMovimentacaoEstoquePorId(MovimentacaoEstoqueDTO movimentacaoEstoque) {
         EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
-                .findByMovimentacaoEstoqueId(movimentacaoEstoque.getId())
+                .findById(movimentacaoEstoque.getId())
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(existingEntitye, MovimentacaoEstoqueDTO.class);
     }
 
     public MovimentacaoEstoqueDTO atualizarMovimentacaoEstoquePorId(MovimentacaoEstoqueDTO movimentacaoEstoqueParaAtualizar) {
         EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
-                .findByMovimentacaoEstoqueId(movimentacaoEstoqueParaAtualizar.getId())
+                .findById(movimentacaoEstoqueParaAtualizar.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -70,7 +70,7 @@ public class SMovimentacaoEstoque {
 
     public boolean excluirMovimentacaoEstoquePorId(Long movimentacaoEstoqueId) {
         EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
-                .findByMovimentacaoEstoqueId(movimentacaoEstoqueId)
+                .findById(movimentacaoEstoqueId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);

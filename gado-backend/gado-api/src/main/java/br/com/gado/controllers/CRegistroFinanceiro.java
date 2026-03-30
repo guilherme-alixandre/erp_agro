@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SRegistroFinanceiro;
-import br.com.gado.dto.RegistroFinanceiroDTO;
+import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

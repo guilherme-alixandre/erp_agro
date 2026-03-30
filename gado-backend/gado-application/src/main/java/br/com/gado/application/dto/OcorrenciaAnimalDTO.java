@@ -1,4 +1,4 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.enums.EnTipoOcorrencia;
@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class OcorrenciaAnimalDTO extends AbstractDTO{
+public class OcorrenciaAnimalDTO extends AbstractDTO {
 
     private EnTipoOcorrencia tipoOcorrencia;
     private Date dataOcorrencia;

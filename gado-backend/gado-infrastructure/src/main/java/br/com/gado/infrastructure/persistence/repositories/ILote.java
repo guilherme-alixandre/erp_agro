@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface ILote extends JpaRepository<ELote, Long> {
-    Optional<ELote> findByLoteId(Long loteId);
+    Optional<ELote> findById(Long loteId);
 }

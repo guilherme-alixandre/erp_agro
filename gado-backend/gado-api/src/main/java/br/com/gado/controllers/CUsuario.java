@@ -20,7 +20,7 @@ public class CUsuario {
         return usuarioService.encontraPorEmail(email);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public String postUsuario(@RequestBody UsuarioCadastroDto dto){
         return usuarioService.cadastra(dto);
     }

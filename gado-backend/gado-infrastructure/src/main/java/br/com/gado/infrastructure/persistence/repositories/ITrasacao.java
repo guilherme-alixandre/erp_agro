@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ITrasacao extends JpaRepository<ETransacao,Long> {
-    Optional<ETransacao> findByTrasacaoId(Long id);
+    Optional<ETransacao> findById(Long id);
 }

@@ -21,5 +21,4 @@ public class AnimalDto extends AbstractDTO {
     private String tamanho;
     private EnSexoAnimal sexo;
     private EnStatusAnimal statusAnimal;
-    private Long usuarioId;
 }

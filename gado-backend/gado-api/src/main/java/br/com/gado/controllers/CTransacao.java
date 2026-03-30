@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.STrasacao;
-import br.com.gado.dto.TrasacaoDTO;
+import br.com.gado.application.dto.TrasacaoDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

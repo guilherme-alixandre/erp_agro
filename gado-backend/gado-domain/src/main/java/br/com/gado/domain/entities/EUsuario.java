@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "usuario")
 @Data
 public class EUsuario extends EAbstract{
 

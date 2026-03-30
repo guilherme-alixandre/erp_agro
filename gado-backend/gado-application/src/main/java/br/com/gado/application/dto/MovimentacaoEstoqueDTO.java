@@ -1,14 +1,14 @@
-package br.com.gado.dto;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.entities.*;
 import br.com.gado.domain.enums.EnTipoMovimentacaoEstoque;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class MovimentacaoEstoqueDTO extends AbstractDTO {
 

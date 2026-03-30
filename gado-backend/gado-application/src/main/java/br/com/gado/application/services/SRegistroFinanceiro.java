@@ -4,7 +4,7 @@ import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.entities.ERegistroFinanceiro;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.RegistroFinanceiroDTO;
+import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import br.com.gado.infrastructure.persistence.repositories.IRegistroFinanceiro;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
@@ -38,7 +38,7 @@ public class SRegistroFinanceiro {
                 .orElseThrow(EntityNotFoundException::new);
 
         ECategoria existingCategoria = this.categoriaInterface
-                .findByCategoriaId(registroFinanceiroDto.getCategoriaId().getId())
+                .findById(registroFinanceiroDto.getCategoriaId().getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         ERegistroFinanceiro novoRegistroFinanceiro = new ERegistroFinanceiro();
@@ -64,7 +64,7 @@ public class SRegistroFinanceiro {
 
     public RegistroFinanceiroDTO buscarRegistroFinanceiroPorId(RegistroFinanceiroDTO registroFinanceiroDto) {
         ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
-                .buscarRegistroFinanceiroPorId(registroFinanceiroDto.getId())
+                .findById(registroFinanceiroDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         return modelMapper.map(existingEntitye, RegistroFinanceiroDTO.class);
@@ -72,7 +72,7 @@ public class SRegistroFinanceiro {
 
     public RegistroFinanceiroDTO atualizarRegistroFinanceiroPorId(RegistroFinanceiroDTO registroFinanceiroDto) {
         ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
-                .buscarRegistroFinanceiroPorId(registroFinanceiroDto.getId())
+                .findById(registroFinanceiroDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -91,7 +91,7 @@ public class SRegistroFinanceiro {
     public boolean excluirRegistroFinanceiroPorId(Long registroFinanceiroId) {
 
         ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
-                .buscarRegistroFinanceiroPorId(registroFinanceiroId)
+                .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);

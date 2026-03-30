@@ -1,8 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SUnidadeMedida;
-import br.com.gado.dto.UnidadeMedidaDTO;
-import br.com.gado.dto.VacinacaoDTO;
+import br.com.gado.application.dto.UnidadeMedidaDTO;
+import br.com.gado.application.dto.VacinacaoDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

@@ -3,7 +3,7 @@ package br.com.gado.application.services;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EOcorrenciaAnimal;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.OcorrenciaAnimalDTO;
+import br.com.gado.application.dto.OcorrenciaAnimalDTO;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IOcorrenciaAnimal;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,7 +50,7 @@ public class SOcorrenciaAnimal {
 
     public OcorrenciaAnimalDTO encontrarOcorrenciaAnimalPorId(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
         EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
-                .findByOcorrenciaId(ocorrenciaAnimalDto.getId())
+                .findById(ocorrenciaAnimalDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         if(existingEntitye != null){
@@ -63,7 +63,7 @@ public class SOcorrenciaAnimal {
 
     public OcorrenciaAnimalDTO atualizarOcorrenciaAnimal(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
         EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
-                .findByOcorrenciaId(ocorrenciaAnimalDto.getId())
+                .findById(ocorrenciaAnimalDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -81,7 +81,7 @@ public class SOcorrenciaAnimal {
 
     public boolean excluirOcorrenciaAnimal(Long ocorrenciaAnimalId) {
         EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
-                .findByOcorrenciaId(ocorrenciaAnimalId)
+                .findById(ocorrenciaAnimalId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);

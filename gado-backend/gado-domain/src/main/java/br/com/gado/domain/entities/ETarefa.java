@@ -8,6 +8,7 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "tarefa")
 @Data
 public class ETarefa extends EAbstract{
 

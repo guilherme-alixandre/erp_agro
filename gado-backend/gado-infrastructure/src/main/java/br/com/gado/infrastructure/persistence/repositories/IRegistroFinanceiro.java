@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface IRegistroFinanceiro extends JpaRepository<ERegistroFinanceiro, Long> {
-    Optional<ERegistroFinanceiro> buscarRegistroFinanceiroPorId(Long id);
+    Optional<ERegistroFinanceiro> findById(Long id);
 }
