@@ -1,7 +1,7 @@
 package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.ESetor;
-import br.com.gado.dto.SetorDto;
+import br.com.gado.application.dto.SetorDto;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;

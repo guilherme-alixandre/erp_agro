@@ -3,13 +3,13 @@ package br.com.gado.domain.entities;
 import br.com.gado.domain.enums.EnTipoInsumo;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "insumo")
 @Data
-public class EInsumo {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EInsumo extends EAbstract{
 
     private String nome;
     private Double estoqueMinimo;

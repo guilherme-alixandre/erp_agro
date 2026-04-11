@@ -1,8 +1,8 @@
 package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EUsuario;
-import br.com.gado.dto.usuarioDto.UsuarioCadastroDto;
-import br.com.gado.dto.usuarioDto.UsuarioPutDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -49,7 +49,7 @@ public class SUsuario {
 
     @Transactional
     public String deleta(String email){
-        boolean existe = usuarioInterface.existByEmail(email);
+        boolean existe = usuarioInterface.existsByEmail(email);
         if(!existe){
             return "Usuário não encontrado";
         }

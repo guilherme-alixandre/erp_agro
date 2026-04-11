@@ -4,16 +4,15 @@ import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
-
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "animal")
 @Data
-public class EAnimal {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EAnimal extends EAbstract{
 
     private String codigoBrinco;
     private String nome;
@@ -27,11 +26,10 @@ public class EAnimal {
     private EnSexoAnimal sexo;
 
     @Enumerated(EnumType.STRING)
-    private EnStatusAnimal status;
+    private EnStatusAnimal statusAnimal;
 
     // no banco vai ficar o "pessoa_id"
     @ManyToOne
     @JoinColumn(name = "pessoa_id")
     private EUsuario usuario;
-
 }

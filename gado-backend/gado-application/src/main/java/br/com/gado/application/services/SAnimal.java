@@ -2,10 +2,12 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EUsuario;
-import br.com.gado.dto.AnimalDto;
+import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -14,14 +16,15 @@ import java.util.Optional;
 
 @Service
 public class SAnimal {
-    private final IAnimal animalInterface;
-    private final IUsuario usuarioInterface;
 
-    public SAnimal(IAnimal animalInterface, IUsuario usuarioInterface){
-        this.animalInterface = animalInterface;
-        this.usuarioInterface = usuarioInterface;
-    }
+    @Autowired
+    private IAnimal animalInterface;
 
+    @Autowired
+    private IUsuario usuarioInterface;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     public Map<String, Object> buscarPorBrinco(String brinco){
         Map<String, Object> response = new HashMap<>();
@@ -37,25 +40,14 @@ public class SAnimal {
     }
 
     @Transactional
-    public String cadastraAnimal(AnimalDto animal){
+    public String cadastraAnimal(String email, AnimalDto animal){
         try{
-            EAnimal novoAnimal = new EAnimal();
+            EAnimal novoAnimal = modelMapper.map(animal, EAnimal.class);
 
-            novoAnimal.setCodigoBrinco(animal.getCodigoBrinco());
-            novoAnimal.setNome(animal.getNome());
-            novoAnimal.setDataNascimento(animal.getDataNascimento());
-            novoAnimal.setPesoAtual(animal.getPesoAtual());
-            novoAnimal.setRaca(animal.getRaca());
-            novoAnimal.setCor(animal.getCor());
-            novoAnimal.setTamanho(animal.getTamanho());
-            novoAnimal.setSexo(animal.getSexo());
-            novoAnimal.setStatus(animal.getStatus());
-
-            EUsuario usuario = usuarioInterface.findById(animal.getUsuario_id())
+            EUsuario usuario = usuarioInterface.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
             novoAnimal.setUsuario(usuario);
-
             animalInterface.save(novoAnimal);
 
             return "animal cadastrado";
@@ -85,43 +77,8 @@ public class SAnimal {
             return "animal não encontrado";
         }
 
-        // as alterações
-        // ain, pra que isso? se eu não fizer isso e fazer do jeito normal
-        // o que eu não passar vira null, assim salva o que eu não passar
         EAnimal animal = animalOptional.get();
-
-        if(dto.getRaca() != null){
-            animal.setRaca(dto.getRaca());
-        }
-
-        if(dto.getNome() != null){
-            animal.setNome(dto.getNome());
-        }
-
-        if(dto.getSexo() != null){
-            animal.setSexo(dto.getSexo());
-        }
-
-        if(dto.getCor() != null){
-            animal.setCor(dto.getCor());
-        }
-
-        if(dto.getDataNascimento() != null){
-            animal.setDataNascimento(dto.getDataNascimento());
-        }
-
-        if(dto.getPesoAtual() != null){
-            animal.setPesoAtual(dto.getPesoAtual());
-        }
-
-        if(dto.getTamanho() != null){
-            animal.setTamanho(dto.getTamanho());
-        }
-
-        if(dto.getStatus() != null){
-            animal.setStatus(dto.getStatus());
-        }
-
+        modelMapper.map(dto, animal);
         animalInterface.save(animal);
         return "animal atualizado";
     }
