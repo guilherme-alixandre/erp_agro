@@ -7,6 +7,7 @@ import {
   buscarAnimalPorBrinco,
   cadastrarAnimal,
   deletarAnimal,
+  getBackendMessage,
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import '../styles/animais.css'
@@ -26,11 +27,15 @@ const defaultForm = {
 
 function calcAgeLabel(dateText) {
   if (!dateText) return 'idade não informada'
-  const birthDate = new Date(`${dateText}T00:00:00`)
+  const [birthYear, birthMonth, birthDay] = dateText
+    .split('-')
+    .map((part) => Number(part))
+  if (!birthYear || !birthMonth || !birthDay) return 'idade não informada'
+
   const now = new Date()
-  let years = now.getFullYear() - birthDate.getFullYear()
-  const monthDiff = now.getMonth() - birthDate.getMonth()
-  const dayDiff = now.getDate() - birthDate.getDate()
+  let years = now.getFullYear() - birthYear
+  const monthDiff = now.getMonth() + 1 - birthMonth
+  const dayDiff = now.getDate() - birthDay
   if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     years -= 1
   }
@@ -56,12 +61,12 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimalPage() {
+function AnimaisPage() {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [animals, setAnimals] = useState([])
   const [modal, setModal] = useState({ type: null, animal: null })
   const [formMode, setFormMode] = useState('create')
@@ -112,12 +117,15 @@ function AnimalPage() {
     if (!brinco) return
 
     setIsLoadingSearch(true)
-    setFeedback('')
+    setFeedback({ type: '', message: '' })
     try {
       const animal = await buscarAnimalPorBrinco(brinco)
       setAnimals((current) => mergeByBrinco(current, animal))
     } catch (error) {
-      setFeedback(error.message || 'Falha ao buscar animal.')
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao buscar animal.',
+      })
     } finally {
       setIsLoadingSearch(false)
     }
@@ -127,22 +135,22 @@ function AnimalPage() {
     event.preventDefault()
     setIsSaving(true)
     setFormFeedback('')
-    setFeedback('')
+    setFeedback({ type: '', message: '' })
 
     try {
       if (formMode === 'create') {
         const result = await cadastrarAnimal(formData.emailUsuario, formData)
         if (isBackendErrorMessage(result)) {
-          throw new Error(result)
+          throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
 
         const loadedAnimal = await buscarAnimalPorBrinco(formData.codigoBrinco)
         setAnimals((current) => mergeByBrinco(current, loadedAnimal))
-        setFeedback('Animal cadastrado com sucesso.')
+        setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
       } else {
         const result = await atualizarAnimal(formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {
-          throw new Error(result)
+          throw new Error(getBackendMessage(result) || 'Falha ao atualizar animal.')
         }
 
         setAnimals((current) =>
@@ -156,7 +164,7 @@ function AnimalPage() {
               : animal,
           ),
         )
-        setFeedback('Animal atualizado com sucesso.')
+        setFeedback({ type: 'info', message: 'Animal atualizado com sucesso.' })
       }
 
       closeModal()
@@ -174,20 +182,23 @@ function AnimalPage() {
     if (!confirmDelete) return
 
     setIsDeleting(true)
-    setFeedback('')
+    setFeedback({ type: '', message: '' })
     try {
       const result = await deletarAnimal(animal.codigoBrinco)
       if (isBackendErrorMessage(result)) {
-        throw new Error(result)
+        throw new Error(getBackendMessage(result) || 'Falha ao excluir animal.')
       }
 
       setAnimals((current) =>
         current.filter((item) => item.codigoBrinco !== animal.codigoBrinco),
       )
       closeModal()
-      setFeedback('Animal excluído com sucesso.')
+      setFeedback({ type: 'info', message: 'Animal excluído com sucesso.' })
     } catch (error) {
-      setFeedback(error.message || 'Falha ao excluir animal.')
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao excluir animal.',
+      })
     } finally {
       setIsDeleting(false)
     }
@@ -237,7 +248,13 @@ function AnimalPage() {
           </button>
         </form>
 
-        {feedback ? <p className="feedback feedback--info">{feedback}</p> : null}
+        {feedback.message ? (
+          <p
+            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+          >
+            {feedback.message}
+          </p>
+        ) : null}
 
         {cards.length ? (
           <div className="animals-grid">
@@ -295,4 +312,4 @@ function AnimalPage() {
   )
 }
 
-export default AnimalPage
+export default AnimaisPage

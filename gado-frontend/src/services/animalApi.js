@@ -35,12 +35,26 @@ function normalizeAnimal(rawAnimal) {
   }
 }
 
-function isBackendErrorMessage(message) {
-  if (typeof message !== 'string') {
+function getBackendMessage(payload) {
+  if (typeof payload === 'string') {
+    return payload
+  }
+
+  if (payload && typeof payload === 'object') {
+    const message = payload.mensagem ?? payload.message
+    return typeof message === 'string' ? message : ''
+  }
+
+  return ''
+}
+
+function isBackendErrorMessage(payload) {
+  const message = getBackendMessage(payload)
+  if (!message) {
     return false
   }
 
-  const normalized = message.toLowerCase()
+  const normalized = String(message).toLowerCase()
   return normalized.includes('erro') || normalized.includes('não encontrado')
 }
 
@@ -57,7 +71,7 @@ async function buscarAnimalPorBrinco(brinco) {
   const payload = await request(`/animais/${codigoBrinco}`)
   const mensagem = payload?.mensagem
 
-  if (!mensagem || typeof mensagem === 'string') {
+  if (!mensagem || typeof mensagem !== 'object' || Array.isArray(mensagem)) {
     throw new Error(
       typeof mensagem === 'string'
         ? mensagem
@@ -88,5 +102,6 @@ export {
   buscarAnimalPorBrinco,
   cadastrarAnimal,
   deletarAnimal,
+  getBackendMessage,
   isBackendErrorMessage,
 }
