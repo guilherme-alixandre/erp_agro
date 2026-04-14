@@ -87,6 +87,29 @@
   background: #c3c3c3;
 }
 
+.animals-crud-test {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.animals-crud-test input {
+  flex: 1;
+  border: 1px solid #c7c7c7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f2f2f2;
+}
+
+.animals-crud-test button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  background: #4f7f2f;
+  color: #fff;
+}
+
 .animals-grid {
   margin-top: 20px;
   display: grid;
@@ -326,6 +349,10 @@
 
   .animals-search input {
     font-size: 1rem;
+  }
+
+  .animals-crud-test {
+    flex-direction: column;
   }
 
   .animals-grid {

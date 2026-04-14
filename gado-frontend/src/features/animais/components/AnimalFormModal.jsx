@@ -37,89 +37,102 @@ function AnimalFormModal({
                 value={formData.emailUsuario}
                 onChange={onChange}
                 required
+                maxLength={120}
               />
             </label>
           ) : null}
 
           <label>
             <span>Código do brinco</span>
-            <input
-              type="text"
-              name="codigoBrinco"
-              value={formData.codigoBrinco}
-              onChange={onChange}
-              required
-              disabled={!isCreate}
-            />
-          </label>
+              <input
+                type="text"
+                name="codigoBrinco"
+                value={formData.codigoBrinco}
+                onChange={onChange}
+                required
+                disabled={!isCreate}
+                pattern="[A-Za-z0-9-]+"
+                maxLength={30}
+                title="Use apenas letras, números e hífen."
+              />
+            </label>
 
           <label>
             <span>Nome</span>
-            <input
-              type="text"
-              name="nome"
-              value={formData.nome}
-              onChange={onChange}
-              required
-            />
-          </label>
+              <input
+                type="text"
+                name="nome"
+                value={formData.nome}
+                onChange={onChange}
+                required
+                minLength={2}
+                maxLength={80}
+              />
+            </label>
 
           <label>
             <span>Data de nascimento</span>
-            <input
-              type="date"
-              name="dataNascimento"
-              value={formData.dataNascimento}
-              onChange={onChange}
-              required
-            />
-          </label>
+              <input
+                type="date"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onChange={onChange}
+                required
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </label>
 
           <label>
             <span>Peso atual</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              name="pesoAtual"
-              value={formData.pesoAtual}
-              onChange={onChange}
-              required
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                name="pesoAtual"
+                value={formData.pesoAtual}
+                onChange={onChange}
+                required
             />
           </label>
 
           <label>
             <span>Raça</span>
-            <input
-              type="text"
-              name="raca"
-              value={formData.raca}
-              onChange={onChange}
-              required
-            />
-          </label>
+              <input
+                type="text"
+                name="raca"
+                value={formData.raca}
+                onChange={onChange}
+                required
+                minLength={2}
+                maxLength={80}
+              />
+            </label>
 
           <label>
             <span>Cor</span>
-            <input
-              type="text"
-              name="cor"
-              value={formData.cor}
-              onChange={onChange}
-              required
-            />
-          </label>
+              <input
+                type="text"
+                name="cor"
+                value={formData.cor}
+                onChange={onChange}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+            </label>
 
           <label>
             <span>Tamanho</span>
-            <input
-              type="text"
-              name="tamanho"
-              value={formData.tamanho}
-              onChange={onChange}
-              required
-            />
-          </label>
+              <input
+                type="text"
+                name="tamanho"
+                value={formData.tamanho}
+                onChange={onChange}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+            </label>
 
           <label>
             <span>Sexo</span>
