@@ -97,6 +97,66 @@ function deletarAnimal(brinco) {
   })
 }
 
+async function testarCrudAnimal(email) {
+  const emailLimpo = email.trim()
+  const idTeste = `TESTE-${Date.now()}`
+  const baseAnimal = {
+    codigoBrinco: idTeste,
+    nome: 'Animal Teste Integração',
+    dataNascimento: '2020-01-01',
+    pesoAtual: '350',
+    raca: 'Nelore',
+    cor: 'Branca',
+    tamanho: 'Medio',
+    sexo: 'M',
+    statusAnimal: 'EX1',
+  }
+
+  const passos = []
+
+  try {
+    const created = await cadastrarAnimal(emailLimpo, baseAnimal)
+    if (isBackendErrorMessage(created)) {
+      throw new Error(getBackendMessage(created) || 'Falha no endpoint de criação.')
+    }
+    passos.push('CREATE ok')
+
+    const loaded = await buscarAnimalPorBrinco(idTeste)
+    if (!loaded || loaded.codigoBrinco !== idTeste) {
+      throw new Error('Falha no endpoint de leitura.')
+    }
+    passos.push('READ ok')
+
+    const updated = await atualizarAnimal(idTeste, {
+      ...baseAnimal,
+      nome: 'Animal Teste Integração Atualizado',
+      pesoAtual: '355',
+    })
+    if (isBackendErrorMessage(updated)) {
+      throw new Error(
+        getBackendMessage(updated) || 'Falha no endpoint de atualização.',
+      )
+    }
+    passos.push('UPDATE ok')
+
+    const deleted = await deletarAnimal(idTeste)
+    if (isBackendErrorMessage(deleted)) {
+      throw new Error(getBackendMessage(deleted) || 'Falha no endpoint de exclusão.')
+    }
+    passos.push('DELETE ok')
+  } catch (error) {
+    throw new Error(error.message || 'Falha no teste de conexão CRUD.')
+  } finally {
+    try {
+      await deletarAnimal(idTeste)
+    } catch {
+      // ignorado: tentativa de limpeza para não deixar dado de teste
+    }
+  }
+
+  return passos
+}
+
 export {
   atualizarAnimal,
   buscarAnimalPorBrinco,
@@ -104,4 +164,5 @@ export {
   deletarAnimal,
   getBackendMessage,
   isBackendErrorMessage,
+  testarCrudAnimal,
 }

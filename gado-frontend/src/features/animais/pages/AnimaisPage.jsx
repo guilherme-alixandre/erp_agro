@@ -9,6 +9,7 @@ import {
   deletarAnimal,
   getBackendMessage,
   isBackendErrorMessage,
+  testarCrudAnimal,
 } from '../../../services/animalApi'
 import '../styles/animais.css'
 
@@ -24,6 +25,11 @@ const defaultForm = {
   sexo: 'M',
   statusAnimal: 'EX1',
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const BRINCO_REGEX = /^[A-Za-z0-9-]+$/
+const ALLOWED_SEX = ['M', 'F']
+const ALLOWED_STATUS = ['EX1', 'EX2']
 
 function calcAgeLabel(dateText) {
   if (!dateText) return 'idade não informada'
@@ -61,11 +67,88 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
+function validateSearch(brinco) {
+  const cleanBrinco = brinco.trim()
+
+  if (!cleanBrinco) {
+    return 'Informe o brinco para buscar.'
+  }
+
+  if (!BRINCO_REGEX.test(cleanBrinco)) {
+    return 'O brinco aceita apenas letras, números e hífen.'
+  }
+
+  return ''
+}
+
+function validateForm(data, mode) {
+  if (mode === 'create') {
+    if (!data.emailUsuario.trim()) {
+      return 'Informe o e-mail do usuário.'
+    }
+
+    if (!EMAIL_REGEX.test(data.emailUsuario.trim())) {
+      return 'Informe um e-mail válido.'
+    }
+  }
+
+  const brinco = data.codigoBrinco.trim()
+  if (!brinco) {
+    return 'Informe o código do brinco.'
+  }
+  if (!BRINCO_REGEX.test(brinco)) {
+    return 'O código do brinco aceita apenas letras, números e hífen.'
+  }
+
+  const nome = data.nome.trim()
+  if (!nome || nome.length < 2) {
+    return 'Informe um nome válido com pelo menos 2 caracteres.'
+  }
+
+  if (!data.dataNascimento) {
+    return 'Informe a data de nascimento.'
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+  if (data.dataNascimento > today) {
+    return 'A data de nascimento não pode ser futura.'
+  }
+
+  const peso = Number(data.pesoAtual)
+  if (!Number.isFinite(peso) || peso <= 0) {
+    return 'Informe um peso maior que zero.'
+  }
+
+  if (!data.raca.trim()) {
+    return 'Informe a raça.'
+  }
+
+  if (!data.cor.trim()) {
+    return 'Informe a cor.'
+  }
+
+  if (!data.tamanho.trim()) {
+    return 'Informe o tamanho.'
+  }
+
+  if (!ALLOWED_SEX.includes(data.sexo)) {
+    return 'Sexo inválido.'
+  }
+
+  if (!ALLOWED_STATUS.includes(data.statusAnimal)) {
+    return 'Status inválido.'
+  }
+
+  return ''
+}
+
 function AnimaisPage() {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isTestingCrud, setIsTestingCrud] = useState(false)
+  const [crudEmail, setCrudEmail] = useState('')
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [animals, setAnimals] = useState([])
   const [modal, setModal] = useState({ type: null, animal: null })
@@ -114,7 +197,11 @@ function AnimaisPage() {
   async function handleSearch(event) {
     event.preventDefault()
     const brinco = search.trim()
-    if (!brinco) return
+    const searchError = validateSearch(brinco)
+    if (searchError) {
+      setFeedback({ type: 'error', message: searchError })
+      return
+    }
 
     setIsLoadingSearch(true)
     setFeedback({ type: '', message: '' })
@@ -133,13 +220,19 @@ function AnimaisPage() {
 
   async function handleSubmitForm(event) {
     event.preventDefault()
+    const formError = validateForm(formData, formMode)
+    if (formError) {
+      setFormFeedback(formError)
+      return
+    }
+
     setIsSaving(true)
     setFormFeedback('')
     setFeedback({ type: '', message: '' })
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(formData.emailUsuario, formData)
+        const result = await cadastrarAnimal(formData.emailUsuario.trim(), formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
@@ -204,6 +297,34 @@ function AnimaisPage() {
     }
   }
 
+  async function handleCrudTest() {
+    const email = crudEmail.trim()
+    if (!EMAIL_REGEX.test(email)) {
+      setFeedback({
+        type: 'error',
+        message: 'Informe um e-mail válido para executar o teste CRUD.',
+      })
+      return
+    }
+
+    setIsTestingCrud(true)
+    setFeedback({ type: '', message: '' })
+    try {
+      const passos = await testarCrudAnimal(email)
+      setFeedback({
+        type: 'info',
+        message: `Conexão front↔back validada nos endpoints: ${passos.join(', ')}.`,
+      })
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Falha no teste de conexão CRUD.',
+      })
+    } finally {
+      setIsTestingCrud(false)
+    }
+  }
+
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
@@ -247,6 +368,22 @@ function AnimaisPage() {
             {isLoadingSearch ? 'Buscando...' : 'Buscar'}
           </button>
         </form>
+
+        <div className="animals-crud-test">
+          <input
+            type="email"
+            value={crudEmail}
+            onChange={(event) => setCrudEmail(event.target.value)}
+            placeholder="E-mail do usuário para teste CRUD"
+          />
+          <button
+            type="button"
+            onClick={handleCrudTest}
+            disabled={isTestingCrud}
+          >
+            {isTestingCrud ? 'Testando CRUD...' : 'Testar conexão CRUD'}
+          </button>
+        </div>
 
         {feedback.message ? (
           <p
