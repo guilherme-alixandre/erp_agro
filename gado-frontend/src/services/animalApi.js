@@ -149,8 +149,10 @@ async function testarCrudAnimal(email) {
   } finally {
     try {
       await deletarAnimal(idTeste)
-    } catch {
-      // ignorado: tentativa de limpeza para não deixar dado de teste
+    } catch (cleanupError) {
+      if (import.meta.env.DEV) {
+        console.warn('Falha ao limpar dado do teste CRUD:', cleanupError)
+      }
     }
   }
 

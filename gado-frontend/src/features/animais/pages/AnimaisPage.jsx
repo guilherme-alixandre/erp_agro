@@ -109,14 +109,18 @@ function validateForm(data, mode) {
     return 'Informe a data de nascimento.'
   }
 
-  const today = new Date().toISOString().slice(0, 10)
-  if (data.dataNascimento > today) {
+  const today = new Date()
+  const nascimento = new Date(`${data.dataNascimento}T00:00:00`)
+  if (Number.isNaN(nascimento.getTime())) {
+    return 'Informe uma data de nascimento válida.'
+  }
+  if (nascimento > today) {
     return 'A data de nascimento não pode ser futura.'
   }
 
   const peso = Number(data.pesoAtual)
-  if (!Number.isFinite(peso) || peso <= 0) {
-    return 'Informe um peso maior que zero.'
+  if (!Number.isFinite(peso) || peso < 0.01) {
+    return 'Informe um peso maior ou igual a 0,01.'
   }
 
   if (!data.raca.trim()) {
