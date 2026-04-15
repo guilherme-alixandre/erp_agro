@@ -60,7 +60,7 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimaisPage({ currentUser, onNavigate }) {
+function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -243,6 +243,15 @@ function AnimaisPage({ currentUser, onNavigate }) {
             Perfil
           </button>
         </nav>
+        <div className="sidebar-user">
+          <strong>{currentUser?.nome ?? 'Sem login'}</strong>
+          <span>{currentUser?.email ?? 'Faça login para continuar'}</span>
+          {currentUser ? (
+            <button type="button" className="sidebar-logout" onClick={onLogout}>
+              Sair
+            </button>
+          ) : null}
+        </div>
       </aside>
 
       <section className="animals-content">

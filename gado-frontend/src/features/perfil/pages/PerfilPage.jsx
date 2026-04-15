@@ -20,10 +20,12 @@ const defaultLoginForm = {
 function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
   const [cadastroForm, setCadastroForm] = useState(defaultCadastroForm)
   const [loginForm, setLoginForm] = useState(defaultLoginForm)
+  const [showCadastroForm, setShowCadastroForm] = useState(false)
   const [isCadastrando, setIsCadastrando] = useState(false)
   const [isLogando, setIsLogando] = useState(false)
   const [cadastroFeedback, setCadastroFeedback] = useState({ type: '', message: '' })
   const [loginFeedback, setLoginFeedback] = useState({ type: '', message: '' })
+  const [sessionFeedback, setSessionFeedback] = useState({ type: '', message: '' })
 
   function handleCadastroChange(event) {
     const { name, value } = event.target
@@ -50,6 +52,11 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
             : 'Usuário cadastrado com sucesso.',
       })
       setCadastroForm(defaultCadastroForm)
+      setShowCadastroForm(false)
+      setLoginFeedback({
+        type: 'info',
+        message: 'Cadastro realizado com sucesso. Faça login para continuar.',
+      })
     } catch (error) {
       setCadastroFeedback({
         type: 'error',
@@ -70,6 +77,7 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
       onLogin(usuario)
       setLoginForm(defaultLoginForm)
       setLoginFeedback({ type: 'info', message: 'Login realizado com sucesso.' })
+      setSessionFeedback({ type: '', message: '' })
     } catch (error) {
       setLoginFeedback({
         type: 'error',
@@ -78,6 +86,12 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
     } finally {
       setIsLogando(false)
     }
+  }
+
+  function handleLogoutClick() {
+    onLogout()
+    setSessionFeedback({ type: 'info', message: 'Você saiu da sessão com sucesso.' })
+    setLoginFeedback({ type: '', message: '' })
   }
 
   return (
@@ -104,85 +118,22 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
             Perfil
           </button>
         </nav>
+        <div className="sidebar-user">
+          <strong>{currentUser?.nome ?? 'Sem login'}</strong>
+          <span>{currentUser?.email ?? 'Entre para acessar os recursos'}</span>
+        </div>
       </aside>
 
       <section className="animals-content">
         <header className="animals-header">
           <h1>Perfil</h1>
-          <span>{currentUser ? currentUser.email : 'Sem login'}</span>
+          <span>{currentUser ? `Sessão ativa: ${currentUser.nome}` : 'Sessão inativa'}</span>
         </header>
 
-        <div className="perfil-grid">
-          <article className="animal-card perfil-card">
-            <h2>Cadastrar usuário</h2>
-
-            <form className="animal-form" onSubmit={handleCadastroSubmit}>
-              <label>
-                <span>Nome</span>
-                <input
-                  type="text"
-                  name="nome"
-                  value={cadastroForm.nome}
-                  onChange={handleCadastroChange}
-                  required
-                />
-              </label>
-
-              <label>
-                <span>E-mail</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={cadastroForm.email}
-                  onChange={handleCadastroChange}
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Senha</span>
-                <input
-                  type="password"
-                  name="senha"
-                  value={cadastroForm.senha}
-                  onChange={handleCadastroChange}
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Perfil</span>
-                <select
-                  name="perfil"
-                  value={cadastroForm.perfil}
-                  onChange={handleCadastroChange}
-                >
-                  {PERFIL_OPTIONS.map((perfil) => (
-                    <option key={perfil} value={perfil}>
-                      {perfil}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {cadastroFeedback.message ? (
-                <p
-                  className={`feedback ${cadastroFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-                >
-                  {cadastroFeedback.message}
-                </p>
-              ) : null}
-
-              <div className="modal-actions">
-                <button type="submit" className="btn-primary" disabled={isCadastrando}>
-                  {isCadastrando ? 'Cadastrando...' : 'Cadastrar'}
-                </button>
-              </div>
-            </form>
-          </article>
-
-          <article className="animal-card perfil-card">
-            <h2>Login</h2>
+        <div className="perfil-stack">
+          <article className="animal-card perfil-card perfil-card--main">
+            <h2>Entrar</h2>
+            <p className="perfil-subtitle">Acesse sua conta para continuar.</p>
 
             <form className="animal-form" onSubmit={handleLoginSubmit}>
               <label>
@@ -215,9 +166,17 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
                 </p>
               ) : null}
 
+              {sessionFeedback.message ? (
+                <p
+                  className={`feedback ${sessionFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+                >
+                  {sessionFeedback.message}
+                </p>
+              ) : null}
+
               <div className="modal-actions perfil-actions">
                 {currentUser ? (
-                  <button type="button" className="btn-secondary" onClick={onLogout}>
+                  <button type="button" className="btn-secondary" onClick={handleLogoutClick}>
                     Sair
                   </button>
                 ) : null}
@@ -226,7 +185,89 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
                 </button>
               </div>
             </form>
+
+            <div className="perfil-toggle">
+              <p>Não tem cadastro?</p>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowCadastroForm((current) => !current)}
+              >
+                {showCadastroForm ? 'Fechar cadastro' : 'Cadastre-se'}
+              </button>
+            </div>
           </article>
+
+          {showCadastroForm ? (
+            <article className="animal-card perfil-card">
+              <h2>Cadastre-se</h2>
+              <p className="perfil-subtitle">Crie sua conta para acessar o sistema.</p>
+
+              <form className="animal-form" onSubmit={handleCadastroSubmit}>
+                <label>
+                  <span>Nome</span>
+                  <input
+                    type="text"
+                    name="nome"
+                    value={cadastroForm.nome}
+                    onChange={handleCadastroChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>E-mail</span>
+                  <input
+                    type="email"
+                    name="email"
+                    value={cadastroForm.email}
+                    onChange={handleCadastroChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>Senha</span>
+                  <input
+                    type="password"
+                    name="senha"
+                    value={cadastroForm.senha}
+                    onChange={handleCadastroChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>Perfil</span>
+                  <select
+                    name="perfil"
+                    value={cadastroForm.perfil}
+                    onChange={handleCadastroChange}
+                  >
+                    {PERFIL_OPTIONS.map((perfil) => (
+                      <option key={perfil} value={perfil}>
+                        {perfil}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {cadastroFeedback.message ? (
+                  <p
+                    className={`feedback ${cadastroFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+                  >
+                    {cadastroFeedback.message}
+                  </p>
+                ) : null}
+
+                <div className="modal-actions">
+                  <button type="submit" className="btn-primary" disabled={isCadastrando}>
+                    {isCadastrando ? 'Cadastrando...' : 'Cadastrar'}
+                  </button>
+                </div>
+              </form>
+            </article>
+          ) : null}
         </div>
 
         <article className="animals-empty perfil-session">

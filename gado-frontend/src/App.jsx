@@ -36,12 +36,14 @@ function App() {
   function handleLogout() {
     setCurrentUser(null)
     localStorage.removeItem(STORAGE_KEY)
+    setActivePage('perfil')
   }
 
   if (activePage === 'animais') {
     return (
       <AnimalPage
         currentUser={currentUser}
+        onLogout={handleLogout}
         onNavigate={setActivePage}
       />
     )

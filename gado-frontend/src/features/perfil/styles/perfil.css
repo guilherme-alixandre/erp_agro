@@ -1,10 +1,3 @@
-.perfil-grid {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
 .perfil-card {
   padding: 14px;
 }
@@ -13,16 +6,45 @@
   margin: 0;
 }
 
+.perfil-card--main {
+  padding-bottom: 16px;
+}
+
+.perfil-stack {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.perfil-subtitle {
+  margin: 6px 0 0;
+  color: #676767;
+  font-weight: 500;
+}
+
+.perfil-toggle {
+  margin-top: 12px;
+  border-top: 1px solid #d8d8d8;
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.perfil-toggle p {
+  margin: 0;
+  color: #606060;
+  font-weight: 600;
+}
+
 .perfil-actions {
   justify-content: space-between;
+  align-items: center;
 }
 
 .perfil-session {
   margin-top: 14px;
-}
-
-@media (max-width: 900px) {
-  .perfil-grid {
-    grid-template-columns: 1fr;
-  }
+  max-width: 760px;
 }
