@@ -132,77 +132,14 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
 
         <div className="perfil-stack">
           <article className="animal-card perfil-card perfil-card--main">
-            <h2>Entrar</h2>
-            <p className="perfil-subtitle">Acesse sua conta para continuar.</p>
+            <h2>{showCadastroForm ? 'Cadastre-se' : 'Entrar'}</h2>
+            <p className="perfil-subtitle">
+              {showCadastroForm
+                ? 'Crie sua conta para acessar o sistema.'
+                : 'Acesse sua conta para continuar.'}
+            </p>
 
-            <form className="animal-form" onSubmit={handleLoginSubmit}>
-              <label>
-                <span>E-mail</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={loginForm.email}
-                  onChange={handleLoginChange}
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Senha</span>
-                <input
-                  type="password"
-                  name="senha"
-                  value={loginForm.senha}
-                  onChange={handleLoginChange}
-                  required
-                />
-              </label>
-
-              {loginFeedback.message ? (
-                <p
-                  className={`feedback ${loginFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-                >
-                  {loginFeedback.message}
-                </p>
-              ) : null}
-
-              {sessionFeedback.message ? (
-                <p
-                  className={`feedback ${sessionFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-                >
-                  {sessionFeedback.message}
-                </p>
-              ) : null}
-
-              <div className="modal-actions perfil-actions">
-                {currentUser ? (
-                  <button type="button" className="btn-secondary" onClick={handleLogoutClick}>
-                    Sair
-                  </button>
-                ) : null}
-                <button type="submit" className="btn-primary" disabled={isLogando}>
-                  {isLogando ? 'Entrando...' : 'Entrar'}
-                </button>
-              </div>
-            </form>
-
-            <div className="perfil-toggle">
-              <p>Não tem cadastro?</p>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setShowCadastroForm((current) => !current)}
-              >
-                {showCadastroForm ? 'Fechar cadastro' : 'Cadastre-se'}
-              </button>
-            </div>
-          </article>
-
-          {showCadastroForm ? (
-            <article className="animal-card perfil-card">
-              <h2>Cadastre-se</h2>
-              <p className="perfil-subtitle">Crie sua conta para acessar o sistema.</p>
-
+            {showCadastroForm ? (
               <form className="animal-form" onSubmit={handleCadastroSubmit}>
                 <label>
                   <span>Nome</span>
@@ -266,8 +203,70 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
                   </button>
                 </div>
               </form>
-            </article>
-          ) : null}
+            ) : (
+              <form className="animal-form" onSubmit={handleLoginSubmit}>
+                <label>
+                  <span>E-mail</span>
+                  <input
+                    type="email"
+                    name="email"
+                    value={loginForm.email}
+                    onChange={handleLoginChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>Senha</span>
+                  <input
+                    type="password"
+                    name="senha"
+                    value={loginForm.senha}
+                    onChange={handleLoginChange}
+                    required
+                  />
+                </label>
+
+                {loginFeedback.message ? (
+                  <p
+                    className={`feedback ${loginFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+                  >
+                    {loginFeedback.message}
+                  </p>
+                ) : null}
+
+                {sessionFeedback.message ? (
+                  <p
+                    className={`feedback ${sessionFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+                  >
+                    {sessionFeedback.message}
+                  </p>
+                ) : null}
+
+                <div className="modal-actions perfil-actions">
+                  {currentUser ? (
+                    <button type="button" className="btn-secondary" onClick={handleLogoutClick}>
+                      Sair
+                    </button>
+                  ) : null}
+                  <button type="submit" className="btn-primary" disabled={isLogando}>
+                    {isLogando ? 'Entrando...' : 'Entrar'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="perfil-toggle">
+              <p>{showCadastroForm ? 'Já tem cadastro?' : 'Não tem cadastro?'}</p>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowCadastroForm((current) => !current)}
+              >
+                {showCadastroForm ? 'Voltar para login' : 'Cadastre-se'}
+              </button>
+            </div>
+          </article>
         </div>
 
         <article className="animals-empty perfil-session">
