@@ -1,0 +1,28 @@
+.perfil-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.perfil-card {
+  padding: 14px;
+}
+
+.perfil-card h2 {
+  margin: 0;
+}
+
+.perfil-actions {
+  justify-content: space-between;
+}
+
+.perfil-session {
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -37,6 +37,7 @@ function AnimalFormModal({
                 value={formData.emailUsuario}
                 onChange={onChange}
                 required
+                readOnly
               />
             </label>
           ) : null}

@@ -61,7 +61,7 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimaisPage() {
+function AnimaisPage({ currentUser, onNavigate }) {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -90,8 +90,19 @@ function AnimaisPage() {
   }
 
   function openCreateModal() {
+    if (!currentUser?.email) {
+      setFeedback({
+        type: 'error',
+        message: 'Faça login em Perfil para cadastrar um animal.',
+      })
+      return
+    }
+
     setFormMode('create')
-    setFormData(defaultForm)
+    setFormData({
+      ...defaultForm,
+      emailUsuario: currentUser.email,
+    })
     setFormFeedback('')
     setModal({ type: 'form', animal: null })
   }
@@ -139,7 +150,11 @@ function AnimaisPage() {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(formData.emailUsuario, formData)
+        if (!currentUser?.email) {
+          throw new Error('Faça login em Perfil para cadastrar um animal.')
+        }
+
+        const result = await cadastrarAnimal(currentUser.email, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
@@ -224,7 +239,11 @@ function AnimaisPage() {
           <button type="button" className="menu-item">
             Financeiro
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('perfil')}
+          >
             Perfil
           </button>
         </nav>
@@ -233,7 +252,7 @@ function AnimaisPage() {
       <section className="animals-content">
         <header className="animals-header">
           <h1>Animais</h1>
-          <span>Perfil</span>
+          <span>{currentUser?.email ?? 'Sem login'}</span>
         </header>
 
         <form className="animals-search" onSubmit={handleSearch}>
