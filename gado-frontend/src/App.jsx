@@ -1,8 +1,7 @@
-import './App.css'
-import CadastroSimples from './tela_teste/CadastroSimples'
+import AnimalPage from './features/animais/pages/AnimaisPage'
 
 function App() {
-  return <CadastroSimples />
+  return <AnimalPage />
 }
 
 export default App
