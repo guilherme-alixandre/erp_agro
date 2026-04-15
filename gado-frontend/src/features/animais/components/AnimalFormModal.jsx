@@ -28,20 +28,6 @@ function AnimalFormModal({
         </div>
 
         <form className="animal-form" onSubmit={onSubmit}>
-          {isCreate ? (
-            <label>
-              <span>E-mail do usuário</span>
-              <input
-                type="email"
-                name="emailUsuario"
-                value={formData.emailUsuario}
-                onChange={onChange}
-                required
-                readOnly
-              />
-            </label>
-          ) : null}
-
           <label>
             <span>Código do brinco</span>
             <input

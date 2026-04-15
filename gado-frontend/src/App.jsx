@@ -4,6 +4,13 @@ import PerfilPage from './features/perfil/pages/PerfilPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
+function sanitizeUser(usuario) {
+  if (!usuario || typeof usuario !== 'object') return null
+  const safeUser = { ...usuario }
+  delete safeUser.senha
+  return safeUser
+}
+
 function App() {
   const [activePage, setActivePage] = useState('perfil')
   const [currentUser, setCurrentUser] = useState(null)
@@ -12,7 +19,7 @@ function App() {
     const storedUser = localStorage.getItem(STORAGE_KEY)
     if (storedUser) {
       try {
-        setCurrentUser(JSON.parse(storedUser))
+        setCurrentUser(sanitizeUser(JSON.parse(storedUser)))
       } catch {
         localStorage.removeItem(STORAGE_KEY)
       }
@@ -20,8 +27,9 @@ function App() {
   }, [])
 
   function handleLogin(usuario) {
-    setCurrentUser(usuario)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(usuario))
+    const safeUser = sanitizeUser(usuario)
+    setCurrentUser(safeUser)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
     setActivePage('animais')
   }
 

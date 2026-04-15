@@ -13,7 +13,6 @@ import {
 import '../styles/animais.css'
 
 const defaultForm = {
-  emailUsuario: '',
   codigoBrinco: '',
   nome: '',
   dataNascimento: '',
@@ -99,10 +98,7 @@ function AnimaisPage({ currentUser, onNavigate }) {
     }
 
     setFormMode('create')
-    setFormData({
-      ...defaultForm,
-      emailUsuario: currentUser.email,
-    })
+    setFormData(defaultForm)
     setFormFeedback('')
     setModal({ type: 'form', animal: null })
   }

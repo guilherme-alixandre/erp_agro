@@ -71,7 +71,9 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
         throw new Error('Senha inválida.')
       }
 
-      onLogin(usuario)
+      const safeUser = { ...usuario }
+      delete safeUser.senha
+      onLogin(safeUser)
       setLoginForm(defaultLoginForm)
       setLoginFeedback({ type: 'info', message: 'Login realizado com sucesso.' })
     } catch (error) {
