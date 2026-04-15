@@ -92,7 +92,7 @@ function AnimaisPage({ currentUser, onNavigate }) {
     if (!currentUser?.email) {
       setFeedback({
         type: 'error',
-        message: 'Faça login em Perfil para cadastrar um animal.',
+        message: 'Faça login no Perfil para cadastrar um animal.',
       })
       return
     }
@@ -147,7 +147,7 @@ function AnimaisPage({ currentUser, onNavigate }) {
     try {
       if (formMode === 'create') {
         if (!currentUser?.email) {
-          throw new Error('Faça login em Perfil para cadastrar um animal.')
+          throw new Error('Faça login no Perfil para cadastrar um animal.')
         }
 
         const result = await cadastrarAnimal(currentUser.email, formData)

@@ -33,4 +33,21 @@ function cadastrarUsuario(usuario) {
   })
 }
 
-export { buscarUsuarioPorEmail, cadastrarUsuario }
+async function loginUsuario(email, senha) {
+  const payload = await request('/usuarios/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: email.trim(),
+      senha,
+    }),
+  })
+
+  const usuario = getUsuarioDoPayload(payload)
+  if (!usuario || typeof usuario !== 'object' || Array.isArray(usuario)) {
+    throw new Error(payload?.Erro ?? payload?.erro ?? 'Credenciais inválidas.')
+  }
+
+  return usuario
+}
+
+export { buscarUsuarioPorEmail, cadastrarUsuario, loginUsuario }

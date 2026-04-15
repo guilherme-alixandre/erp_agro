@@ -2,6 +2,7 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -35,6 +37,30 @@ public class SUsuario {
             response.put("Usuário", usuarioOptional.get());
         }
 
+        return response;
+    }
+
+    public Map<String, Object> login(UsuarioLoginDto dto){
+        Optional<EUsuario> usuarioOptional = usuarioInterface.findByEmail(dto.getEmail());
+        Map<String, Object> response = new HashMap<>();
+
+        if(usuarioOptional.isEmpty()){
+            response.put("Erro", "usuário não encontrado");
+            return response;
+        }
+
+        EUsuario usuario = usuarioOptional.get();
+        if(!Objects.equals(usuario.getSenha(), dto.getSenha())){
+            response.put("Erro", "credenciais inválidas");
+            return response;
+        }
+
+        Map<String, Object> usuarioLogado = new HashMap<>();
+        usuarioLogado.put("nome", usuario.getNome());
+        usuarioLogado.put("email", usuario.getEmail());
+        usuarioLogado.put("perfil", usuario.getPerfil());
+        usuarioLogado.put("dataCadastro", usuario.getDataCadastro());
+        response.put("Usuário", usuarioLogado);
         return response;
     }
 

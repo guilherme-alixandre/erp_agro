@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { buscarUsuarioPorEmail, cadastrarUsuario } from '../../../services/usuarioApi'
+import { cadastrarUsuario, loginUsuario } from '../../../services/usuarioApi'
 import '../../animais/styles/animais.css'
 import '../styles/perfil.css'
 
@@ -66,14 +66,8 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
     setLoginFeedback({ type: '', message: '' })
 
     try {
-      const usuario = await buscarUsuarioPorEmail(loginForm.email)
-      if (usuario.senha !== loginForm.senha) {
-        throw new Error('Senha inválida.')
-      }
-
-      const safeUser = { ...usuario }
-      delete safeUser.senha
-      onLogin(safeUser)
+      const usuario = await loginUsuario(loginForm.email, loginForm.senha)
+      onLogin(usuario)
       setLoginForm(defaultLoginForm)
       setLoginFeedback({ type: 'info', message: 'Login realizado com sucesso.' })
     } catch (error) {
@@ -243,7 +237,7 @@ function PerfilPage({ currentUser, onLogin, onLogout, onNavigate }) {
               {currentUser.perfil}
             </span>
           ) : (
-            <span>Faça login para permitir cadastro de animais.</span>
+            <span>Faça login para permitir o cadastro de animais.</span>
           )}
         </article>
       </section>
