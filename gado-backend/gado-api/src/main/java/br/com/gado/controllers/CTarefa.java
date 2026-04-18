@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.STarefa;
-import br.com.gado.dto.TarefaDTO;
+import br.com.gado.application.dto.TarefaDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

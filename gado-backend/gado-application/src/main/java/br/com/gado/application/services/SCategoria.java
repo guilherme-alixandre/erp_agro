@@ -2,27 +2,27 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.CategoriaDTO;
+import br.com.gado.application.dto.CategoriaDTO;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.reactive.TransactionalOperator;
 
 @Service
 public class SCategoria {
 
     private static final Logger log = LoggerFactory.getLogger(SCategoria.class);
-    private final ICategoria categoriaInterface;
-    private final ModelMapper modelMapper;
 
-    public SCategoria(ICategoria categoriaInterface, TransactionalOperator transactionalOperator) {
-        this.categoriaInterface = categoriaInterface;
-        this.modelMapper = new ModelMapper();
-    }
+    @Autowired
+    private ICategoria categoriaInterface;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
 
     @Transactional
     public CategoriaDTO criarCategoria (CategoriaDTO nomeCategoria) {
@@ -38,7 +38,7 @@ public class SCategoria {
     @Transactional
     public CategoriaDTO buscarCategoriaPorId(Long categoriaId) {
         ECategoria categoriaEntitye = (ECategoria) this.categoriaInterface
-                .findByCategoriaId(categoriaId)
+                .findById(categoriaId)
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(categoriaEntitye, CategoriaDTO.class);
     }
@@ -46,7 +46,7 @@ public class SCategoria {
     @Transactional
     public CategoriaDTO atualizarCategoriaPorId(CategoriaDTO categoriaParaAtualizar, Long categoriaId) {
         ECategoria existingEntitye = (ECategoria) this.categoriaInterface
-                .findByCategoriaId(categoriaId)
+                .findById(categoriaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -67,19 +67,21 @@ public class SCategoria {
 
     @Transactional
     public boolean excluirCategoria(Long categoriaId) {
-        ECategoria categoriaParaExcluir = (ECategoria) this.categoriaInterface
-                .findByCategoriaId(categoriaId)
-                .orElseThrow(EntityNotFoundException::new);
+        // 1. Usa o findById padrão do JPA
+        ECategoria categoriaParaExcluir = this.categoriaInterface
+                .findById(categoriaId)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoriaId));
 
+        // 2. Inativa a categoria (Exclusão Lógica)
         categoriaParaExcluir.setStatus(EnStatus.I);
 
-        try{
+        try {
             this.categoriaInterface.save(categoriaParaExcluir);
             return true;
-        } catch (Exception e){
+        } catch (Exception e) {
+            // O log.error é excelente para debugar no console do IntelliJ
             log.error("Erro ao excluir categoria: {}", e.getMessage(), e);
+            return false;
         }
-
-        return false;
     }
 }

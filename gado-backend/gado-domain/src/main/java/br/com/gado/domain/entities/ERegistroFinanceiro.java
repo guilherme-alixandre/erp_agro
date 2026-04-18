@@ -4,10 +4,13 @@ import br.com.gado.domain.enums.EnStatusDespesa;
 import br.com.gado.domain.enums.EnTipoDespesa;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "registro_financeiro")
 @Data
 public class ERegistroFinanceiro extends EAbstract{
 

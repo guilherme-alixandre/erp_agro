@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SMovimentacaoEstoque;
-import br.com.gado.dto.MovimentacaoEstoqueDTO;
+import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

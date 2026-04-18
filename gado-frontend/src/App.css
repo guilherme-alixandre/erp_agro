@@ -1,0 +1,146 @@
+#root {
+  width: 100%;
+}
+
+.cadastro-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: linear-gradient(180deg, #f6f7fb 0%, #eceff5 100%);
+}
+
+.cadastro-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.cadastro-header {
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.cadastro-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.cadastro-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  color: #111827;
+}
+
+.cadastro-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.cadastro-form {
+  display: grid;
+  gap: 16px;
+}
+
+.cadastro-field {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.cadastro-field span {
+  color: #374151;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.cadastro-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.cadastro-field select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.cadastro-field input:focus,
+.cadastro-field select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.cadastro-feedback {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+}
+
+.cadastro-feedback--success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.cadastro-feedback--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.cadastro-form button {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.cadastro-form button:hover {
+  background: #1d4ed8;
+}
+
+.cadastro-form button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@media (max-width: 480px) {
+  .cadastro-card {
+    padding: 24px;
+    border-radius: 16px;
+  }
+
+  .cadastro-header h1 {
+    font-size: 1.7rem;
+  }
+}

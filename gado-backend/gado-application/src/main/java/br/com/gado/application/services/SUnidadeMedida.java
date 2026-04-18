@@ -1,10 +1,8 @@
 package br.com.gado.application.services;
 
-import br.com.gado.domain.entities.EMovimentacaoEstoque;
 import br.com.gado.domain.entities.EUnidadeMedida;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.MovimentacaoEstoqueDTO;
-import br.com.gado.dto.UnidadeMedidaDTO;
+import br.com.gado.application.dto.UnidadeMedidaDTO;
 import br.com.gado.infrastructure.persistence.repositories.IUnidadeMedida;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -40,14 +38,14 @@ public class SUnidadeMedida {
 
     public UnidadeMedidaDTO bucarUnidadeMedidaPorId(UnidadeMedidaDTO unidadeMedidaDto) {
         EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
-                .findByUnidadeMedidaId(unidadeMedidaDto.getId())
+                .findById(unidadeMedidaDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(existingEntitye, UnidadeMedidaDTO.class);
     }
 
     public UnidadeMedidaDTO atualizarUnidadeMedida(UnidadeMedidaDTO unidadeMedidaDto) {
         EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
-                .findByUnidadeMedidaId(unidadeMedidaDto.getId())
+                .findById(unidadeMedidaDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -65,7 +63,7 @@ public class SUnidadeMedida {
 
     public boolean excluirUnidadeMedida(Long unidadeMedidaId) {
         EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
-                .findByUnidadeMedidaId(unidadeMedidaId)
+                .findById(unidadeMedidaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);

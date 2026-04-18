@@ -9,6 +9,7 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "lote")
 @Data
 public class ELote extends EAbstract{
 

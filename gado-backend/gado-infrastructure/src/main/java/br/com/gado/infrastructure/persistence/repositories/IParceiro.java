@@ -10,10 +10,10 @@ import java.util.Optional;
 
 @Repository
 public interface IParceiro extends JpaRepository<EParceiro, Long> {
-    Optional<EParceiro> findByCPF_CNPJ(String cpf_cnpj);
-    boolean existsByCPF_CNPJ(String cpf_cnpj);
+    Optional<EParceiro> findByCpfCnpj(String cpfCnpj);
+    boolean existsByCpfCnpj(String cpfCnpj);
 
     @Modifying
     @Transactional
-    void deleteByCPF_CNPJ(String cpf_cnpj);
+    void deleteByCpfCnpj(String cpfCnpj);
 }

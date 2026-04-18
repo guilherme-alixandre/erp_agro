@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "insumo")
 @Data
 public class EInsumo extends EAbstract{
 

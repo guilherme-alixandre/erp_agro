@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface IOcorrenciaAnimal extends JpaRepository<EOcorrenciaAnimal, Long> {
-    Optional<EOcorrenciaAnimal> findByOcorrenciaId(Long id);
+    Optional<EOcorrenciaAnimal> findById(Long id);
 }

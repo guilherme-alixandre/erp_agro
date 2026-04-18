@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface IUsuario extends JpaRepository<EUsuario, Long> {
-    boolean existByEmail(String email);
+    boolean existsByEmail(String email);
     Optional<EUsuario> findByEmail(String email);
     void deleteByEmail(String email);
 }

@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface IVacinacao extends JpaRepository<EVacinacao, Long> {
-    Optional<EVacinacao> findByVacinacaoId(Long vacinacaoId);
-    void deleteByVacinacaoId(Long vacinacaoId);
+    Optional<EVacinacao> findById(Long vacinacaoId);
+    void deleteById(Long vacinacaoId);
 }

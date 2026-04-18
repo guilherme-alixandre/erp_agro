@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "animal")
 @Data
 public class EAnimal extends EAbstract{
 
@@ -30,5 +31,5 @@ public class EAnimal extends EAbstract{
     // no banco vai ficar o "pessoa_id"
     @ManyToOne
     @JoinColumn(name = "pessoa_id")
-    private EUsuario usuarioId;
+    private EUsuario usuario;
 }

@@ -2,10 +2,13 @@ package br.com.gado.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "tarefa")
 @Data
 public class ETarefa extends EAbstract{
 

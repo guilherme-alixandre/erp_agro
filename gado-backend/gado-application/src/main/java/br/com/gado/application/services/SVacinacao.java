@@ -1,9 +1,8 @@
 package br.com.gado.application.services;
 
-
 import br.com.gado.domain.entities.EVacinacao;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.VacinacaoDTO;
+import br.com.gado.application.dto.VacinacaoDTO;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
@@ -13,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
@@ -20,19 +20,22 @@ import org.springframework.stereotype.Service;
 public class SVacinacao {
 
     private static final Logger log = LoggerFactory.getLogger(SVacinacao.class);
-    private final ModelMapper modelMapper;
-    private final IVacinacao vacinacaoInterface;
-    private final IUsuario usuarioInterface;
-    private final ILote loteInterface;
-    private final IInsumo insumoInterface;
 
-    public SVacinacao(ModelMapper modelMapper, IVacinacao vacinacaoInterface, IUsuario usuarioInterface, ILote loteInterface, IInsumo insumoInterface) {
-        this.modelMapper = modelMapper;
-        this.vacinacaoInterface = vacinacaoInterface;
-        this.usuarioInterface = usuarioInterface;
-        this.loteInterface = loteInterface;
-        this.insumoInterface = insumoInterface;
-    }
+    @Autowired
+    private ModelMapper modelMapper;
+
+    @Autowired
+    private IVacinacao vacinacaoInterface;
+
+    @Autowired
+    private IUsuario usuarioInterface;
+
+    @Autowired
+    private ILote loteInterface;
+
+    @Autowired
+    private IInsumo insumoInterface;
+
 
     @Transactional
     public VacinacaoDTO criarVacinacao(VacinacaoDTO novaVacinacao) {
@@ -55,14 +58,14 @@ public class SVacinacao {
 
     public VacinacaoDTO buscarVacinacaoPorId(VacinacaoDTO vacinacao) {
         EVacinacao existingEntitye = this.vacinacaoInterface
-                .findByVacinacaoId(vacinacao.getId())
+                .findById(vacinacao.getId())
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(existingEntitye, VacinacaoDTO.class);
     }
 
     public VacinacaoDTO atualizarVacinacaoPorId(VacinacaoDTO vacinacaoParaAtualizar) {
         EVacinacao existingEntitye = this.vacinacaoInterface
-                .findByVacinacaoId(vacinacaoParaAtualizar.getId())
+                .findById(vacinacaoParaAtualizar.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -82,7 +85,7 @@ public class SVacinacao {
 
     public boolean excluirVacinacaoPorId(Long vacinacaoId) {
         EVacinacao existingEntitye = this.vacinacaoInterface
-                .findByVacinacaoId(vacinacaoId)
+                .findById(vacinacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);

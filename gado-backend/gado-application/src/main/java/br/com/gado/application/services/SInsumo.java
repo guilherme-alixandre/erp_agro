@@ -2,10 +2,12 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EInsumo;
 import br.com.gado.domain.entities.EParceiro;
-import br.com.gado.dto.InsumoDto;
+import br.com.gado.application.dto.InsumoDto;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -15,13 +17,14 @@ import java.util.Optional;
 @Service
 public class SInsumo {
 
-    private final IInsumo insumoInterface;
-    private final IParceiro parceiroInterface;
+    @Autowired
+    private IInsumo insumoInterface;
 
-    public SInsumo(IInsumo insumoInterface, IParceiro parceiroInterface){
-        this.insumoInterface = insumoInterface;
-        this.parceiroInterface = parceiroInterface;
-    }
+    @Autowired
+    private IParceiro parceiroInterface;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
 
     public Map<String, Object> buscaPorId(Long id){
@@ -78,21 +81,7 @@ public class SInsumo {
         }
 
         EInsumo insumo = insumoOptional.get();
-        if(dto.getNome() != null){
-            insumo.setNome(dto.getNome());
-        }
-
-        if(dto.getEstoqueMinimo() != null){
-            insumo.setEstoqueMinimo(dto.getEstoqueMinimo());
-        }
-
-        if(dto.getSaldoAtual() != null){
-            insumo.setSaldoAtual(dto.getSaldoAtual());
-        }
-
-        if(dto.getTipo() != null){
-            insumo.setTipo(dto.getTipo());
-        }
+        modelMapper.map(dto, insumo);
 
         insumoInterface.save(insumo);
         return "insumo alterado com sucesso";

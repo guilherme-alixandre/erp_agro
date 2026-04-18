@@ -1,7 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SInsumo;
-import br.com.gado.dto.InsumoDto;
+import br.com.gado.application.dto.InsumoDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -10,11 +11,8 @@ import java.util.Map;
 @RequestMapping("/api/insumos")
 public class CInsumo {
 
-    private final SInsumo insumoService;
-
-    public CInsumo(SInsumo insumoService){
-        this.insumoService = insumoService;
-    }
+    @Autowired
+    private SInsumo insumoService;
 
 
     @GetMapping("/{id}")

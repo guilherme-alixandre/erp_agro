@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface ICategoria extends JpaRepository<ECategoria, Long> {
-    Optional<ECategoria> findByCategoriaId(Long id);
-    void deleteByCategoriaId(Long id);
+    Optional<ECategoria> findById(Long id);
+    void deleteById(Long id);
 }

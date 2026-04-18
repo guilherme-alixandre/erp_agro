@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SVacinacao;
-import br.com.gado.dto.VacinacaoDTO;
+import br.com.gado.application.dto.VacinacaoDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

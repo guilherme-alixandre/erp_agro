@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface IUnidadeMedida extends JpaRepository<EUnidadeMedida, Long> {
-    Optional<EUnidadeMedida> findByUnidadeMedidaId(Long id);
+    Optional<EUnidadeMedida> findById(Long id);
 }

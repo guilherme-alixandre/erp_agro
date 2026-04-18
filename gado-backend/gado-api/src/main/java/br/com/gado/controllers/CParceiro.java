@@ -1,8 +1,8 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.services.SParceiro;
-import br.com.gado.dto.parcerioDto.ParceiroCadastroDto;
-import br.com.gado.dto.parcerioDto.ParceiroPutDto;
+import br.com.gado.application.dto.parcerioDto.ParceiroCadastroDto;
+import br.com.gado.application.dto.parcerioDto.ParceiroPutDto;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

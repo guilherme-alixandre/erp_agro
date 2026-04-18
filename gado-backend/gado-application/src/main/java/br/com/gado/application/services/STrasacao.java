@@ -4,7 +4,7 @@ import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EParceiro;
 import br.com.gado.domain.entities.ETransacao;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.dto.TrasacaoDTO;
+import br.com.gado.application.dto.TrasacaoDTO;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import br.com.gado.infrastructure.persistence.repositories.ITrasacao;
@@ -31,11 +31,11 @@ public class STrasacao {
 
     public TrasacaoDTO criarTrasacao(TrasacaoDTO trasacaoDto) {
         EParceiro existingParceiro = this.parceiroInterface
-                .findByCPF_CNPJ(trasacaoDto.getParceiro().getCPF_CNPJ())
+                .findByCpfCnpj(trasacaoDto.getParceiro().getCpfCnpj())
                 .orElseThrow(EntityNotFoundException::new);
 
         ELote existingLote = this.loteInterface
-                .findByLoteId(trasacaoDto.getLote().getId())
+                .findById(trasacaoDto.getLote().getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         ETransacao novaTransacao = new ETransacao();
@@ -58,7 +58,7 @@ public class STrasacao {
     public TrasacaoDTO buscarTrasacaoPorId(TrasacaoDTO trasacaoDto) {
 
         ETransacao existingEntitye = this.trasacaoInterface
-                .findByTrasacaoId(trasacaoDto.getId())
+                .findById(trasacaoDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         return modelMapper.map(existingEntitye, TrasacaoDTO.class);
@@ -67,15 +67,15 @@ public class STrasacao {
     public TrasacaoDTO atualizarTrasacaoPorId(TrasacaoDTO trasacaoDto) {
 
         ETransacao existingEntitye = this.trasacaoInterface
-                .findByTrasacaoId(trasacaoDto.getId())
+                .findById(trasacaoDto.getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         EParceiro existingParceiro = this.parceiroInterface
-                .findByCPF_CNPJ(trasacaoDto.getParceiro().getCPF_CNPJ())
+                .findByCpfCnpj(trasacaoDto.getParceiro().getCpfCnpj())
                 .orElseThrow(EntityNotFoundException::new);
 
         ELote existingLote = this.loteInterface
-                .findByLoteId(trasacaoDto.getLote().getId())
+                .findById(trasacaoDto.getLote().getId())
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
@@ -93,7 +93,7 @@ public class STrasacao {
 
     public boolean excluirTrasacaoPorId(Long trasacaoId) {
         ETransacao existingEntitye = this.trasacaoInterface
-                .findByTrasacaoId(trasacaoId)
+                .findById(trasacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
         existingEntitye.setStatus(EnStatus.I);
