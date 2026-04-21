@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.STrasacao;
 import br.com.gado.application.dto.TrasacaoDTO;
+import br.com.gado.application.services.STrasacao;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,26 +14,23 @@ public class CTransacao {
         this.trasacaoService = trasacaoService;
     }
 
-
     @GetMapping("/{transacaoId}")
-    public TrasacaoDTO getMovimentacaoEsotque(@PathVariable TrasacaoDTO transacaoId){
+    public TrasacaoDTO getMovimentacaoEsotque(@PathVariable Long transacaoId) {
         return trasacaoService.buscarTrasacaoPorId(transacaoId);
     }
 
     @PostMapping("/")
-    public TrasacaoDTO postMovimentacaoEstoque(@RequestBody TrasacaoDTO transacaoId){
+    public TrasacaoDTO postMovimentacaoEstoque(@RequestBody TrasacaoDTO transacaoId) {
         return trasacaoService.criarTrasacao(transacaoId);
     }
 
     @DeleteMapping("/{transacaoId}")
-    public Boolean deleteMovimentacaoEsotque(@PathVariable Long transacaoId){
-
+    public String deleteMovimentacaoEsotque(@PathVariable Long transacaoId) {
         return trasacaoService.excluirTrasacaoPorId(transacaoId);
     }
 
     @PutMapping("/{transacaoId}")
-    public TrasacaoDTO putMovimentacaoEstoque(@PathVariable TrasacaoDTO transacaoId){
-        return trasacaoService.atualizarTrasacaoPorId(transacaoId);
+    public TrasacaoDTO putMovimentacaoEstoque(@PathVariable Long transacaoId, @RequestBody TrasacaoDTO dto) {
+        return trasacaoService.atualizarTrasacaoPorId(transacaoId, dto);
     }
-
 }

@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.SVacinacao;
 import br.com.gado.application.dto.VacinacaoDTO;
+import br.com.gado.application.services.SVacinacao;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -10,30 +10,27 @@ public class CVacinacao {
 
     private final SVacinacao vacinacaoService;
 
-    public CVacinacao(SVacinacao vacinacaoService){
+    public CVacinacao(SVacinacao vacinacaoService) {
         this.vacinacaoService = vacinacaoService;
     }
 
-
     @GetMapping("/{vacinacaoId}")
-    public VacinacaoDTO getVacinacao(@PathVariable VacinacaoDTO vacinacaoId){
+    public VacinacaoDTO getVacinacao(@PathVariable Long vacinacaoId) {
         return vacinacaoService.buscarVacinacaoPorId(vacinacaoId);
     }
 
     @PostMapping("/")
-    public VacinacaoDTO postVacinacao(@RequestBody VacinacaoDTO vacinacao){
+    public VacinacaoDTO postVacinacao(@RequestBody VacinacaoDTO vacinacao) {
         return vacinacaoService.criarVacinacao(vacinacao);
     }
 
     @DeleteMapping("/{vacinacaoId}")
-    public Boolean deleteVacinacao(@PathVariable Long vacinacaoId){
-
+    public String deleteVacinacao(@PathVariable Long vacinacaoId) {
         return vacinacaoService.excluirVacinacaoPorId(vacinacaoId);
     }
 
     @PutMapping("/{vacinacaoId}")
-    public VacinacaoDTO putVacinacao(@PathVariable VacinacaoDTO vacinacaoId){
-        return vacinacaoService.atualizarVacinacaoPorId(vacinacaoId);
+    public VacinacaoDTO putVacinacao(@PathVariable Long vacinacaoId, @RequestBody VacinacaoDTO dto) {
+        return vacinacaoService.atualizarVacinacaoPorId(vacinacaoId, dto);
     }
-
 }

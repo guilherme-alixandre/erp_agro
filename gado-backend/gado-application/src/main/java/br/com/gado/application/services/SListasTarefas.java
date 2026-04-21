@@ -1,8 +1,8 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.ListasTarefasDTO;
 import br.com.gado.domain.entities.EListasTarefas;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.ListasTarefasDTO;
 import br.com.gado.infrastructure.persistence.repositories.IListasTarefas;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -11,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-
 
 @Service
 public class SListasTarefas {
@@ -28,61 +26,53 @@ public class SListasTarefas {
     }
 
     @Transactional
-    public ListasTarefasDTO criarListaDeTarefas (ListasTarefasDTO dadosLista) {
-
-        EListasTarefas listaTarefas = new EListasTarefas();
-        listaTarefas.setNomeLista(dadosLista.getNomeLista());
+    public ListasTarefasDTO criarListaDeTarefas(ListasTarefasDTO dadosLista) {
+        EListasTarefas listaTarefas = modelMapper.map(dadosLista, EListasTarefas.class);
 
         EListasTarefas listaSalva = listasTarefasInterface.save(listaTarefas);
-
         return modelMapper.map(listaSalva, ListasTarefasDTO.class);
     }
 
     @Transactional
     public ListasTarefasDTO buscarListaDeTarefasPorId(Long listaId) {
-        EListasTarefas listaTarefaEntitye = (EListasTarefas) this.listasTarefasInterface
+        EListasTarefas listaTarefaEntity = this.listasTarefasInterface
                 .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
-        return modelMapper.map(listaTarefaEntitye, ListasTarefasDTO.class);
+        return modelMapper.map(listaTarefaEntity, ListasTarefasDTO.class);
     }
 
     @Transactional
     public ListasTarefasDTO atualizarListaDeTarefasPorId(ListasTarefasDTO listaParaAtualizar, Long listaId) {
-        EListasTarefas existingEntitye = (EListasTarefas) this.listasTarefasInterface
+        EListasTarefas existingEntity = this.listasTarefasInterface
                 .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        this.modelMapper.map(listaParaAtualizar, existingEntitye);
-        EListasTarefas listaParaSalvar = existingEntitye;
+        this.modelMapper.map(listaParaAtualizar, existingEntity);
 
         try {
-
-            EListasTarefas listaSalva = this.listasTarefasInterface.save(listaParaSalvar);
+            EListasTarefas listaSalva = this.listasTarefasInterface.save(existingEntity);
             return modelMapper.map(listaSalva, ListasTarefasDTO.class);
-
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Erro ao atualizar tarefa: {}", e.getMessage(), e);
             throw e;
         }
     }
 
     @Transactional
-    public boolean excluirListaDeTarefas(Long listaId) {
-        EListasTarefas listaParaExcluir = (EListasTarefas) this.listasTarefasInterface
+    public String excluirListaDeTarefas(Long listaId) {
+        EListasTarefas listaParaExcluir = this.listasTarefasInterface
                 .findById(listaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         listaParaExcluir.setStatus(EnStatus.I);
 
-        try{
+        try {
             this.listasTarefasInterface.save(listaParaExcluir);
-            return true;
-        } catch (Exception e){
+            return "lista de tarefas excluÃ­da com sucesso";
+        } catch (Exception e) {
             log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
+            return "erro ao excluir lista de tarefas";
         }
-
-        return false;
     }
 }

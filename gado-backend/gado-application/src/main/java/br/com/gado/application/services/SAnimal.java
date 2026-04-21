@@ -1,18 +1,15 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EUsuario;
-import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class SAnimal {
@@ -26,60 +23,42 @@ public class SAnimal {
     @Autowired
     private ModelMapper modelMapper;
 
-    public Map<String, Object> buscarPorBrinco(String brinco){
-        Map<String, Object> response = new HashMap<>();
-        Optional<EAnimal> animal = animalInterface.findByCodigoBrinco(brinco);
-
-        if(animal.isPresent()) {
-            response.put("mensagem", animal.get());
-        } else {
-            response.put("mensagem", "animal não encontrado");
-        }
-
-        return response;
+    public AnimalDto buscarPorBrinco(String brinco) {
+        EAnimal animal = animalInterface.findByCodigoBrinco(brinco)
+                .orElseThrow(() -> new EntityNotFoundException("animal nÃ£o encontrado"));
+        return modelMapper.map(animal, AnimalDto.class);
     }
 
     @Transactional
-    public String cadastraAnimal(String email, AnimalDto animal){
-        try{
-            EAnimal novoAnimal = modelMapper.map(animal, EAnimal.class);
+    public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) {
+        EAnimal novoAnimal = modelMapper.map(animalDto, EAnimal.class);
 
-            EUsuario usuario = usuarioInterface.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        EUsuario usuario = usuarioInterface.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("UsuÃ¡rio nÃ£o encontrado"));
 
-            novoAnimal.setUsuario(usuario);
-            animalInterface.save(novoAnimal);
+        novoAnimal.setUsuario(usuario);
+        EAnimal animalSalvo = animalInterface.save(novoAnimal);
 
-            return "animal cadastrado";
-
-        } catch (Exception e) {
-            return "Erro: " + e.getMessage();
-        }
+        return modelMapper.map(animalSalvo, AnimalDto.class);
     }
 
     @Transactional
-    public String deletaAnimal(String brinco){
-        Optional<EAnimal> animal = animalInterface.findByCodigoBrinco(brinco);
-
-        if(animal.isPresent()){
+    public String deletaAnimal(String brinco) {
+        if (animalInterface.findByCodigoBrinco(brinco).isPresent()) {
             animalInterface.deleteByCodigoBrinco(brinco);
             return "animal deletado";
         }
-        return "animal não encontrado";
-
+        return "animal nÃ£o encontrado";
     }
 
     @Transactional
-    public String alteraAnimal(String brinco, AnimalDto dto){
-        Optional<EAnimal> animalOptional = animalInterface.findByCodigoBrinco(brinco);
+    public AnimalDto alteraAnimal(String brinco, AnimalDto dto) {
+        EAnimal animal = animalInterface.findByCodigoBrinco(brinco)
+                .orElseThrow(() -> new EntityNotFoundException("animal nÃ£o encontrado"));
 
-        if(animalOptional.isEmpty()){
-            return "animal não encontrado";
-        }
-
-        EAnimal animal = animalOptional.get();
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, animal);
-        animalInterface.save(animal);
-        return "animal atualizado";
+        EAnimal animalAtualizado = animalInterface.save(animal);
+        return modelMapper.map(animalAtualizado, AnimalDto.class);
     }
 }

@@ -1,7 +1,7 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.SCategoria;
 import br.com.gado.application.dto.CategoriaDTO;
+import br.com.gado.application.services.SCategoria;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,24 +13,22 @@ public class CCategoria {
     private SCategoria categoriaService;
 
     @GetMapping("/{categoriaId}")
-    public CategoriaDTO getCategoria(@PathVariable Long categoriaId){
+    public CategoriaDTO getCategoria(@PathVariable Long categoriaId) {
         return categoriaService.buscarCategoriaPorId(categoriaId);
     }
 
     @PostMapping("/")
-    public CategoriaDTO postCategoria(@RequestBody CategoriaDTO categoria){
+    public CategoriaDTO postCategoria(@RequestBody CategoriaDTO categoria) {
         return categoriaService.criarCategoria(categoria);
     }
 
     @DeleteMapping("/{categoriaId}")
-    public Boolean deleteCategoria(@PathVariable Long categoriaId){
-
+    public String deleteCategoria(@PathVariable Long categoriaId) {
         return categoriaService.excluirCategoria(categoriaId);
     }
 
     @PutMapping("/{categoriaId}")
-    public CategoriaDTO putCategoria(@PathVariable Long categoriaId, @RequestBody CategoriaDTO categoria){
+    public CategoriaDTO putCategoria(@PathVariable Long categoriaId, @RequestBody CategoriaDTO categoria) {
         return categoriaService.atualizarCategoriaPorId(categoria, categoriaId);
     }
-
 }
