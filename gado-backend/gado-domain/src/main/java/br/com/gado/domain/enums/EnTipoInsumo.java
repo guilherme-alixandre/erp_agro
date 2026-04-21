@@ -4,7 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum EnTipoInsumo {
-    PRIMEIRO,
-    SEGUNDO
+    RACAO,
+    VACINA,
+    MEDICAMENTO,
+    OUTROS
 
 }

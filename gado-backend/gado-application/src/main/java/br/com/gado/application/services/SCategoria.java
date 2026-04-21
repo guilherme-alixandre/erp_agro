@@ -5,7 +5,7 @@ import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +31,11 @@ public class SCategoria {
         return modelMapper.map(categoriaSalva, CategoriaDTO.class);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public CategoriaDTO buscarCategoriaPorId(Long categoriaId) {
         ECategoria categoriaEntity = this.categoriaInterface
-                .findById(categoriaId)
-                .orElseThrow(EntityNotFoundException::new);
+                .findByIdAndStatus(categoriaId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada ou está inativa."));
         return modelMapper.map(categoriaEntity, CategoriaDTO.class);
     }
 
@@ -67,7 +67,7 @@ public class SCategoria {
 
         try {
             this.categoriaInterface.save(categoriaParaExcluir);
-            return "categoria excluÃ­da com sucesso";
+            return "categoria excluida com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir categoria: {}", e.getMessage(), e);
             return "erro ao excluir categoria";

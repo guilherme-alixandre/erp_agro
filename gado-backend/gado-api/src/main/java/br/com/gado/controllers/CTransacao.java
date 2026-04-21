@@ -5,6 +5,7 @@ import br.com.gado.application.services.STrasacao;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/transacao")
 public class CTransacao {
 

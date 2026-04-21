@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum EnPerfilUsuario {
     // adicionar conforme for lembrando e precisando
     GERENTE,
-    CASEIRO,
-    ADMINISTRADOR
+    CUIDADOR,
+    ADMINISTRADOR,
+    FINANCEIRO
 }

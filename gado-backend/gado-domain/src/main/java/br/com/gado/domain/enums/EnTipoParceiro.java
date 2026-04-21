@@ -4,7 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum EnTipoParceiro {
-    PRIMEIRO,
-    SEGUNDO
+    FORNECEDOR,
+    COMPRADOR,
+    AMBOS
 
 }

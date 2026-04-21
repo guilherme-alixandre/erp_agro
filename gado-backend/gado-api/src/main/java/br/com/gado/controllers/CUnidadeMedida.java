@@ -5,6 +5,7 @@ import br.com.gado.application.services.SUnidadeMedida;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/unidadeMedida")
 public class CUnidadeMedida {
 

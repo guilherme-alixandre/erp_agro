@@ -6,6 +6,9 @@ import lombok.Getter;
 // MUDAR COM EXTREMA URGÊNCIA
 @Getter
 public enum EnStatusAnimal {
-    EX1,
-    EX2
+    ATIVO,
+    OBERVACAO,
+    VENDIDO,
+    OBITO,
+    ABATIDO
 }
