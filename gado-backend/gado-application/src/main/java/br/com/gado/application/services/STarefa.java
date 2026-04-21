@@ -1,9 +1,9 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.TarefaDTO;
 import br.com.gado.domain.entities.EListasTarefas;
 import br.com.gado.domain.entities.ETarefa;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.TarefaDTO;
 import br.com.gado.infrastructure.persistence.repositories.IListasTarefas;
 import br.com.gado.infrastructure.persistence.repositories.ITarefa;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,20 +28,16 @@ public class STarefa {
     @Autowired
     private ModelMapper modelMapper;
 
-
     @Transactional
     public TarefaDTO criarTarefa(TarefaDTO novaTarefa, Long listaId) {
-        try{
-            EListasTarefas lista = (EListasTarefas) listaTarefas.findById(listaId)
+        try {
+            EListasTarefas lista = listaTarefas.findById(listaId)
                     .orElseThrow(() -> {
-                        log.error("Erro ao criar tarefa: Lista ID {} não encontrada.", listaId);
-                        return new RuntimeException("Lista de tarefas não encontrada");
+                        log.error("Erro ao criar tarefa: Lista ID {} nÃ£o encontrada.", listaId);
+                        return new RuntimeException("Lista de tarefas nÃ£o encontrada");
                     });
 
             ETarefa tarefa = modelMapper.map(novaTarefa, ETarefa.class);
-
-            tarefa.setDescricao(novaTarefa.getDescricao());
-            tarefa.setDataLimite(novaTarefa.getDataLimite());
             tarefa.setStatusConclusao(false);
             tarefa.setListasTarefaId(lista);
 
@@ -49,10 +45,9 @@ public class STarefa {
             log.info("Tarefa criada com sucesso! ID: {}", tarefaSalva.getId());
 
             return modelMapper.map(tarefaSalva, TarefaDTO.class);
-
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Erro ao salvar tarefa: {}", e.getMessage(), e);
-            throw e; // Lança a exceção para que o @Transactional faça o rollback
+            throw e;
         }
     }
 
@@ -66,44 +61,36 @@ public class STarefa {
 
     @Transactional
     public TarefaDTO atualizarTarefa(TarefaDTO tarefaParaAtualizar, Long tarefaId) {
-        // 1. Busca a entidade existente (para garantir que os dados atuais não se percam)
         ETarefa existingEntity = this.tarefaInterface
                 .findById(tarefaId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        // 2. Configura o ModelMapper para ignorar campos nulos vindo do DTO
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        // 3. Mapeia os dados do DTO para a entidade existente (apenas campos não nulos)
         this.modelMapper.map(tarefaParaAtualizar, existingEntity);
 
-        // 4. Salva a entidade atualizada no banco (Passo essencial que faltava!)
-        try{
+        try {
             ETarefa tarefaSalva = this.tarefaInterface.save(existingEntity);
-
-            // 5. Retorna o DTO atualizado
             return modelMapper.map(tarefaSalva, TarefaDTO.class);
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Erro ao atualizar tarefa: {}", e.getMessage(), e);
             throw e;
         }
     }
 
     @Transactional
-    public Boolean excluirTarefa(Long tarefaId) {
-
+    public String excluirTarefa(Long tarefaId) {
         ETarefa tarefaParaExcluir = this.tarefaInterface
                 .findById(tarefaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         tarefaParaExcluir.setStatus(EnStatus.I);
-        try{
-            this.tarefaInterface.save(tarefaParaExcluir);
-            return true;
-        } catch (Exception e){
-            log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
-        }
 
-        return false;
+        try {
+            this.tarefaInterface.save(tarefaParaExcluir);
+            return "tarefa excluÃ­da com sucesso";
+        } catch (Exception e) {
+            log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
+            return "erro ao excluir tarefa";
+        }
     }
 }

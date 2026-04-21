@@ -1,18 +1,15 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.InsumoDto;
 import br.com.gado.domain.entities.EInsumo;
 import br.com.gado.domain.entities.EParceiro;
-import br.com.gado.application.dto.InsumoDto;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class SInsumo {
@@ -26,45 +23,28 @@ public class SInsumo {
     @Autowired
     private ModelMapper modelMapper;
 
-
-    public Map<String, Object> buscaPorId(Long id){
-        Map<String, Object> response = new HashMap<>();
-        Optional<EInsumo> insumo = insumoInterface.findById(id);
-
-        if(insumo.isEmpty()){
-            response.put("Erro", "Insumo não encontrado");
-        }
-        else {
-            response.put("insumo", insumo.get());
-        }
-
-        return response;
+    public InsumoDto buscaPorId(Long id) {
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Insumo nÃ£o encontrado"));
+        return modelMapper.map(insumo, InsumoDto.class);
     }
 
     @Transactional
-    public String cadastraInsumo(InsumoDto dto){
-        EInsumo insumo = new EInsumo();
+    public InsumoDto cadastraInsumo(InsumoDto dto) {
+        EInsumo insumo = modelMapper.map(dto, EInsumo.class);
 
-        insumo.setNome(dto.getNome());
-        insumo.setEstoqueMinimo(dto.getEstoqueMinimo());
-        insumo.setSaldoAtual(dto.getSaldoAtual());
+        EParceiro parceiro = parceiroInterface.findById(dto.getParceiro_id())
+                .orElseThrow(() -> new EntityNotFoundException("Id do fornecedor nÃ£o encontrado"));
 
-        Optional<EParceiro> parceiroOptional = parceiroInterface.findById(dto.getParceiro_id());
-        if(parceiroOptional.isEmpty()){
-            return "Id do forcenedor não encontrado";
-        }
-        insumo.setParceiro(parceiroOptional.get());
-        insumo.setTipo(dto.getTipo());
+        insumo.setParceiro(parceiro);
 
-        insumoInterface.save(insumo);
-        return "insumo cadastrado";
+        EInsumo insumoSalvo = insumoInterface.save(insumo);
+        return modelMapper.map(insumoSalvo, InsumoDto.class);
     }
 
     @Transactional
-    public String deletaInsumo(Long id){
-        Optional<EInsumo> insumoOptional = insumoInterface.findById(id);
-
-        if(insumoOptional.isEmpty()){
+    public String deletaInsumo(Long id) {
+        if (insumoInterface.findById(id).isEmpty()) {
             return "nenhum insumo com esse id foi encontrado";
         }
 
@@ -73,18 +53,13 @@ public class SInsumo {
     }
 
     @Transactional
-    public String alteraInsumo(Long id, InsumoDto dto){
-        Optional<EInsumo> insumoOptional = insumoInterface.findById(id);
+    public InsumoDto alteraInsumo(Long id, InsumoDto dto) {
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("nenhum insumo encontrado com esse id"));
 
-        if(insumoOptional.isEmpty()){
-            return "nenhum insumo encontrado com esse id";
-        }
-
-        EInsumo insumo = insumoOptional.get();
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, insumo);
-
-        insumoInterface.save(insumo);
-        return "insumo alterado com sucesso";
+        EInsumo insumoAtualizado = insumoInterface.save(insumo);
+        return modelMapper.map(insumoAtualizado, InsumoDto.class);
     }
-
 }
