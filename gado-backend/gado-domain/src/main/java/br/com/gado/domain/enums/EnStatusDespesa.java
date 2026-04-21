@@ -6,14 +6,7 @@ import lombok.Getter;
 // MUDAR COM EXTREMA URGÊNCIA
 @Getter
 public enum EnStatusDespesa {
-    ATRASADO("Atrasado"),
-    PAGO("Pago"),
-    PENDENTE("Pendente");
-
-    private final String statusDespesa;
-
-    EnStatusDespesa(String statusDespesa){
-        this.statusDespesa = statusDespesa;
-    }
-
+    ATRASADO,
+    PAGO,
+    PENDENTE
 }
