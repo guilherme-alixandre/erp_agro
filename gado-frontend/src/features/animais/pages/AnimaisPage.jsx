@@ -13,7 +13,6 @@ import {
 import '../styles/animais.css'
 
 const defaultForm = {
-  emailUsuario: '',
   codigoBrinco: '',
   nome: '',
   dataNascimento: '',
@@ -61,7 +60,7 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimaisPage() {
+function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -90,6 +89,14 @@ function AnimaisPage() {
   }
 
   function openCreateModal() {
+    if (!currentUser?.email) {
+      setFeedback({
+        type: 'error',
+        message: 'Faça login no Perfil para cadastrar um animal.',
+      })
+      return
+    }
+
     setFormMode('create')
     setFormData(defaultForm)
     setFormFeedback('')
@@ -139,7 +146,11 @@ function AnimaisPage() {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(formData.emailUsuario, formData)
+        if (!currentUser?.email) {
+          throw new Error('Faça login no Perfil para cadastrar um animal.')
+        }
+
+        const result = await cadastrarAnimal(currentUser.email, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
@@ -224,16 +235,29 @@ function AnimaisPage() {
           <button type="button" className="menu-item">
             Financeiro
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('perfil')}
+          >
             Perfil
           </button>
         </nav>
+        <div className="sidebar-user">
+          <strong>{currentUser?.nome ?? 'Sem login'}</strong>
+          <span>{currentUser?.email ?? 'Faça login para continuar'}</span>
+          {currentUser ? (
+            <button type="button" className="sidebar-logout" onClick={onLogout}>
+              Sair
+            </button>
+          ) : null}
+        </div>
       </aside>
 
       <section className="animals-content">
         <header className="animals-header">
           <h1>Animais</h1>
-          <span>Perfil</span>
+          <span>{currentUser?.email ?? 'Sem login'}</span>
         </header>
 
         <form className="animals-search" onSubmit={handleSearch}>
