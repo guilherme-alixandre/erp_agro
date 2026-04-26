@@ -1,0 +1,150 @@
+/* ============================================
+   ESTILOS DO MÓDULO DE LOTES
+   Baseado em animais.css para manter consistência
+   ============================================ */
+
+.lote-card {
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
+}
+
+.lote-card__top,
+.lote-card__middle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lote-card__top {
+  color: #9a9a9a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.lote-card__middle {
+  margin-top: 2px;
+  align-items: baseline;
+  flex-direction: column;
+}
+
+.lote-card__middle strong {
+  font-size: 1.2rem;
+  line-height: 1.1;
+  color: #1d1d1d;
+}
+
+.lote-card__info {
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.lote-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.lote-card__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.45rem;
+  background: #d3d3d3;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.lote-card__actions button:hover {
+  background: #c0c0c0;
+}
+
+/* ============================================
+   ESTILOS DO FORMULÁRIO DE LOTES (Modal)
+   ============================================ */
+
+.lote-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.lote-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.lote-form label span {
+  font-weight: 600;
+  color: #333;
+}
+
+.lote-form input,
+.lote-form select {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.lote-form input:focus,
+.lote-form select:focus {
+  outline: none;
+  border-color: #4f7f2f;
+  box-shadow: 0 0 0 3px rgba(79, 127, 47, 0.1);
+}
+
+/* ============================================
+   RESPONSIVIDADE
+   ============================================ */
+
+@media (max-width: 1300px) {
+  .lote-card {
+    padding: 8px 10px;
+  }
+
+  .lote-card__top {
+    font-size: 1rem;
+  }
+
+  .lote-card__middle strong {
+    font-size: 1rem;
+  }
+
+  .lote-card__info {
+    font-size: 1rem;
+  }
+
+  .lote-card__actions button {
+    font-size: 1.2rem;
+    min-width: 80px;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 900px) {
+  .lote-card {
+    padding: 10px 12px;
+  }
+
+  .lote-card__top {
+    font-size: 0.95rem;
+  }
+
+  .lote-card__middle strong {
+    font-size: 1.2rem;
+  }
+
+  .lote-card__info {
+    font-size: 1rem;
+  }
+
+  .lote-card__actions button {
+    font-size: 1rem;
+    min-width: 70px;
+  }
+}

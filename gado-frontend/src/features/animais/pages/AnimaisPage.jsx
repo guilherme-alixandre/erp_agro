@@ -28,8 +28,8 @@ const defaultForm = {
 function calcAgeLabel(dateText) {
   if (!dateText) return 'idade não informada'
   const [birthYear, birthMonth, birthDay] = dateText
-    .split('-')
-    .map((part) => Number(part))
+      .split('-')
+      .map((part) => Number(part))
   if (!birthYear || !birthMonth || !birthDay) return 'idade não informada'
 
   const now = new Date()
@@ -53,7 +53,7 @@ function toCardAnimal(animal) {
 
 function mergeByBrinco(current, animal) {
   const index = current.findIndex(
-    (item) => item.codigoBrinco === animal.codigoBrinco,
+      (item) => item.codigoBrinco === animal.codigoBrinco,
   )
   if (index === -1) return [animal, ...current]
   const next = [...current]
@@ -154,15 +154,15 @@ function AnimaisPage() {
         }
 
         setAnimals((current) =>
-          current.map((animal) =>
-            animal.codigoBrinco === formData.codigoBrinco
-              ? {
-                  ...animal,
-                  ...formData,
-                  pesoAtual: Number(formData.pesoAtual),
-                }
-              : animal,
-          ),
+            current.map((animal) =>
+                animal.codigoBrinco === formData.codigoBrinco
+                    ? {
+                      ...animal,
+                      ...formData,
+                      pesoAtual: Number(formData.pesoAtual),
+                    }
+                    : animal,
+            ),
         )
         setFeedback({ type: 'info', message: 'Animal atualizado com sucesso.' })
       }
@@ -177,7 +177,7 @@ function AnimaisPage() {
 
   async function handleDelete(animal) {
     const confirmDelete = window.confirm(
-      `Deseja excluir o animal ${animal.codigoBrinco}?`,
+        `Deseja excluir o animal ${animal.codigoBrinco}?`,
     )
     if (!confirmDelete) return
 
@@ -190,7 +190,7 @@ function AnimaisPage() {
       }
 
       setAnimals((current) =>
-        current.filter((item) => item.codigoBrinco !== animal.codigoBrinco),
+          current.filter((item) => item.codigoBrinco !== animal.codigoBrinco),
       )
       closeModal()
       setFeedback({ type: 'info', message: 'Animal excluído com sucesso.' })
@@ -205,31 +205,6 @@ function AnimaisPage() {
   }
 
   return (
-    <main className="animals-layout">
-      <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
-        <nav>
-          <button type="button" className="menu-item menu-item--active">
-            Animais
-          </button>
-          <button type="button" className="menu-item">
-            Lotes
-          </button>
-          <button type="button" className="menu-item">
-            Setores
-          </button>
-          <button type="button" className="menu-item">
-            Insumos
-          </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
-          <button type="button" className="menu-item">
-            Perfil
-          </button>
-        </nav>
-      </aside>
-
       <section className="animals-content">
         <header className="animals-header">
           <h1>Animais</h1>
@@ -238,10 +213,10 @@ function AnimaisPage() {
 
         <form className="animals-search" onSubmit={handleSearch}>
           <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pesquisar animal, lote, setor ou etiqueta"
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Pesquisar animal, lote, setor ou etiqueta"
           />
           <button type="submit" disabled={isLoadingSearch}>
             {isLoadingSearch ? 'Buscando...' : 'Buscar'}
@@ -249,66 +224,65 @@ function AnimaisPage() {
         </form>
 
         {feedback.message ? (
-          <p
-            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-          >
-            {feedback.message}
-          </p>
+            <p
+                className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+            >
+              {feedback.message}
+            </p>
         ) : null}
 
         {cards.length ? (
-          <div className="animals-grid">
-            {cards.map((animal) => (
-              <AnimalCard
-                key={animal.codigoBrinco}
-                animal={animal}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
-          </div>
+            <div className="animals-grid">
+              {cards.map((animal) => (
+                  <AnimalCard
+                      key={animal.codigoBrinco}
+                      animal={animal}
+                      onDetalhes={openDetailsModal}
+                      onEditar={openEditModal}
+                  />
+              ))}
+            </div>
         ) : (
-          <div className="animals-empty">
-            <p>Nenhum animal carregado.</p>
-            <span>
-              Busque por brinco para carregar um animal ou clique no botão +
-              para cadastrar.
-            </span>
-          </div>
+            <div className="animals-empty">
+              <p>Nenhum animal carregado.</p>
+              <span>
+            Busque por brinco para carregar um animal ou clique no botão +
+            para cadastrar.
+          </span>
+            </div>
         )}
 
         <button
-          type="button"
-          className="fab-add"
-          aria-label="Adicionar animal"
-          onClick={openCreateModal}
+            type="button"
+            className="fab-add"
+            aria-label="Adicionar animal"
+            onClick={openCreateModal}
         >
           +
         </button>
+
+        {modal.type === 'form' ? (
+            <AnimalFormModal
+                mode={formMode}
+                formData={formData}
+                isSaving={isSaving}
+                feedback={formFeedback}
+                onClose={closeModal}
+                onChange={handleFormChange}
+                onSubmit={handleSubmitForm}
+            />
+        ) : null}
+
+        {modal.type === 'details' && modal.animal ? (
+            <AnimalDetailsModal
+                animal={toCardAnimal(modal.animal)}
+                onClose={closeModal}
+                onEdit={() => openEditModal(modal.animal)}
+                onDelete={handleDelete}
+                isDeleting={isDeleting}
+            />
+        ) : null}
       </section>
-
-      {modal.type === 'form' ? (
-        <AnimalFormModal
-          mode={formMode}
-          formData={formData}
-          isSaving={isSaving}
-          feedback={formFeedback}
-          onClose={closeModal}
-          onChange={handleFormChange}
-          onSubmit={handleSubmitForm}
-        />
-      ) : null}
-
-      {modal.type === 'details' && modal.animal ? (
-        <AnimalDetailsModal
-          animal={toCardAnimal(modal.animal)}
-          onClose={closeModal}
-          onEdit={() => openEditModal(modal.animal)}
-          onDelete={handleDelete}
-          isDeleting={isDeleting}
-        />
-      ) : null}
-    </main>
   )
 }
 
