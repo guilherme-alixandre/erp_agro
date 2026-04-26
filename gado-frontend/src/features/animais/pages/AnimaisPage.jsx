@@ -19,9 +19,11 @@ const defaultForm = {
   pesoAtual: '',
   raca: '',
   cor: '',
-  tamanho: '',
+  alturaCernelha: '',
+  perimetroToracico: '',
+  comprimentoCorporal: '',
   sexo: 'M',
-  statusAnimal: 'EX1',
+  statusAnimal: 'ATIVO',
 }
 
 function calcAgeLabel(dateText) {
@@ -89,14 +91,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   }
 
   function openCreateModal() {
-    if (!currentUser?.email) {
-      setFeedback({
-        type: 'error',
-        message: 'Faça login no Perfil para cadastrar um animal.',
-      })
-      return
-    }
-
     setFormMode('create')
     setFormData(defaultForm)
     setFormFeedback('')
@@ -146,10 +140,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     try {
       if (formMode === 'create') {
-        if (!currentUser?.email) {
-          throw new Error('Faça login no Perfil para cadastrar um animal.')
-        }
-
         const result = await cadastrarAnimal(currentUser.email, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
@@ -244,20 +234,18 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           </button>
         </nav>
         <div className="sidebar-user">
-          <strong>{currentUser?.nome ?? 'Sem login'}</strong>
-          <span>{currentUser?.email ?? 'Faça login para continuar'}</span>
-          {currentUser ? (
-            <button type="button" className="sidebar-logout" onClick={onLogout}>
-              Sair
-            </button>
-          ) : null}
+          <strong>{currentUser.nome}</strong>
+          <span>{currentUser.email}</span>
+          <button type="button" className="sidebar-logout" onClick={onLogout}>
+            Sair
+          </button>
         </div>
       </aside>
 
       <section className="animals-content">
         <header className="animals-header">
           <h1>Animais</h1>
-          <span>{currentUser?.email ?? 'Sem login'}</span>
+          <span>{currentUser.email}</span>
         </header>
 
         <form className="animals-search" onSubmit={handleSearch}>
@@ -317,6 +305,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           formData={formData}
           isSaving={isSaving}
           feedback={formFeedback}
+          userEmail={currentUser.email}
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}

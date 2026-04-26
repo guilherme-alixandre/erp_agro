@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AnimalPage from './features/animais/pages/AnimaisPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
+import AuthPage from './features/auth/pages/AuthPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -12,8 +13,9 @@ function sanitizeUser(usuario) {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState('perfil')
+  const [activePage, setActivePage] = useState('animais')
   const [currentUser, setCurrentUser] = useState(null)
+  const [sessionFeedback, setSessionFeedback] = useState('')
 
   useEffect(() => {
     const storedUser = localStorage.getItem(STORAGE_KEY)
@@ -31,17 +33,23 @@ function App() {
     setCurrentUser(safeUser)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
     setActivePage('animais')
+    setSessionFeedback('')
   }
 
   function handleLogout() {
     setCurrentUser(null)
     localStorage.removeItem(STORAGE_KEY)
-    setActivePage('perfil')
+    setActivePage('animais')
+    setSessionFeedback('Você saiu da sessão com sucesso.')
   }
 
-  if (activePage === 'animais') {
+  if (!currentUser) {
+    return <AuthPage onLogin={handleLogin} sessionFeedback={sessionFeedback} />
+  }
+
+  if (activePage === 'perfil') {
     return (
-      <AnimalPage
+      <PerfilPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
@@ -50,9 +58,8 @@ function App() {
   }
 
   return (
-    <PerfilPage
+    <AnimalPage
       currentUser={currentUser}
-      onLogin={handleLogin}
       onLogout={handleLogout}
       onNavigate={setActivePage}
     />

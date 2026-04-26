@@ -48,3 +48,26 @@
   margin-top: 14px;
   max-width: 760px;
 }
+
+.perfil-info {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.perfil-info > div {
+  display: grid;
+  gap: 2px;
+}
+
+.perfil-info dt {
+  font-size: 0.86rem;
+  color: #787878;
+  margin: 0;
+}
+
+.perfil-info dd {
+  margin: 0;
+  font-weight: 600;
+  color: #1d1d1d;
+}

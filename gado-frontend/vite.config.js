@@ -10,6 +10,9 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+        target: process.env.VITE_BACKEND_URL ?? 'http://localhost:8080',
+        changeOrigin: true,
+
       },
     },
   },

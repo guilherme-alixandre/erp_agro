@@ -1,13 +1,16 @@
 // URL base do backend Spring Boot.
 // Se existir VITE_API_BASE_URL no ambiente, ela tem prioridade.
-// Caso contrario, usamos /api para aproveitar o proxy do Vite em desenvolvimento.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+// Caso contrario, usamos '/api' em dev (proxy do Vite) e localhost:8080/api em build.
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? '/api' : 'http://localhost:8080/api')
 
 // Função generica para chamadas HTTP ao backend.
 // Ela padroniza headers JSON, trata respostas de sucesso/erro
 // e devolve o corpo ja convertido para texto ou JSON.
 async function request(path, options = {}) {
   let response
+
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -30,12 +33,36 @@ async function request(path, options = {}) {
 
   // caso dê erro para comunicar tá pelo menos inicialmente tratado isso aqui
   if (!response.ok) {
-    const message =
-      typeof payload === 'string'
-        ? payload
-        : payload?.message ?? payload?.mensagem ?? 'Erro ao comunicar com o backend.'
+    let message = ''
 
-    throw new Error(message)
+    if (typeof payload === 'string') {
+      message = payload
+    } else if (payload && typeof payload === 'object') {
+      const mainMessage =
+        payload.message ?? payload.mensagem ?? payload.error ?? payload.detail
+      if (typeof mainMessage === 'string' && mainMessage.trim()) {
+        message = mainMessage.trim()
+      }
+
+      const fieldErrors = payload.errors ?? payload.erros
+      if (
+        !message &&
+        Array.isArray(fieldErrors) &&
+        fieldErrors.length > 0
+      ) {
+        const firstFieldError = fieldErrors[0]
+        if (typeof firstFieldError === 'string') {
+          message = firstFieldError
+        } else if (firstFieldError && typeof firstFieldError === 'object') {
+          message =
+            firstFieldError.message ?? firstFieldError.mensagem ?? message
+        }
+      }
+    }
+
+    const fallbackMessage = `Falha na requisição (${response.status} ${response.statusText}).`
+
+    throw new Error(message || fallbackMessage)
   }
 
   return payload

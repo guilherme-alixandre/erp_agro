@@ -20,7 +20,9 @@ public class EAnimal extends EAbstract{
     private Double pesoAtual;
     private String raca;
     private String cor;
-    private String tamanho;
+    private Double alturaCernelha;
+    private Double perimetroToracico;
+    private Double comprimentoCorporal;
 
     @Enumerated(EnumType.STRING)
     private EnSexoAnimal sexo;

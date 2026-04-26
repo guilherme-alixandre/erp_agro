@@ -1,10 +1,29 @@
-const STATUS_OPTIONS = ['EX1', 'EX2']
+const STATUS_OPTIONS = ['ABATIDO', 'OBITO', 'ATIVO', 'OBSERVACAO', 'VENDIDO']
+
+const MIN_BIRTH_DATE = '1990-01-01'
+
+function todayIso() {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function RequiredLabel({ children }) {
+  return (
+    <span>
+      {children} <span className="required-marker" aria-hidden="true">*</span>
+    </span>
+  )
+}
 
 function AnimalFormModal({
   mode,
   formData,
   isSaving,
   feedback,
+  userEmail,
   onClose,
   onChange,
   onSubmit,
@@ -16,6 +35,7 @@ function AnimalFormModal({
     : isCreate
       ? 'Cadastrar'
       : 'Salvar alterações'
+  const maxBirthDate = todayIso()
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -28,8 +48,15 @@ function AnimalFormModal({
         </div>
 
         <form className="animal-form" onSubmit={onSubmit}>
+
+          {isCreate && userEmail ? (
+            <p className="form-info">
+              Cadastrando como <strong>{userEmail}</strong>
+            </p>
+          ) : null}
+
           <label>
-            <span>Código do brinco</span>
+            <RequiredLabel>Código do brinco</RequiredLabel>
             <input
               type="text"
               name="codigoBrinco"
@@ -41,7 +68,7 @@ function AnimalFormModal({
           </label>
 
           <label>
-            <span>Nome</span>
+            <RequiredLabel>Nome</RequiredLabel>
             <input
               type="text"
               name="nome"
@@ -52,31 +79,35 @@ function AnimalFormModal({
           </label>
 
           <label>
-            <span>Data de nascimento</span>
+            <RequiredLabel>Data de nascimento</RequiredLabel>
             <input
               type="date"
               name="dataNascimento"
               value={formData.dataNascimento}
               onChange={onChange}
+              min={MIN_BIRTH_DATE}
+              max={maxBirthDate}
               required
             />
           </label>
 
           <label>
-            <span>Peso atual</span>
+            <RequiredLabel>Peso atual (kg)</RequiredLabel>
             <input
               type="number"
               min="0"
+              max="1500"
               step="0.01"
               name="pesoAtual"
               value={formData.pesoAtual}
               onChange={onChange}
+              placeholder="Ex.: 320.5"
               required
             />
           </label>
 
           <label>
-            <span>Raça</span>
+            <RequiredLabel>Raça</RequiredLabel>
             <input
               type="text"
               name="raca"
@@ -87,7 +118,7 @@ function AnimalFormModal({
           </label>
 
           <label>
-            <span>Cor</span>
+            <RequiredLabel>Cor</RequiredLabel>
             <input
               type="text"
               name="cor"
@@ -97,14 +128,49 @@ function AnimalFormModal({
             />
           </label>
 
+          <p className="form-help">
+            Medidas zootécnicas — preencha as que você medir.
+          </p>
+
           <label>
-            <span>Tamanho</span>
+            <span>Altura na cernelha (cm)</span>
             <input
-              type="text"
-              name="tamanho"
-              value={formData.tamanho}
+              type="number"
+              min="0"
+              max="350"
+              step="0.1"
+              name="alturaCernelha"
+              value={formData.alturaCernelha}
               onChange={onChange}
-              required
+              placeholder="cm"
+            />
+          </label>
+
+          <label>
+            <span>Perímetro torácico (cm)</span>
+            <input
+              type="number"
+              min="0"
+              max="350"
+              step="0.1"
+              name="perimetroToracico"
+              value={formData.perimetroToracico}
+              onChange={onChange}
+              placeholder="cm"
+            />
+          </label>
+
+          <label>
+            <span>Comprimento corporal (cm)</span>
+            <input
+              type="number"
+              min="0"
+              max="350"
+              step="0.1"
+              name="comprimentoCorporal"
+              value={formData.comprimentoCorporal}
+              onChange={onChange}
+              placeholder="cm"
             />
           </label>
 

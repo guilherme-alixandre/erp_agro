@@ -4,6 +4,13 @@ function formatDate(dateText) {
   return `${day}/${month}/${year}`
 }
 
+function formatCm(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '-'
+  return `${num} cm`
+}
+
 function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -41,8 +48,16 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
             <dd>{animal.cor || '-'}</dd>
           </div>
           <div>
-            <dt>Tamanho</dt>
-            <dd>{animal.tamanho || '-'}</dd>
+            <dt>Altura na cernelha</dt>
+            <dd>{formatCm(animal.alturaCernelha)}</dd>
+          </div>
+          <div>
+            <dt>Perímetro torácico</dt>
+            <dd>{formatCm(animal.perimetroToracico)}</dd>
+          </div>
+          <div>
+            <dt>Comprimento corporal</dt>
+            <dd>{formatCm(animal.comprimentoCorporal)}</dd>
           </div>
           <div>
             <dt>Sexo</dt>

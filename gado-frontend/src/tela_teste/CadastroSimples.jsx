@@ -13,7 +13,7 @@ const initialForm = {
   cor: '',
   tamanho: '',
   sexo: 'M',
-  statusAnimal: 'EX1',
+  statusAnimal: 'ATIVO',
 }
 
 function CadastroSimples() {
@@ -193,8 +193,11 @@ function CadastroSimples() {
               value={formData.statusAnimal}
               onChange={handleChange}
             >
-              <option value="EX1">EX1</option>
-              <option value="EX2">EX2</option>
+              <option value="ABATIDO">ABATIDO</option>
+              <option value="OBITO">OBITO</option>
+              <option value="ATIVO">ATIVO</option>
+              <option value="OBSERVACAO">OBSERVACAO</option>
+              <option value="VENDIDO">VENDIDO</option>
             </select>
           </label>
 
