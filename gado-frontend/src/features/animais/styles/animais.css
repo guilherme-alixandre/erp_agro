@@ -10,6 +10,9 @@
   background: #4f7f2f;
   color: #eff7e9;
   padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .animals-logo {
@@ -21,6 +24,7 @@
 .animals-sidebar nav {
   display: grid;
   gap: 8px;
+  flex: 1;
 }
 
 .menu-item {
@@ -37,6 +41,39 @@
 .menu-item--active {
   background: #86b262;
   color: #244011;
+}
+
+.sidebar-user {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-user strong {
+  color: #f4fbe9;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.sidebar-user span {
+  color: rgba(239, 247, 233, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.sidebar-logout {
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #86b262;
+  color: #224110;
+  font-weight: 700;
+  text-align: left;
 }
 
 .animals-content {
@@ -241,6 +278,32 @@
 .animal-form label {
   display: grid;
   gap: 4px;
+}
+
+.required-marker {
+  color: #b12a2a;
+  font-weight: 700;
+}
+
+.form-info {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eef5e6;
+  border: 1px solid #c8dfb1;
+  color: #2e4a14;
+  font-size: 0.9rem;
+}
+
+.form-info strong {
+  color: #1d300a;
+}
+
+.form-help {
+  margin: 6px 0 0;
+  color: #707070;
+  font-size: 0.86rem;
+  font-weight: 500;
 }
 
 .animal-form input,

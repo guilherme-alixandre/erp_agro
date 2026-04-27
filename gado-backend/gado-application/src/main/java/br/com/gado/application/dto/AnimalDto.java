@@ -18,7 +18,9 @@ public class AnimalDto extends AbstractDTO {
     private LocalDateTime dataNascimento;
     private Double pesoAtual;
     private String raca;
-    private String tamanho;
+    private Double alturaCernelha;
+    private Double perimetroToracico;
+    private Double comprimentoCorporal;
     private EnSexoAnimal sexo;
     private EnStatusAnimal statusAnimal;
 }

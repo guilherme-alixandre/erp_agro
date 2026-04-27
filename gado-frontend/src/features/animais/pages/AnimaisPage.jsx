@@ -13,16 +13,17 @@ import {
 import '../styles/animais.css'
 
 const defaultForm = {
-  emailUsuario: '',
   codigoBrinco: '',
   nome: '',
   dataNascimento: '',
   pesoAtual: '',
   raca: '',
   cor: '',
-  tamanho: '',
+  alturaCernelha: '',
+  perimetroToracico: '',
+  comprimentoCorporal: '',
   sexo: 'M',
-  statusAnimal: 'EX1',
+  statusAnimal: 'ATIVO',
 }
 
 function calcAgeLabel(dateText) {
@@ -61,7 +62,7 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimaisPage() {
+function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -139,7 +140,7 @@ function AnimaisPage() {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(formData.emailUsuario, formData)
+        const result = await cadastrarAnimal(currentUser.email, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
@@ -205,10 +206,46 @@ function AnimaisPage() {
   }
 
   return (
+    <main className="animals-layout">
+      <aside className="animals-sidebar">
+        <div className="animals-logo">🌿</div>
+        <nav>
+          <button type="button" className="menu-item menu-item--active">
+            Animais
+          </button>
+          <button type="button" className="menu-item">
+            Lotes
+          </button>
+          <button type="button" className="menu-item">
+            Setores
+          </button>
+          <button type="button" className="menu-item">
+            Insumos
+          </button>
+          <button type="button" className="menu-item">
+            Financeiro
+          </button>
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('perfil')}
+          >
+            Perfil
+          </button>
+        </nav>
+        <div className="sidebar-user">
+          <strong>{currentUser.nome}</strong>
+          <span>{currentUser.email}</span>
+          <button type="button" className="sidebar-logout" onClick={onLogout}>
+            Sair
+          </button>
+        </div>
+      </aside>
+
       <section className="animals-content">
         <header className="animals-header">
           <h1>Animais</h1>
-          <span>Perfil</span>
+          <span>{currentUser.email}</span>
         </header>
 
         <form className="animals-search" onSubmit={handleSearch}>
@@ -272,6 +309,18 @@ function AnimaisPage() {
                 onSubmit={handleSubmitForm}
             />
         ) : null}
+      {modal.type === 'form' ? (
+        <AnimalFormModal
+          mode={formMode}
+          formData={formData}
+          isSaving={isSaving}
+          feedback={formFeedback}
+          userEmail={currentUser.email}
+          onClose={closeModal}
+          onChange={handleFormChange}
+          onSubmit={handleSubmitForm}
+        />
+      ) : null}
 
         {modal.type === 'details' && modal.animal ? (
             <AnimalDetailsModal

@@ -2,6 +2,7 @@ package br.com.gado.controllers;
 
 import br.com.gado.application.services.SUsuario;
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,11 @@ public class CUsuario {
     @PostMapping
     public String postUsuario(@RequestBody UsuarioCadastroDto dto){
         return usuarioService.cadastra(dto);
+    }
+
+    @PostMapping("/login")
+    public Map<String, Object> postLogin(@RequestBody UsuarioLoginDto dto){
+        return usuarioService.login(dto);
     }
 
     @DeleteMapping("/{email}")
