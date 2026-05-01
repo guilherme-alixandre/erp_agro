@@ -2,7 +2,11 @@ package br.com.gado.controllers;
 
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.application.services.SAnimal;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -16,22 +20,27 @@ public class CAnimal {
     }
 
     @GetMapping("/{brinco}")
-    public AnimalDto getAnimal(@PathVariable String brinco) {
-        return animalService.buscarPorBrinco(brinco);
+    public ResponseEntity<AnimalDto> getAnimal(@PathVariable String brinco) {
+        return ResponseEntity.ok(animalService.buscarPorBrinco(brinco));
+    }
+
+    @GetMapping
+    public ResponseEntity<ArrayList<AnimalDto>> getAnimals(){
+        return ResponseEntity.ok(animalService.buscarTodosAnimais());
     }
 
     @PostMapping("/usuarios/{email}")
-    public AnimalDto postAnimal(@PathVariable String email, @RequestBody AnimalDto animal) {
-        return animalService.cadastraAnimal(email, animal);
+    public ResponseEntity<AnimalDto> postAnimal(@PathVariable String email, @RequestBody AnimalDto animal) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(animalService.cadastraAnimal(email, animal));
     }
 
     @DeleteMapping("/{brinco}")
-    public String deleteAnimal(@PathVariable String brinco) {
-        return animalService.deletaAnimal(brinco);
+    public ResponseEntity<String> deleteAnimal(@PathVariable String brinco) {
+        return ResponseEntity.ok(animalService.deletaAnimal(brinco));
     }
 
     @PutMapping("/{brinco}")
-    public AnimalDto putAnimal(@PathVariable String brinco, @RequestBody AnimalDto animal) {
-        return animalService.alteraAnimal(brinco, animal);
+    public ResponseEntity<AnimalDto> putAnimal(@PathVariable String brinco, @RequestBody AnimalDto animal) {
+        return ResponseEntity.ok(animalService.alteraAnimal(brinco, animal));
     }
 }

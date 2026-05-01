@@ -30,6 +30,16 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (
+      currentUser &&
+      activePage === 'configuracoes' &&
+      currentUser.perfil !== 'ADMINISTRADOR'
+    ) {
+      setActivePage('animais')
+    }
+  }, [activePage, currentUser])
+
   function handleLogin(usuario) {
     const safeUser = sanitizeUser(usuario)
     setCurrentUser(safeUser)
