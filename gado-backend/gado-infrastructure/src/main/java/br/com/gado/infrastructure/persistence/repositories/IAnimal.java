@@ -4,6 +4,7 @@ import br.com.gado.domain.entities.EAnimal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -11,4 +12,7 @@ import java.util.Optional;
 public interface IAnimal extends JpaRepository<EAnimal, Long> {
     Optional<EAnimal> findByCodigoBrinco(String codigoBrinco);
     void deleteByCodigoBrinco(String codigoBrinco);
+
+    List<EAnimal> findByNomeContainingIgnoreCaseOrCodigoBrincoContainingIgnoreCase(
+            String nome, String codigoBrinco);
 }

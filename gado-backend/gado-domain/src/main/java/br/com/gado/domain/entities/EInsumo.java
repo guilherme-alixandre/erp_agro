@@ -22,6 +22,8 @@ public class EInsumo extends EAbstract{
     @Enumerated(EnumType.STRING)
     private EnTipoInsumo tipo;
 
+    private Boolean pendente;
+
     // fazer depois o unidade_medida pq não lembro pra que isso
 
 }

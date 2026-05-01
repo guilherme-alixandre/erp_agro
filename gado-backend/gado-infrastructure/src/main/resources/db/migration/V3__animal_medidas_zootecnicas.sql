@@ -1,0 +1,4 @@
+ALTER TABLE animal DROP COLUMN tamanho;
+ALTER TABLE animal ADD COLUMN altura_cernelha DOUBLE PRECISION;
+ALTER TABLE animal ADD COLUMN perimetro_toracico DOUBLE PRECISION;
+ALTER TABLE animal ADD COLUMN comprimento_corporal DOUBLE PRECISION;

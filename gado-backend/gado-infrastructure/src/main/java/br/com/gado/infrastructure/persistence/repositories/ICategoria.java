@@ -10,5 +10,4 @@ import java.util.Optional;
 @Repository
 public interface ICategoria extends JpaRepository<ECategoria, Long> {
     Optional<ECategoria> findByIdAndStatus(Long id, EnStatus status);
-    void deleteById(Long id);
 }

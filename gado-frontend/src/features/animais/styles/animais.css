@@ -1,0 +1,572 @@
+.animals-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  background: #d9d9d9;
+  color: #1d1d1d;
+}
+
+.animals-sidebar {
+  background: #4f7f2f;
+  color: #eff7e9;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.animals-logo {
+  font-size: 64px;
+  text-align: center;
+  margin: 6px 0 20px;
+}
+
+.animals-sidebar nav {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}
+
+.menu-item {
+  border: 0;
+  background: transparent;
+  color: #f3f9ed;
+  text-align: left;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.menu-item--active {
+  background: #86b262;
+  color: #244011;
+}
+
+.sidebar-user {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-user strong {
+  color: #f4fbe9;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.sidebar-user span {
+  color: rgba(239, 247, 233, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.sidebar-logout {
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #86b262;
+  color: #224110;
+  font-weight: 700;
+  text-align: left;
+}
+
+.animals-content {
+  padding: 14px 22px 24px;
+  position: relative;
+}
+
+.animals-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.animals-header h1 {
+  margin: 0;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.animals-header span {
+  font-weight: 500;
+}
+
+.animals-search {
+  background: #ededed;
+  border-radius: 16px;
+  border: 1px solid #c7c7c7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+}
+
+.animals-search input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 1.35rem;
+}
+
+.animals-search button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  background: #c3c3c3;
+}
+
+.animals-count {
+  margin: 12px 0 0;
+  color: #5a5a5a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.animals-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.animal-card {
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
+}
+
+.animal-card__top,
+.animal-card__middle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.animal-card__top {
+  color: #9a9a9a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.animal-card__middle {
+  margin-top: 2px;
+  align-items: baseline;
+}
+
+.animal-card__middle strong {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.animal-card__vaccines {
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.animal-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.animal-card__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.45rem;
+  background: #d3d3d3;
+}
+
+.fab-add {
+  position: fixed;
+  right: 34px;
+  bottom: 32px;
+  width: 88px;
+  height: 88px;
+  border: 0;
+  border-radius: 12px;
+  background: #9fd155;
+  color: #1f4010;
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.animals-empty {
+  margin-top: 22px;
+  background: #efefef;
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.animals-empty p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.animals-empty span {
+  color: #6a6a6a;
+}
+
+.feedback {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.feedback--info {
+  background: #e9f4ff;
+  border: 1px solid #bfdfff;
+  color: #1c4f7d;
+}
+
+.feedback--error {
+  background: #fdecec;
+  border: 1px solid #f8b6b6;
+  color: #8e2222;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.modal-card {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  border: 0;
+  font-size: 1.4rem;
+  background: transparent;
+}
+
+.animal-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.animal-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.required-marker {
+  color: #b12a2a;
+  font-weight: 700;
+}
+
+.form-info {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eef5e6;
+  border: 1px solid #c8dfb1;
+  color: #2e4a14;
+  font-size: 0.9rem;
+}
+
+.form-info strong {
+  color: #1d300a;
+}
+
+.form-help {
+  margin: 6px 0 0;
+  color: #707070;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.animal-form input,
+.animal-form select {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.details-grid {
+  margin: 14px 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.details-grid dt {
+  font-size: 0.86rem;
+  color: #787878;
+}
+
+.details-grid dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.modal-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.vacinas-fieldset {
+  margin-top: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.vacinas-fieldset legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #244011;
+}
+
+.vacinas-empty {
+  margin: 0;
+  color: #6a6a6a;
+  font-style: italic;
+}
+
+.vacinas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vacinas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  background: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.vacinas-row label {
+  display: grid;
+  gap: 4px;
+}
+
+.vacinas-row input {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.vacina-select {
+  position: relative;
+}
+
+.vacina-select input {
+  width: 100%;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.vacina-select__list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.vacina-select__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vacina-select__item:hover {
+  background: #eef5e7;
+}
+
+.vacina-select__empty {
+  padding: 8px 10px;
+  color: #6a6a6a;
+  font-style: italic;
+}
+
+.vacina-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.vacina-badge--pendente {
+  background: #fff1c2;
+  color: #8a5a00;
+  border: 1px solid #f3d774;
+}
+
+.vacinas-remove {
+  height: 38px;
+}
+
+.details-section {
+  margin: 14px 0 6px;
+  font-size: 1.05rem;
+  color: #244011;
+}
+
+.vacinas-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.vacinas-detail-list li {
+  display: flex;
+  justify-content: space-between;
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+@media (max-width: 600px) {
+  .vacinas-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: #4f7f2f;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e2e2;
+}
+
+.btn-danger {
+  background: #cc4747;
+  color: #fff;
+}
+
+@media (max-width: 1300px) {
+  .animals-layout {
+    grid-template-columns: 140px 1fr;
+  }
+
+  .animals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .animals-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .animals-sidebar {
+    display: none;
+  }
+
+  .animals-content {
+    padding: 14px;
+  }
+
+  .animals-header h1 {
+    font-size: 2rem;
+  }
+
+  .animals-search input {
+    font-size: 1rem;
+  }
+
+  .animals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .animal-card__top {
+    font-size: 0.95rem;
+  }
+
+  .animal-card__middle strong {
+    font-size: 1.45rem;
+  }
+
+  .animal-card__vaccines {
+    font-size: 1rem;
+  }
+
+  .animal-card__actions button {
+    font-size: 1rem;
+  }
+}
