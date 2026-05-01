@@ -7,7 +7,6 @@ import br.com.gado.application.services.SParceiro;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/parceiros")
 public class CParceiro {
 
