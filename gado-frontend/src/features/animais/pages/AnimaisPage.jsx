@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AnimalCard from '../components/AnimalCard'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
 import {
   atualizarAnimal,
-  buscarAnimalPorBrinco,
+  buscarAnimais,
   cadastrarAnimal,
   deletarAnimal,
   getBackendMessage,
   isBackendErrorMessage,
 } from '../../../services/animalApi'
+import { listarVacinas } from '../../../services/insumoApi'
 import '../styles/animais.css'
 
 const defaultForm = {
@@ -24,6 +25,7 @@ const defaultForm = {
   comprimentoCorporal: '',
   sexo: 'M',
   statusAnimal: 'ATIVO',
+  vacinas: [],
 }
 
 function calcAgeLabel(dateText) {
@@ -52,19 +54,10 @@ function toCardAnimal(animal) {
   }
 }
 
-function mergeByBrinco(current, animal) {
-  const index = current.findIndex(
-    (item) => item.codigoBrinco === animal.codigoBrinco,
-  )
-  if (index === -1) return [animal, ...current]
-  const next = [...current]
-  next[index] = animal
-  return next
-}
-
 function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
-  const [isLoadingSearch, setIsLoadingSearch] = useState(false)
+  const [activeSearch, setActiveSearch] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
@@ -73,8 +66,42 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [formMode, setFormMode] = useState('create')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
+  const [vacinasDisponiveis, setVacinasDisponiveis] = useState([])
 
   const cards = useMemo(() => animals.map(toCardAnimal), [animals])
+
+  const fetchAnimals = useCallback(async (termo) => {
+    setIsLoading(true)
+    setFeedback({ type: '', message: '' })
+    try {
+      const list = await buscarAnimais(termo)
+      setAnimals(list)
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao carregar animais.',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAnimals('')
+  }, [fetchAnimals])
+
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+    const termo = search.trim()
+    setActiveSearch(termo)
+    fetchAnimals(termo)
+  }
+
+  function handleClearSearch() {
+    setSearch('')
+    setActiveSearch('')
+    fetchAnimals('')
+  }
 
   function closeModal() {
     setModal({ type: null, animal: null })
@@ -90,11 +117,43 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     }))
   }
 
+  function handleAddVacina() {
+    setFormData((current) => ({
+      ...current,
+      vacinas: [...(current.vacinas ?? []), { nome: '', dataOcorrencia: '' }],
+    }))
+  }
+
+  function handleChangeVacina(index, field, value) {
+    setFormData((current) => {
+      const next = [...(current.vacinas ?? [])]
+      next[index] = { ...next[index], [field]: value }
+      return { ...current, vacinas: next }
+    })
+  }
+
+  function handleRemoveVacina(index) {
+    setFormData((current) => ({
+      ...current,
+      vacinas: (current.vacinas ?? []).filter((_, i) => i !== index),
+    }))
+  }
+
+  async function carregarVacinasDisponiveis() {
+    try {
+      const lista = await listarVacinas('')
+      setVacinasDisponiveis(lista)
+    } catch {
+      setVacinasDisponiveis([])
+    }
+  }
+
   function openCreateModal() {
     setFormMode('create')
     setFormData(defaultForm)
     setFormFeedback('')
     setModal({ type: 'form', animal: null })
+    carregarVacinasDisponiveis()
   }
 
   function openEditModal(animal) {
@@ -104,32 +163,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
       ...defaultForm,
       ...animal,
       pesoAtual: String(animal.pesoAtual ?? ''),
+      vacinas: [],
     })
     setModal({ type: 'form', animal })
   }
 
   function openDetailsModal(animal) {
     setModal({ type: 'details', animal })
-  }
-
-  async function handleSearch(event) {
-    event.preventDefault()
-    const brinco = search.trim()
-    if (!brinco) return
-
-    setIsLoadingSearch(true)
-    setFeedback({ type: '', message: '' })
-    try {
-      const animal = await buscarAnimalPorBrinco(brinco)
-      setAnimals((current) => mergeByBrinco(current, animal))
-    } catch (error) {
-      setFeedback({
-        type: 'error',
-        message: error.message || 'Falha ao buscar animal.',
-      })
-    } finally {
-      setIsLoadingSearch(false)
-    }
   }
 
   async function handleSubmitForm(event) {
@@ -144,31 +184,17 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
-
-        const loadedAnimal = await buscarAnimalPorBrinco(formData.codigoBrinco)
-        setAnimals((current) => mergeByBrinco(current, loadedAnimal))
         setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
       } else {
         const result = await atualizarAnimal(formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao atualizar animal.')
         }
-
-        setAnimals((current) =>
-          current.map((animal) =>
-            animal.codigoBrinco === formData.codigoBrinco
-              ? {
-                  ...animal,
-                  ...formData,
-                  pesoAtual: Number(formData.pesoAtual),
-                }
-              : animal,
-          ),
-        )
         setFeedback({ type: 'info', message: 'Animal atualizado com sucesso.' })
       }
 
       closeModal()
+      await fetchAnimals(activeSearch)
     } catch (error) {
       setFormFeedback(error.message || 'Falha ao salvar o animal.')
     } finally {
@@ -190,11 +216,9 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         throw new Error(getBackendMessage(result) || 'Falha ao excluir animal.')
       }
 
-      setAnimals((current) =>
-        current.filter((item) => item.codigoBrinco !== animal.codigoBrinco),
-      )
       closeModal()
       setFeedback({ type: 'info', message: 'Animal excluído com sucesso.' })
+      await fetchAnimals(activeSearch)
     } catch (error) {
       setFeedback({
         type: 'error',
@@ -219,7 +243,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item">
             Setores
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('insumos')}
+          >
             Insumos
           </button>
           <button type="button" className="menu-item">
@@ -232,6 +260,15 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           >
             Perfil
           </button>
+          {currentUser.perfil === 'ADMINISTRADOR' ? (
+            <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('configuracoes')}
+            >
+              ⚙ Configurações
+            </button>
+          ) : null}
         </nav>
         <div className="sidebar-user">
           <strong>{currentUser.nome}</strong>
@@ -248,17 +285,30 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           <span>{currentUser.email}</span>
         </header>
 
-        <form className="animals-search" onSubmit={handleSearch}>
+        <form className="animals-search" onSubmit={handleSearchSubmit}>
           <input
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pesquisar animal, lote, setor ou etiqueta"
+            placeholder="Buscar por nome ou código do brinco"
           />
-          <button type="submit" disabled={isLoadingSearch}>
-            {isLoadingSearch ? 'Buscando...' : 'Buscar'}
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Buscando...' : 'Buscar'}
           </button>
+          {activeSearch ? (
+            <button type="button" onClick={handleClearSearch} disabled={isLoading}>
+              Limpar
+            </button>
+          ) : null}
         </form>
+
+        <p className="animals-count">
+          {isLoading
+            ? 'Carregando...'
+            : activeSearch
+              ? `${cards.length} ${cards.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
+              : `${cards.length} ${cards.length === 1 ? 'animal cadastrado' : 'animais cadastrados'}`}
+        </p>
 
         {feedback.message ? (
           <p
@@ -281,11 +331,17 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           </div>
         ) : (
           <div className="animals-empty">
-            <p>Nenhum animal carregado.</p>
-            <span>
-              Busque por brinco para carregar um animal ou clique no botão +
-              para cadastrar.
-            </span>
+            {activeSearch ? (
+              <>
+                <p>Nenhum animal encontrado.</p>
+                <span>Nenhum resultado para "{activeSearch}". Ajuste o termo da busca.</span>
+              </>
+            ) : (
+              <>
+                <p>Nenhum animal cadastrado.</p>
+                <span>Clique no botão + para cadastrar o primeiro animal.</span>
+              </>
+            )}
           </div>
         )}
 
@@ -306,9 +362,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           isSaving={isSaving}
           feedback={formFeedback}
           userEmail={currentUser.email}
+          vacinasDisponiveis={vacinasDisponiveis}
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
+          onAddVacina={handleAddVacina}
+          onChangeVacina={handleChangeVacina}
+          onRemoveVacina={handleRemoveVacina}
         />
       ) : null}
 

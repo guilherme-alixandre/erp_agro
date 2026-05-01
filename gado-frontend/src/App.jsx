@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import AnimalPage from './features/animais/pages/AnimaisPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
 import AuthPage from './features/auth/pages/AuthPage'
+import InsumosPage from './features/insumos/pages/InsumosPage'
+import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -50,6 +52,26 @@ function App() {
   if (activePage === 'perfil') {
     return (
       <PerfilPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'insumos') {
+    return (
+      <InsumosPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'configuracoes' && currentUser.perfil === 'ADMINISTRADOR') {
+    return (
+      <ConfiguracoesPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}

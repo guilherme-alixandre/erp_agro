@@ -124,6 +124,13 @@
   background: #c3c3c3;
 }
 
+.animals-count {
+  margin: 12px 0 0;
+  color: #5a5a5a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
 .animals-grid {
   margin-top: 20px;
   display: grid;
@@ -335,6 +342,158 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.vacinas-fieldset {
+  margin-top: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.vacinas-fieldset legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #244011;
+}
+
+.vacinas-empty {
+  margin: 0;
+  color: #6a6a6a;
+  font-style: italic;
+}
+
+.vacinas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vacinas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  background: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.vacinas-row label {
+  display: grid;
+  gap: 4px;
+}
+
+.vacinas-row input {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.vacina-select {
+  position: relative;
+}
+
+.vacina-select input {
+  width: 100%;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.vacina-select__list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.vacina-select__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vacina-select__item:hover {
+  background: #eef5e7;
+}
+
+.vacina-select__empty {
+  padding: 8px 10px;
+  color: #6a6a6a;
+  font-style: italic;
+}
+
+.vacina-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.vacina-badge--pendente {
+  background: #fff1c2;
+  color: #8a5a00;
+  border: 1px solid #f3d774;
+}
+
+.vacinas-remove {
+  height: 38px;
+}
+
+.details-section {
+  margin: 14px 0 6px;
+  font-size: 1.05rem;
+  color: #244011;
+}
+
+.vacinas-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.vacinas-detail-list li {
+  display: flex;
+  justify-content: space-between;
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+@media (max-width: 600px) {
+  .vacinas-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .btn-primary,

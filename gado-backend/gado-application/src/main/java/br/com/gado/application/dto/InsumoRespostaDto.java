@@ -4,13 +4,9 @@ import br.com.gado.domain.enums.EnTipoInsumo;
 import lombok.Data;
 
 @Data
-public class InsumoDto extends AbstractDTO {
-
+public class InsumoRespostaDto {
+    private Long id;
     private String nome;
-    private Double estoqueMinimo;
-    private Double saldoAtual;
-    private Long parceiro_id;
     private EnTipoInsumo tipo;
     private Boolean pendente;
-
 }

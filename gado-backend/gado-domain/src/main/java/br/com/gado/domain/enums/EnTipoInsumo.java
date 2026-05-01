@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum EnTipoInsumo {
     PRIMEIRO("Tipo 1"),
-    SEGUNDO("Tipo 2");
+    SEGUNDO("Tipo 2"),
+    VACINA("Vacina");
 
     private final String tipo;
 

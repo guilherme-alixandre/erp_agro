@@ -2,9 +2,11 @@ package br.com.gado.controllers;
 
 import br.com.gado.application.services.SInsumo;
 import br.com.gado.application.dto.InsumoDto;
+import br.com.gado.application.dto.InsumoRespostaDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -35,6 +37,28 @@ public class CInsumo {
                             @RequestBody InsumoDto dto)
     {
         return insumoService.alteraInsumo(id, dto);
+    }
+
+    @GetMapping("/vacinas")
+    public List<InsumoRespostaDto> listarVacinas(
+            @RequestParam(name = "busca", required = false, defaultValue = "") String busca){
+        return insumoService.listarVacinas(busca);
+    }
+
+    @PostMapping("/vacinas")
+    public InsumoRespostaDto postVacina(@RequestBody InsumoDto dto){
+        return insumoService.cadastraVacina(dto);
+    }
+
+    @PutMapping("/vacinas/{id}")
+    public InsumoRespostaDto putVacina(@PathVariable Long id,
+                                       @RequestBody InsumoDto dto){
+        return insumoService.alteraVacina(id, dto);
+    }
+
+    @DeleteMapping("/vacinas/{id}")
+    public String deleteVacina(@PathVariable Long id){
+        return insumoService.deletaVacina(id);
     }
 
 }

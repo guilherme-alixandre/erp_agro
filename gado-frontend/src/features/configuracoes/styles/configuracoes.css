@@ -1,0 +1,47 @@
+.usuario-card {
+  display: grid;
+  gap: 8px;
+}
+
+.usuario-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.15rem;
+}
+
+.usuario-card__email {
+  margin: 0;
+  color: #5a5a5a;
+  word-break: break-word;
+}
+
+.usuario-card__hint {
+  margin: 0;
+  color: #6a6a6a;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.usuario-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  background: #e9f0e1;
+  color: #244011;
+  border: 1px solid #c4d8b1;
+}
+
+.form-info {
+  margin: 0 0 6px;
+  background: #eef5ff;
+  border: 1px solid #c4d9f6;
+  color: #1c4f7d;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}

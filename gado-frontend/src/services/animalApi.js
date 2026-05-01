@@ -43,7 +43,28 @@ function validateBirthDate(dataNascimento) {
   }
 }
 
-function toPayload(animal) {
+function sanitizeVacinas(vacinas) {
+  if (!Array.isArray(vacinas)) return []
+  const list = []
+  vacinas.forEach((v, index) => {
+    const nome = sanitizeText(v?.nome)
+    const data = sanitizeText(v?.dataOcorrencia)
+    if (!nome && !data) return
+    if (!nome) {
+      throw new Error(`Informe o nome da vacina ${index + 1}.`)
+    }
+    if (!data) {
+      throw new Error(`Informe a data da vacina "${nome}".`)
+    }
+    list.push({
+      insumoRelacionado: { nome },
+      dataOcorrencia: `${data}T00:00:00`,
+    })
+  })
+  return list
+}
+
+function toPayload(animal, { incluirVacinas = false } = {}) {
   const dataNascimento = sanitizeText(animal.dataNascimento)
   validateBirthDate(dataNascimento)
 
@@ -68,12 +89,32 @@ function toPayload(animal) {
     statusAnimal: animal.statusAnimal,
   }
 
+  if (incluirVacinas) {
+    payload.vacinas = sanitizeVacinas(animal.vacinas)
+  }
+
   return payload
 }
 
 function toFormString(value) {
   if (value === null || value === undefined || value === '') return ''
   return String(value)
+}
+
+function normalizeVacinas(rawVacinas) {
+  if (!Array.isArray(rawVacinas)) return []
+  return rawVacinas.map((v) => {
+    const dataRaw = v?.dataOcorrencia ?? ''
+    const dataIso =
+      typeof dataRaw === 'string' && dataRaw.length >= 10
+        ? dataRaw.slice(0, 10)
+        : dataRaw
+    return {
+      id: v?.id ?? null,
+      nome: v?.insumoRelacionado?.nome ?? '',
+      dataOcorrencia: dataIso || '',
+    }
+  })
 }
 
 function normalizeAnimal(rawAnimal) {
@@ -93,7 +134,7 @@ function normalizeAnimal(rawAnimal) {
     comprimentoCorporal: toFormString(rawAnimal?.comprimentoCorporal),
     sexo: rawAnimal?.sexo ?? 'M',
     statusAnimal: rawAnimal?.statusAnimal ?? 'ATIVO',
-    vacinas: rawAnimal?.vacinas ?? '',
+    vacinas: normalizeVacinas(rawAnimal?.vacinas),
   }
 }
 
@@ -129,8 +170,18 @@ function cadastrarAnimal(email, animal) {
   const emailCodificado = encodeURIComponent(emailLimpo)
   return request(`/animais/usuarios/${emailCodificado}`, {
     method: 'POST',
-    body: JSON.stringify(toPayload(animal)),
+    body: JSON.stringify(toPayload(animal, { incluirVacinas: true })),
   })
+}
+
+async function buscarAnimais(termo) {
+  const limpo = String(termo ?? '').trim()
+  const query = limpo ? `?busca=${encodeURIComponent(limpo)}` : ''
+  const payload = await request(`/animais${query}`)
+  if (!Array.isArray(payload)) {
+    throw new Error('Resposta inesperada ao buscar animais.')
+  }
+  return payload.map(normalizeAnimal)
 }
 
 async function buscarAnimalPorBrinco(brinco) {
@@ -166,6 +217,7 @@ function deletarAnimal(brinco) {
 
 export {
   atualizarAnimal,
+  buscarAnimais,
   buscarAnimalPorBrinco,
   cadastrarAnimal,
   deletarAnimal,

@@ -1,0 +1,70 @@
+.insumos-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 12px;
+  border-bottom: 2px solid #cfcfcf;
+}
+
+.insumos-tab {
+  border: 0;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #5a5a5a;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.insumos-tab--active {
+  color: #244011;
+  border-bottom-color: #4f7f2f;
+}
+
+.insumos-tab[disabled] {
+  color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.vacina-card {
+  display: grid;
+  gap: 10px;
+}
+
+.vacina-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.2rem;
+}
+
+.vacina-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.vacina-badge--pendente {
+  background: #fff1c2;
+  color: #8a5a00;
+  border: 1px solid #f3d774;
+}
+
+.vacina-modal-actions {
+  flex-wrap: wrap;
+}
+
+.insumos-placeholder {
+  margin-top: 22px;
+  background: #efefef;
+  border: 1px dashed #c0c0c0;
+  border-radius: 12px;
+  padding: 22px;
+  text-align: center;
+  color: #6a6a6a;
+}

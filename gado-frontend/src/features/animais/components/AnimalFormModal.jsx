@@ -1,3 +1,5 @@
+import VacinaSelect from './VacinaSelect'
+
 const STATUS_OPTIONS = ['ABATIDO', 'OBITO', 'ATIVO', 'OBSERVACAO', 'VENDIDO']
 
 const MIN_BIRTH_DATE = '1990-01-01'
@@ -24,9 +26,13 @@ function AnimalFormModal({
   isSaving,
   feedback,
   userEmail,
+  vacinasDisponiveis,
   onClose,
   onChange,
   onSubmit,
+  onAddVacina,
+  onChangeVacina,
+  onRemoveVacina,
 }) {
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar animal' : 'Editar animal'
@@ -196,6 +202,64 @@ function AnimalFormModal({
               ))}
             </select>
           </label>
+
+          {isCreate ? (
+            <fieldset className="vacinas-fieldset">
+              <legend>Vacinas (opcional)</legend>
+              <p className="form-help">
+                Adicione as vacinas já aplicadas neste animal.
+              </p>
+
+              {(formData.vacinas ?? []).length === 0 ? (
+                <p className="vacinas-empty">Nenhuma vacina adicionada.</p>
+              ) : (
+                <ul className="vacinas-list">
+                  {formData.vacinas.map((vacina, index) => (
+                    <li key={index} className="vacinas-row">
+                      <label>
+                        <span>Nome</span>
+                        <VacinaSelect
+                          value={vacina.nome ?? ''}
+                          vacinasDisponiveis={vacinasDisponiveis}
+                          onChange={(nome) =>
+                            onChangeVacina(index, 'nome', nome)
+                          }
+                          placeholder="Buscar vacina cadastrada"
+                        />
+                      </label>
+                      <label>
+                        <span>Data</span>
+                        <input
+                          type="date"
+                          value={vacina.dataOcorrencia ?? ''}
+                          onChange={(e) =>
+                            onChangeVacina(index, 'dataOcorrencia', e.target.value)
+                          }
+                          max={maxBirthDate}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn-secondary vacinas-remove"
+                        onClick={() => onRemoveVacina(index)}
+                        aria-label="Remover vacina"
+                      >
+                        Remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onAddVacina}
+              >
+                + Adicionar vacina
+              </button>
+            </fieldset>
+          ) : null}
 
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 

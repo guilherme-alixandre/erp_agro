@@ -1,3 +1,15 @@
+function formatVacinasResumo(vacinas) {
+  if (!Array.isArray(vacinas) || vacinas.length === 0) {
+    return 'Sem vacinas cadastradas'
+  }
+  const nomes = vacinas
+    .map((v) => v?.nome)
+    .filter((n) => typeof n === 'string' && n.trim())
+  if (nomes.length === 0) return `${vacinas.length} cadastrada(s)`
+  if (nomes.length <= 2) return nomes.join(', ')
+  return `${nomes.slice(0, 2).join(', ')} +${nomes.length - 2}`
+}
+
 function AnimalCard({ animal, onDetalhes, onEditar }) {
   return (
     <article className="animal-card">
@@ -14,7 +26,7 @@ function AnimalCard({ animal, onDetalhes, onEditar }) {
       </div>
 
       <p className="animal-card__vaccines">
-        Vacinas: {animal.vacinas || 'Sem vacinas cadastradas'}
+        Vacinas: {formatVacinasResumo(animal.vacinas)}
       </p>
 
       <div className="animal-card__actions">

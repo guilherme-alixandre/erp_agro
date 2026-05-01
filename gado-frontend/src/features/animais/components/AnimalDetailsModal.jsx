@@ -69,6 +69,20 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </div>
         </dl>
 
+        <h3 className="details-section">Vacinas</h3>
+        {Array.isArray(animal.vacinas) && animal.vacinas.length > 0 ? (
+          <ul className="vacinas-detail-list">
+            {animal.vacinas.map((v, i) => (
+              <li key={v?.id ?? i}>
+                <strong>{v.nome || 'Sem nome'}</strong>
+                <span>{formatDate(v.dataOcorrencia)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="vacinas-empty">Nenhuma vacina cadastrada para este animal.</p>
+        )}
+
         <div className="modal-actions">
           <button type="button" className="btn-secondary" onClick={onEdit}>
             Editar

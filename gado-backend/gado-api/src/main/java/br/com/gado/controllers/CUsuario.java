@@ -4,9 +4,11 @@ import br.com.gado.application.services.SUsuario;
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioRespostaDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,13 +18,23 @@ public class CUsuario {
     @Autowired
     private SUsuario usuarioService;
 
+    @GetMapping
+    public List<UsuarioRespostaDto> listarUsuarios(
+            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail){
+        usuarioService.validaAdmin(adminEmail);
+        return usuarioService.listarTodos();
+    }
+
     @GetMapping("/{email}")
     public Map<String, Object> getUsuario(@PathVariable String email){
         return usuarioService.encontraPorEmail(email);
     }
 
     @PostMapping
-    public String postUsuario(@RequestBody UsuarioCadastroDto dto){
+    public String postUsuario(
+            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail,
+            @RequestBody UsuarioCadastroDto dto){
+        usuarioService.validaAdmin(adminEmail);
         return usuarioService.cadastra(dto);
     }
 
@@ -32,7 +44,10 @@ public class CUsuario {
     }
 
     @DeleteMapping("/{email}")
-    public String deleteUsuario(@PathVariable String email){
+    public String deleteUsuario(
+            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail,
+            @PathVariable String email){
+        usuarioService.validaAdmin(adminEmail);
         return usuarioService.deleta(email);
     }
 

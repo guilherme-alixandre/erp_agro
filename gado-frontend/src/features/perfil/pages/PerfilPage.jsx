@@ -16,7 +16,11 @@ function PerfilPage({ currentUser, onLogout, onNavigate }) {
           <button type="button" className="menu-item">
             Setores
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('insumos')}
+          >
             Insumos
           </button>
           <button type="button" className="menu-item">
@@ -25,6 +29,15 @@ function PerfilPage({ currentUser, onLogout, onNavigate }) {
           <button type="button" className="menu-item menu-item--active">
             Perfil
           </button>
+          {currentUser.perfil === 'ADMINISTRADOR' ? (
+            <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('configuracoes')}
+            >
+              ⚙ Configurações
+            </button>
+          ) : null}
         </nav>
         <div className="sidebar-user">
           <strong>{currentUser.nome}</strong>

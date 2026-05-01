@@ -1,9 +1,11 @@
 package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioRespostaDto;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -15,6 +17,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -70,6 +73,35 @@ public class SUsuario {
 
         usuarioInterface.save(usuario);
         return "Usuário salvo com sucesso";
+    }
+
+    public void validaAdmin(String emailAdmin) {
+        if (emailAdmin == null || emailAdmin.isBlank()) {
+            throw new IllegalArgumentException("Apenas administradores podem realizar esta ação.");
+        }
+        EUsuario admin = usuarioInterface.findByEmail(emailAdmin.trim())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Apenas administradores podem realizar esta ação."));
+        if (admin.getPerfil() != EnPerfilUsuario.ADMINISTRADOR) {
+            throw new IllegalArgumentException(
+                    "Apenas administradores podem realizar esta ação.");
+        }
+    }
+
+    public List<UsuarioRespostaDto> listarTodos() {
+        return usuarioInterface.findAll()
+                .stream()
+                .map(this::toRespostaDto)
+                .toList();
+    }
+
+    private UsuarioRespostaDto toRespostaDto(EUsuario usuario) {
+        UsuarioRespostaDto dto = new UsuarioRespostaDto();
+        dto.setNome(usuario.getNome());
+        dto.setEmail(usuario.getEmail());
+        dto.setPerfil(usuario.getPerfil());
+        dto.setDataCadastro(usuario.getDataCadastro());
+        return dto;
     }
 
     @Transactional

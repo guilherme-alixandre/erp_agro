@@ -45,20 +45,14 @@
   font-weight: 500;
 }
 
-.auth-toggle {
+.auth-helper {
   margin-top: 18px;
   border-top: 1px solid #e3e3e3;
   padding-top: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.auth-toggle p {
-  margin: 0;
+  margin-bottom: 0;
   color: #606060;
-  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 @media (max-width: 480px) {

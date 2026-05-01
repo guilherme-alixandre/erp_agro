@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -23,4 +24,5 @@ public class AnimalDto extends AbstractDTO {
     private Double comprimentoCorporal;
     private EnSexoAnimal sexo;
     private EnStatusAnimal statusAnimal;
+    private List<VacinacaoDTO> vacinas;
 }

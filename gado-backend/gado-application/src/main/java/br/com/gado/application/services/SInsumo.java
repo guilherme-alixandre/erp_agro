@@ -2,7 +2,9 @@ package br.com.gado.application.services;
 
 import br.com.gado.domain.entities.EInsumo;
 import br.com.gado.domain.entities.EParceiro;
+import br.com.gado.domain.enums.EnTipoInsumo;
 import br.com.gado.application.dto.InsumoDto;
+import br.com.gado.application.dto.InsumoRespostaDto;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import jakarta.transaction.Transactional;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -85,6 +88,73 @@ public class SInsumo {
 
         insumoInterface.save(insumo);
         return "insumo alterado com sucesso";
+    }
+
+    public List<InsumoRespostaDto> listarVacinas(String busca) {
+        List<EInsumo> vacinas;
+        if (busca == null || busca.trim().isEmpty()) {
+            vacinas = insumoInterface.findByTipoOrderByNomeAsc(EnTipoInsumo.VACINA);
+        } else {
+            vacinas = insumoInterface
+                    .findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(
+                            EnTipoInsumo.VACINA, busca.trim());
+        }
+        return vacinas.stream().map(this::toRespostaDto).toList();
+    }
+
+    @Transactional
+    public InsumoRespostaDto cadastraVacina(InsumoDto dto) {
+        if (dto.getNome() == null || dto.getNome().isBlank()) {
+            throw new IllegalArgumentException("Informe o nome da vacina.");
+        }
+        String nome = dto.getNome().trim();
+
+        Optional<EInsumo> existente = insumoInterface.findFirstByNomeIgnoreCase(nome);
+        if (existente.isPresent()) {
+            throw new IllegalArgumentException("Já existe uma vacina cadastrada com esse nome.");
+        }
+
+        EInsumo vacina = new EInsumo();
+        vacina.setNome(nome);
+        vacina.setTipo(EnTipoInsumo.VACINA);
+        vacina.setPendente(Boolean.TRUE.equals(dto.getPendente()));
+        EInsumo salva = insumoInterface.save(vacina);
+        return toRespostaDto(salva);
+    }
+
+    @Transactional
+    public InsumoRespostaDto alteraVacina(Long id, InsumoDto dto) {
+        EInsumo vacina = insumoInterface.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vacina não encontrada."));
+
+        if (dto.getNome() != null && !dto.getNome().isBlank()) {
+            vacina.setNome(dto.getNome().trim());
+        }
+        if (dto.getPendente() != null) {
+            vacina.setPendente(dto.getPendente());
+        }
+        vacina.setTipo(EnTipoInsumo.VACINA);
+
+        EInsumo salva = insumoInterface.save(vacina);
+        return toRespostaDto(salva);
+    }
+
+    @Transactional
+    public String deletaVacina(Long id) {
+        if (insumoInterface.findById(id).isEmpty()) {
+            return "Vacina não encontrada.";
+        }
+        insumoInterface.deleteById(id);
+        return "vacina deletada";
+    }
+
+    private InsumoRespostaDto toRespostaDto(EInsumo insumo) {
+        InsumoRespostaDto dto = new InsumoRespostaDto();
+        dto.setId(insumo.getId());
+        dto.setNome(insumo.getNome());
+        dto.setTipo(insumo.getTipo());
+        dto.setPendente(Boolean.TRUE.equals(insumo.getPendente()));
+        return dto;
     }
 
 }

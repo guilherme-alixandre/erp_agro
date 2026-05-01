@@ -1,21 +1,16 @@
-package br.com.gado.domain.entities;
+package br.com.gado.application.dto;
 
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
-@Entity
-@Table(name = "animal")
 @Data
-public class EAnimal extends EAbstract{
-
+public class AnimalRespostaDto extends AbstractDTO {
     private String codigoBrinco;
     private String nome;
     private LocalDateTime dataNascimento;
@@ -25,17 +20,7 @@ public class EAnimal extends EAbstract{
     private Double alturaCernelha;
     private Double perimetroToracico;
     private Double comprimentoCorporal;
-
-    @Enumerated(EnumType.STRING)
     private EnSexoAnimal sexo;
-
     private EnStatusAnimal statusAnimal;
-
-    // no banco vai ficar o "pessoa_id"
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pessoa_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private EUsuario usuario;
+    private List<VacinacaoDTO> vacinas;
 }

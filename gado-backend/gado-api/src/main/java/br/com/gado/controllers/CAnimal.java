@@ -2,8 +2,10 @@ package br.com.gado.controllers;
 
 import br.com.gado.application.services.SAnimal;
 import br.com.gado.application.dto.AnimalDto;
+import br.com.gado.application.dto.AnimalRespostaDto;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +18,12 @@ public class CAnimal {
         this.animalService = animalService;
     }
 
+
+    @GetMapping
+    public List<AnimalRespostaDto> buscarAnimais(
+            @RequestParam(name = "busca", required = false, defaultValue = "") String busca){
+        return animalService.buscarPorTermo(busca);
+    }
 
     @GetMapping("/{brinco}")
     public Map<String, Object> getAnimal(@PathVariable String brinco){
