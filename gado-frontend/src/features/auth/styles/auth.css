@@ -55,6 +55,21 @@
   text-align: center;
 }
 
+.auth-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #2f5e11;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-link:hover {
+  color: #244011;
+}
+
 @media (max-width: 480px) {
   .auth-card {
     padding: 20px 16px;
