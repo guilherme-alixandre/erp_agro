@@ -7,6 +7,7 @@ import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SUsuario {
 
@@ -35,6 +37,10 @@ public class SUsuario {
     @Transactional(readOnly = true)
     public ArrayList<UsuarioDto> buscarTodos() {
         ArrayList<EUsuario> usuarios = usuarioInterface.findAllByStatus(EnStatus.A);
+        if (usuarios.isEmpty()) {
+            log.error("Erro ao buscar usuários");
+            return new ArrayList<>();
+        }
         return usuarios.stream()
                 .map(usuario -> modelMapper.map(usuario, UsuarioDto.class))
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -45,7 +51,11 @@ public class SUsuario {
         EUsuario usuario = modelMapper.map(dto, EUsuario.class);
         usuario.setDataCadastro(LocalDateTime.now());
 
-        ArrayList<EUsuario> usuarios = usuarioInterface.findAllByStatus(EnStatus.A);
+        for (EUsuario u : usuarioInterface.findAllByStatus(EnStatus.A)) {
+            if (u.getEmail().equals(usuario.getEmail())) {
+                throw new RuntimeException("Já existe um usuário ativo cadastrado com este e-mail.");
+            }
+        }
 
         EUsuario usuarioSalvo = usuarioInterface.save(usuario);
         return modelMapper.map(usuarioSalvo, UsuarioDto.class);

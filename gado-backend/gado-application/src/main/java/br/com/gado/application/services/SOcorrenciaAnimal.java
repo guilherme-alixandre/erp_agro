@@ -27,7 +27,7 @@ public class SOcorrenciaAnimal {
 
     public OcorrenciaAnimalDTO criarOcorrenciaAnimal(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
         EAnimal existingAnimal = this.animalInterface
-                .findByCodigoBrinco(ocorrenciaAnimalDto.getIdAnimal().getCodigoBrinco())
+                .findByCodigoBrincoAndStatus(ocorrenciaAnimalDto.getIdAnimal().getCodigoBrinco(), ocorrenciaAnimalDto.getIdAnimal().getStatus())
                 .orElseThrow(EntityNotFoundException::new);
 
         EOcorrenciaAnimal novaOcorrenciaAnimal = this.modelMapper.map(ocorrenciaAnimalDto, EOcorrenciaAnimal.class);
