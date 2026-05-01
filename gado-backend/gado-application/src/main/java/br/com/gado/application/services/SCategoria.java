@@ -61,7 +61,7 @@ public class SCategoria {
     public String excluirCategoria(Long categoriaId) {
         ECategoria categoriaParaExcluir = this.categoriaInterface
                 .findById(categoriaId)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria nÃ£o encontrada com o ID: " + categoriaId));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoriaId));
 
         categoriaParaExcluir.setStatus(EnStatus.I);
 
