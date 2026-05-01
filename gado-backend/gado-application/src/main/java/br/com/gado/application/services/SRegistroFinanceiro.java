@@ -32,7 +32,7 @@ public class SRegistroFinanceiro {
 
     public RegistroFinanceiroDTO criarRegistroFinanceiro(RegistroFinanceiroDTO registroFinanceiroDto) {
         EUsuario existingUsuario = this.usuarioInterface
-                .findByEmail(registroFinanceiroDto.getUsuarioId().getEmail())
+                .findByEmailAndStatus(registroFinanceiroDto.getUsuarioId().getEmail(), registroFinanceiroDto.getUsuarioId().getStatus())
                 .orElseThrow(EntityNotFoundException::new);
 
         ECategoria existingCategoria = this.categoriaInterface

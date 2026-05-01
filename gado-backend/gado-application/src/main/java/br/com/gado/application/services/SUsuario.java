@@ -4,14 +4,17 @@ import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 public class SUsuario {
@@ -22,10 +25,19 @@ public class SUsuario {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Transactional(readOnly = true)
     public UsuarioDto encontraPorEmail(String email) {
-        EUsuario usuario = usuarioInterface.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("usuÃ¡rio nÃ£o encontrado"));
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado ou inativo."));
         return modelMapper.map(usuario, UsuarioDto.class);
+    }
+
+    @Transactional(readOnly = true)
+    public ArrayList<UsuarioDto> buscarTodos() {
+        ArrayList<EUsuario> usuarios = usuarioInterface.findAllByStatus(EnStatus.A);
+        return usuarios.stream()
+                .map(usuario -> modelMapper.map(usuario, UsuarioDto.class))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
@@ -33,29 +45,31 @@ public class SUsuario {
         EUsuario usuario = modelMapper.map(dto, EUsuario.class);
         usuario.setDataCadastro(LocalDateTime.now());
 
+        ArrayList<EUsuario> usuarios = usuarioInterface.findAllByStatus(EnStatus.A);
+
         EUsuario usuarioSalvo = usuarioInterface.save(usuario);
         return modelMapper.map(usuarioSalvo, UsuarioDto.class);
     }
 
     @Transactional
     public String deleta(String email) {
-        boolean existe = usuarioInterface.existsByEmail(email);
-        if (!existe) {
-            return "UsuÃ¡rio nÃ£o encontrado";
-        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("usuário não encontrado ou inativo"));
+
+        usuario.setStatus(EnStatus.I);
 
         try {
-            usuarioInterface.deleteByEmail(email);
-            return "UsuÃ¡rio deletado com sucesso";
+            this.usuarioInterface.save(usuario);
+            return "Usuário inativado com sucesso";
         } catch (Exception e) {
-            return "NÃ£o foi possÃ­vel deletar porque ele estÃ¡ vinculado com outras entidades";
+            return "Erro ao inativar usuário!";
         }
     }
 
     @Transactional
     public UsuarioDto altera(String email, UsuarioPutDto dto) {
-        EUsuario usuario = usuarioInterface.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("UsuÃ¡rio nÃ£o encontrado"));
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, usuario);

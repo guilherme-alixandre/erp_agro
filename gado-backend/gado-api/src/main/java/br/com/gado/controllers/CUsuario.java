@@ -4,8 +4,13 @@ import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.application.services.SUsuario;
+import br.com.gado.domain.enums.EnStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -16,22 +21,27 @@ public class CUsuario {
     private SUsuario usuarioService;
 
     @GetMapping("/{email}")
-    public UsuarioDto getUsuario(@PathVariable String email) {
-        return usuarioService.encontraPorEmail(email);
+    public ResponseEntity<UsuarioDto> getUsuario(@PathVariable String email) {
+        return ResponseEntity.ok(usuarioService.encontraPorEmail(email));
+    }
+
+    @GetMapping
+    public ResponseEntity<ArrayList<UsuarioDto>> getUsuarios() {
+        return ResponseEntity.ok(usuarioService.buscarTodos());
     }
 
     @PostMapping
-    public UsuarioDto postUsuario(@RequestBody UsuarioCadastroDto dto) {
-        return usuarioService.cadastra(dto);
+    public ResponseEntity<UsuarioDto> postUsuario(@RequestBody UsuarioCadastroDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastra(dto));
     }
 
     @DeleteMapping("/{email}")
-    public String deleteUsuario(@PathVariable String email) {
-        return usuarioService.deleta(email);
+    public ResponseEntity<String> deleteUsuario(@PathVariable String email) {
+        return ResponseEntity.ok(usuarioService.deleta(email));
     }
 
     @PutMapping("/{email}")
-    public UsuarioDto putUsuario(@PathVariable String email, @RequestBody UsuarioPutDto dto) {
-        return usuarioService.altera(email, dto);
+    public ResponseEntity<UsuarioDto> putUsuario(@PathVariable String email, @RequestBody UsuarioPutDto dto) {
+        return ResponseEntity.ok(usuarioService.altera(email, dto));
     }
 }

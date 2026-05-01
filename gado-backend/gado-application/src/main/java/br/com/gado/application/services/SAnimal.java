@@ -3,6 +3,7 @@ package br.com.gado.application.services;
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,7 +26,7 @@ public class SAnimal {
 
     public AnimalDto buscarPorBrinco(String brinco) {
         EAnimal animal = animalInterface.findByCodigoBrinco(brinco)
-                .orElseThrow(() -> new EntityNotFoundException("animal nÃ£o encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
         return modelMapper.map(animal, AnimalDto.class);
     }
 
@@ -33,8 +34,8 @@ public class SAnimal {
     public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) {
         EAnimal novoAnimal = modelMapper.map(animalDto, EAnimal.class);
 
-        EUsuario usuario = usuarioInterface.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("UsuÃ¡rio nÃ£o encontrado"));
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
         novoAnimal.setUsuario(usuario);
         EAnimal animalSalvo = animalInterface.save(novoAnimal);
