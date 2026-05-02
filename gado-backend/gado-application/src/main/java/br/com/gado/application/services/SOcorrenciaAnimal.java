@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SOcorrenciaAnimal {
+    private static final Logger log = LoggerFactory.getLogger(SOcorrenciaAnimal.class);
     private final IOcorrenciaAnimal ocorrenciaAnimalInterface;
     private final IAnimal animalInterface;
-    private static final Logger log = LoggerFactory.getLogger(SOcorrenciaAnimal.class);
     private final ModelMapper modelMapper;
 
     public SOcorrenciaAnimal(IOcorrenciaAnimal correnciaAnimalInterface, IAnimal animalInterface, ModelMapper modelMapper) {
@@ -37,7 +37,7 @@ public class SOcorrenciaAnimal {
             EOcorrenciaAnimal ocorrenciaAnimalSalva = this.ocorrenciaAnimalInterface.save(novaOcorrenciaAnimal);
             return this.modelMapper.map(ocorrenciaAnimalSalva, OcorrenciaAnimalDTO.class);
         } catch (Exception e) {
-            log.error("Erro ao criar a correncia animal Id: {}", e.getMessage(), e);
+            log.error("Erro ao criar a ocorrência animal Id: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -61,7 +61,7 @@ public class SOcorrenciaAnimal {
             EOcorrenciaAnimal ocorenciaAnimalAtualizada = this.ocorrenciaAnimalInterface.save(existingEntity);
             return modelMapper.map(ocorenciaAnimalAtualizada, OcorrenciaAnimalDTO.class);
         } catch (Exception e) {
-            log.error("Erro ao atualizar a correncia animal Id: {}", e.getMessage(), e);
+            log.error("Erro ao atualizar a ocorrência animal Id: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -75,10 +75,10 @@ public class SOcorrenciaAnimal {
 
         try {
             this.ocorrenciaAnimalInterface.save(existingEntity);
-            return "ocorrÃªncia animal excluÃ­da com sucesso";
+            return "ocorrência animal excluída com sucesso";
         } catch (Exception e) {
-            log.error("Erro ao excluir a correncia animal Id: {}", e.getMessage(), e);
-            return "erro ao excluir ocorrÃªncia animal";
+            log.error("Erro ao excluir a ocorrência animal Id: {}", e.getMessage(), e);
+            return "erro ao excluir ocorrência animal";
         }
     }
 }

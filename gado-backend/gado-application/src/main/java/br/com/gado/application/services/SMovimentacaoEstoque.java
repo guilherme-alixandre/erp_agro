@@ -66,10 +66,10 @@ public class SMovimentacaoEstoque {
 
         try {
             this.movimentacaoEstoqueInterface.save(existingEntity);
-            return "movimentaÃ§Ã£o de estoque excluÃ­da com sucesso";
+            return "movimentação de estoque excluída com sucesso";
         } catch (Exception e) {
-            log.error("Erro ao excluir movimentaÃ§Ã£o de estoque: {}", e.getMessage(), e);
-            return "erro ao excluir movimentaÃ§Ã£o de estoque";
+            log.error("Erro ao excluir movimentação de estoque: {}", e.getMessage(), e);
+            return "erro ao excluir movimentação de estoque";
         }
     }
 }

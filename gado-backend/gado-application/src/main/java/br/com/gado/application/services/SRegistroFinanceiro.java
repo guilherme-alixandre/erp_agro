@@ -85,7 +85,7 @@ public class SRegistroFinanceiro {
 
         try {
             this.registroFinanceiroInterface.save(existingEntity);
-            return "registro financeiro excluÃ­do com sucesso";
+            return "registro financeiro excluído com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir registro financeiro com Id: {}", e.getMessage(), e);
             return "erro ao excluir registro financeiro";

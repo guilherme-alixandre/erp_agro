@@ -67,7 +67,7 @@ public class SUnidadeMedida {
 
         try {
             this.unidadeMedidaInterface.save(existingEntity);
-            return "unidade de medida excluÃ­da com sucesso";
+            return "unidade de medida excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir unidade de medida: {}", e.getMessage(), e);
             return "erro ao excluir unidade de medida";

@@ -25,7 +25,7 @@ public class SInsumo {
 
     public InsumoDto buscaPorId(Long id) {
         EInsumo insumo = insumoInterface.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Insumo nÃ£o encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado"));
         return modelMapper.map(insumo, InsumoDto.class);
     }
 
@@ -34,7 +34,7 @@ public class SInsumo {
         EInsumo insumo = modelMapper.map(dto, EInsumo.class);
 
         EParceiro parceiro = parceiroInterface.findById(dto.getParceiro_id())
-                .orElseThrow(() -> new EntityNotFoundException("Id do fornecedor nÃ£o encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Id do fornecedor não encontrado"));
 
         insumo.setParceiro(parceiro);
 

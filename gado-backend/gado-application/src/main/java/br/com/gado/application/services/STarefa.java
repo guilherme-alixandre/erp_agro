@@ -33,8 +33,8 @@ public class STarefa {
         try {
             EListasTarefas lista = listaTarefas.findById(listaId)
                     .orElseThrow(() -> {
-                        log.error("Erro ao criar tarefa: Lista ID {} nÃ£o encontrada.", listaId);
-                        return new RuntimeException("Lista de tarefas nÃ£o encontrada");
+                        log.error("Erro ao criar tarefa: Lista ID {} não encontrada.", listaId);
+                        return new RuntimeException("Lista de tarefas não encontrada");
                     });
 
             ETarefa tarefa = modelMapper.map(novaTarefa, ETarefa.class);
@@ -87,7 +87,7 @@ public class STarefa {
 
         try {
             this.tarefaInterface.save(tarefaParaExcluir);
-            return "tarefa excluÃ­da com sucesso";
+            return "tarefa excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
             return "erro ao excluir tarefa";

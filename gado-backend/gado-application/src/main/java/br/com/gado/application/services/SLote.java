@@ -34,7 +34,7 @@ public class SLote {
     @Transactional
     public LoteDto cadastra(LoteCadastroDto dto) {
         EUsuario usuario = usuarioInterface.findById(dto.getUsuario_id())
-                .orElseThrow(() -> new EntityNotFoundException("Nenhum usuÃ¡rio com esse id foi encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum usuário com esse id foi encontrado"));
 
         ELote lote = modelMapper.map(dto, ELote.class);
         lote.setUsuario(usuario);
@@ -45,8 +45,8 @@ public class SLote {
 
     @Transactional
     public String deleta(Long id) {
-        boolean existe = loteInterface.existsById(id);
-        if (!existe) {
+        // só refatorei esse if pra ficar menor, não mudei a lógica
+        if(!loteInterface.existsById(id)){
             return "nenhum lote foi encontrado";
         }
 
@@ -54,7 +54,7 @@ public class SLote {
             loteInterface.deleteById(id);
             return "lote deletado com sucesso";
         } catch (Exception e) {
-            return "Erro: esse lote possui transaÃ§Ãµes vinculadas e nÃ£o pode ser excluido";
+            return "Erro: esse lote possui transações vinculadas e não pode ser excluido";
         }
     }
 

@@ -69,7 +69,7 @@ public class SListasTarefas {
 
         try {
             this.listasTarefasInterface.save(listaParaExcluir);
-            return "lista de tarefas excluÃ­da com sucesso";
+            return "lista de tarefas excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
             return "erro ao excluir lista de tarefas";

@@ -32,7 +32,7 @@ public class SParceiro {
     public ParceiroDto cadastra(ParceiroCadastroDto dto) {
         boolean existe = parceiroInterface.existsByCpfCnpj(dto.getCPF_CNPJ());
         if (existe) {
-            throw new IllegalArgumentException("Parceiro jÃ¡ existe no sistema");
+            throw new IllegalArgumentException("Parceiro já existe no sistema");
         }
 
         EParceiro parceiro = modelMapper.map(dto, EParceiro.class);
@@ -45,21 +45,21 @@ public class SParceiro {
     @Transactional
     public String deleta(String cpfCnpj) {
         if (!parceiroInterface.existsByCpfCnpj(cpfCnpj)) {
-            return "Esse cpf/cnpj nÃ£o existe no banco de dados";
+            return "Esse cpf/cnpj não existe no banco de dados";
         }
 
         try {
             parceiroInterface.deleteByCpfCnpj(cpfCnpj);
             return "Parceiro deletado com sucesso";
         } catch (Exception e) {
-            return "NÃ£o Ã© possÃ­vel excluir ele pois ele possui vinculos com outras entidades";
+            return "Não é possível excluir ele pois ele possui vinculos com outras entidades";
         }
     }
 
     @Transactional
     public ParceiroDto altera(String cpfCnpj, ParceiroPutDto dto) {
         EParceiro parceiro = parceiroInterface.findByCpfCnpj(cpfCnpj)
-                .orElseThrow(() -> new EntityNotFoundException("Parceiro nÃ£o existe no sistema"));
+                .orElseThrow(() -> new EntityNotFoundException("Parceiro não existe no sistema"));
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, parceiro);

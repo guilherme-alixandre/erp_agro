@@ -42,7 +42,7 @@ public class SSetor {
             setorInterface.deleteById(id);
             return "setor deletado";
         } catch (Exception e) {
-            return "nÃ£o foi possÃ­vel deletar porque o setor estÃ¡ vinculado com outras entidades";
+            return "Não foi possível deletar porque o setor está vinculado com outras entidades";
         }
     }
 

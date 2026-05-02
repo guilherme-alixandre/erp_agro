@@ -46,7 +46,7 @@ public class STrasacao {
             ETransacao transacaoSalva = this.trasacaoInterface.save(novaTransacao);
             return modelMapper.map(transacaoSalva, TrasacaoDTO.class);
         } catch (Exception e) {
-            log.error("Erro ao criar nova transaÃ§Ã£o Id: {}", e.getMessage(), e);
+            log.error("Erro ao criar nova transação Id: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -85,10 +85,10 @@ public class STrasacao {
 
         try {
             this.trasacaoInterface.save(existingEntity);
-            return "transaÃ§Ã£o excluÃ­da com sucesso";
+            return "transação excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir trasacao Id: {}", e.getMessage(), e);
-            return "erro ao excluir transaÃ§Ã£o";
+            return "erro ao excluir transação";
         }
     }
 }

@@ -43,7 +43,7 @@ public class SVacinacao {
             EVacinacao vaciacaoSalva = this.vacinacaoInterface.save(vacinacao);
             return modelMapper.map(vaciacaoSalva, VacinacaoDTO.class);
         } catch (Exception e) {
-            log.error("Erro ao criar registro de vacinaÃ§Ã£o: {}", e.getMessage(), e);
+            log.error("Erro ao criar registro de vacinação: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -67,7 +67,7 @@ public class SVacinacao {
             EVacinacao vacinacaoSalva = this.vacinacaoInterface.save(existingEntity);
             return modelMapper.map(vacinacaoSalva, VacinacaoDTO.class);
         } catch (Exception e) {
-            log.error("Erro ao atualizar vacinaÃ§Ã£o: {}", e.getMessage(), e);
+            log.error("Erro ao atualizar vacinação: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -81,10 +81,10 @@ public class SVacinacao {
 
         try {
             this.vacinacaoInterface.save(existingEntity);
-            return "vacinaÃ§Ã£o excluÃ­da com sucesso";
+            return "vacinação excluída com sucesso";
         } catch (Exception e) {
-            log.error("Erro ao excluir vacinaÃ§Ã£o: {}", e.getMessage(), e);
-            return "erro ao excluir vacinaÃ§Ã£o";
+            log.error("Erro ao excluir vacinação: {}", e.getMessage(), e);
+            return "erro ao excluir vacinação";
         }
     }
 }
