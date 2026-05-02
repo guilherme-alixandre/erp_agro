@@ -48,14 +48,12 @@ public class SUsuario {
 
     @Transactional
     public UsuarioDto cadastra(UsuarioCadastroDto dto) {
+
+        if(usuarioInterface.existsByEmailAndStatus(dto.getEmail(), EnStatus.A))
+            throw new RuntimeException("usuário já existe no sistema");
+
         EUsuario usuario = modelMapper.map(dto, EUsuario.class);
         usuario.setDataCadastro(LocalDateTime.now());
-
-        for (EUsuario u : usuarioInterface.findAllByStatus(EnStatus.A)) {
-            if (u.getEmail().equals(usuario.getEmail())) {
-                throw new RuntimeException("Já existe um usuário ativo cadastrado com este e-mail.");
-            }
-        }
 
         EUsuario usuarioSalvo = usuarioInterface.save(usuario);
         return modelMapper.map(usuarioSalvo, UsuarioDto.class);
