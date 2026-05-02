@@ -29,6 +29,7 @@ public class EAnimal extends EAbstract{
     @Enumerated(EnumType.STRING)
     private EnSexoAnimal sexo;
 
+    @Enumerated(EnumType.STRING)
     private EnStatusAnimal statusAnimal;
 
     // no banco vai ficar o "pessoa_id"

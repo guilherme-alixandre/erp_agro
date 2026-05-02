@@ -49,7 +49,8 @@ public class SAnimal {
     public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) throws Exception {
         EAnimal novoAnimal = modelMapper.map(animalDto, EAnimal.class);
 
-        if(Objects.equals(novoAnimal.getCodigoBrinco(), animalDto.getCodigoBrinco()))
+
+        if(animalInterface.existsByCodigoBrincoAndStatus(novoAnimal.getCodigoBrinco(), EnStatus.A))
             throw new Exception("Código do brinco deve ser único");
 
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
