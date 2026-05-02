@@ -60,17 +60,17 @@ public class SCategoria {
     @Transactional
     public String excluirCategoria(Long categoriaId) {
         ECategoria categoriaParaExcluir = this.categoriaInterface
-                .findById(categoriaId)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoriaId));
+                .findByIdAndStatus(categoriaId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada, ou já inativa com o ID: " + categoriaId));
 
         categoriaParaExcluir.setStatus(EnStatus.I);
 
         try {
             this.categoriaInterface.save(categoriaParaExcluir);
-            return "categoria excluida com sucesso";
+            return "Categoria excluida com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir categoria: {}", e.getMessage(), e);
-            return "erro ao excluir categoria";
+            return "Erro ao excluir categoria";
         }
     }
 }
