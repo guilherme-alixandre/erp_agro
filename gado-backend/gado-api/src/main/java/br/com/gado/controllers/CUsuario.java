@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,8 +27,8 @@ public class CUsuario {
     }
 
     @GetMapping
-    public List<UsuarioDto> getUsuarios() {
-        return usuarioService.listarTodos();
+    public ArrayList<UsuarioDto> getUsuarios() {
+        return usuarioService.buscarTodos();
     }
 
     @PostMapping

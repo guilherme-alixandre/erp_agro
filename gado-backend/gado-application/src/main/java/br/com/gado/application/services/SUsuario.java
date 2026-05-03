@@ -8,18 +8,23 @@ import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+
+@Slf4j
 @Service
 public class SUsuario {
 
@@ -31,6 +36,7 @@ public class SUsuario {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Transactional(readOnly = true)
     public UsuarioDto encontraPorEmail(String email) {
         String emailNormalizado = String.valueOf(email).trim();
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(emailNormalizado, EnStatus.A)
@@ -38,10 +44,16 @@ public class SUsuario {
         return modelMapper.map(usuario, UsuarioDto.class);
     }
 
-    public List<UsuarioDto> listarTodos() {
-        return usuarioInterface.findAll().stream()
-                .map((usuario) -> modelMapper.map(usuario, UsuarioDto.class))
-                .toList();
+    @Transactional(readOnly = true)
+    public ArrayList<UsuarioDto> buscarTodos() {
+        ArrayList<EUsuario> usuarios = usuarioInterface.findAllByStatus(EnStatus.A);
+        if (usuarios.isEmpty()) {
+            log.error("Erro ao buscar usuários");
+            return new ArrayList<>();
+        }
+        return usuarios.stream()
+                .map(usuario -> modelMapper.map(usuario, UsuarioDto.class))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
@@ -78,16 +90,16 @@ public class SUsuario {
 
     @Transactional
     public String deleta(String email) {
-        boolean existe = usuarioInterface.existsByEmailAndStatus(email, EnStatus.A);
-        if (!existe) {
-            return "Usuário não encontrado";
-        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("usuário não encontrado ou inativo"));
+
+        usuario.setStatus(EnStatus.I);
 
         try {
-            usuarioInterface.deleteByEmail(email);
-            return "Usuário deletado com sucesso";
+            this.usuarioInterface.save(usuario);
+            return "Usuário inativado com sucesso";
         } catch (Exception e) {
-            return "Não foi possível deletar porque ele está vinculado com outras entidades";
+            return "Erro ao inativar usuário!";
         }
     }
 
