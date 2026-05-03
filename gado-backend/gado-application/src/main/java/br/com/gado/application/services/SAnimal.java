@@ -7,17 +7,16 @@ import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class SAnimal {
 
     @Autowired
@@ -36,42 +35,35 @@ public class SAnimal {
     }
 
     public ArrayList<AnimalDto> buscarTodosAnimais() {
-        Optional<ArrayList<EAnimal>> animais = animalInterface.findAllByStatus(EnStatus.A);
-        if (animais.isEmpty())
-            return new ArrayList<>();
+        ArrayList<EAnimal> listaAnimais = animalInterface.findAllByStatus(EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("nenhum animal encontrado"));
 
-        return animais.stream()
+        return listaAnimais.stream()
                 .map(animal -> modelMapper.map(animal, AnimalDto.class))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
-    public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) throws Exception {
+    public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) {
         EAnimal novoAnimal = modelMapper.map(animalDto, EAnimal.class);
-
-
-        if(animalInterface.existsByCodigoBrincoAndStatus(novoAnimal.getCodigoBrinco(), EnStatus.A))
-            throw new Exception("Código do brinco deve ser único");
 
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
         novoAnimal.setUsuario(usuario);
         EAnimal animalSalvo = animalInterface.save(novoAnimal);
-
         return modelMapper.map(animalSalvo, AnimalDto.class);
     }
 
     @Transactional
     public String deletaAnimal(String brinco) {
-        Optional<EAnimal> animalOptional = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A);
+        EAnimal animal = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
 
-        if(animalOptional.isEmpty())
-            return "animal não encontrado";
-
-        EAnimal animal = animalOptional.get();
         animal.setStatus(EnStatus.I);
-        return "Animal deletado com sucesso";
+
+        animalInterface.save(animal);
+        return "animal deletado com sucesso";
     }
 
     @Transactional
@@ -81,8 +73,8 @@ public class SAnimal {
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, animal);
+
         EAnimal animalAtualizado = animalInterface.save(animal);
         return modelMapper.map(animalAtualizado, AnimalDto.class);
     }
-
 }

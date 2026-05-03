@@ -229,7 +229,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
             {activeSearch ? (
               <>
                 <p>Nenhum usuário encontrado.</p>
-                <span>Nenhum resultado para "{activeSearch}".</span>
+                <span>Nenhum resultado para {`"${activeSearch}"`}.</span>
               </>
             ) : (
               <>

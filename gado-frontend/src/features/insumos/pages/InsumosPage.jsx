@@ -286,7 +286,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   <>
                     <p>Nenhuma vacina encontrada.</p>
                     <span>
-                      Nenhum resultado para "{activeSearch}". Ajuste a busca.
+                      Nenhum resultado para {`"${activeSearch}"`}. Ajuste a busca.
                     </span>
                   </>
                 ) : (

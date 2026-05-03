@@ -2,16 +2,31 @@ import { request } from './apiClient'
 
 function toCadastroPayload(usuario) {
   return {
-    nome: usuario.nome.trim(),
-    email: usuario.email.trim(),
-    senha: usuario.senha,
-    perfil: usuario.perfil,
+    nome: String(usuario?.nome ?? '').trim(),
+    email: String(usuario?.email ?? '').trim(),
+    senha: usuario?.senha ?? '',
+    perfil: usuario?.perfil,
   }
 }
 
+function isUsuarioDto(payload) {
+  return (
+    payload &&
+    typeof payload === 'object' &&
+    !Array.isArray(payload) &&
+    ('email' in payload || 'nome' in payload || 'perfil' in payload)
+  )
+}
+
 function getUsuarioDoPayload(payload) {
-  if (!payload || typeof payload !== 'object') return null
-  return payload['Usuário'] ?? payload.usuario ?? payload.mensagem ?? null
+  if (!payload) return null
+  if (isUsuarioDto(payload)) return payload
+
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    return payload['Usuário'] ?? payload.usuario ?? payload.mensagem ?? null
+  }
+
+  return null
 }
 
 function adminHeaders(adminEmail) {
@@ -20,7 +35,7 @@ function adminHeaders(adminEmail) {
 }
 
 async function buscarUsuarioPorEmail(email) {
-  const emailCodificado = encodeURIComponent(email.trim())
+  const emailCodificado = encodeURIComponent(String(email ?? '').trim())
   const payload = await request(`/usuarios/${emailCodificado}`)
   const usuario = getUsuarioDoPayload(payload)
 
@@ -31,12 +46,15 @@ async function buscarUsuarioPorEmail(email) {
   return usuario
 }
 
-function cadastrarUsuario(usuario, adminEmail) {
-  return request('/usuarios', {
+async function cadastrarUsuario(usuario, adminEmail) {
+  const payload = await request('/usuarios', {
     method: 'POST',
     headers: adminHeaders(adminEmail),
     body: JSON.stringify(toCadastroPayload(usuario)),
   })
+
+  const created = getUsuarioDoPayload(payload)
+  return created ?? payload
 }
 
 async function listarUsuarios(adminEmail) {
@@ -58,20 +76,32 @@ function deletarUsuario(email, adminEmail) {
 }
 
 async function loginUsuario(email, senha) {
-  const payload = await request('/usuarios/login', {
-    method: 'POST',
-    body: JSON.stringify({
-      email: email.trim(),
-      senha,
-    }),
-  })
+  const trimmedEmail = String(email ?? '').trim()
 
-  const usuario = getUsuarioDoPayload(payload)
-  if (!usuario || typeof usuario !== 'object' || Array.isArray(usuario)) {
-    throw new Error(payload?.Erro ?? payload?.erro ?? 'Credenciais inválidas.')
+  // Se existir endpoint de login no futuro, tentamos primeiro.
+  try {
+    const payload = await request('/usuarios/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: trimmedEmail,
+        senha,
+      }),
+    })
+
+    const usuario = getUsuarioDoPayload(payload)
+    if (usuario && typeof usuario === 'object' && !Array.isArray(usuario)) {
+      return usuario
+    }
+  } catch (error) {
+    // fallback para o fluxo atual: "login" = buscar por e-mail
+    const message = String(error?.message ?? '')
+    if (!message.includes('Recurso') && !message.includes('404')) {
+      throw error
+    }
   }
 
-  return usuario
+  // fallback: busca pelo e-mail (senha não é validada no backend neste momento)
+  return buscarUsuarioPorEmail(trimmedEmail)
 }
 
 export {
@@ -81,3 +111,4 @@ export {
   listarUsuarios,
   loginUsuario,
 }
+

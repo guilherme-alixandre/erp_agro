@@ -2,6 +2,7 @@ package br.com.gado.controllers;
 
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.application.services.SUsuario;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/usuarios")
 public class CUsuario {
 
@@ -20,27 +21,45 @@ public class CUsuario {
     private SUsuario usuarioService;
 
     @GetMapping("/{email}")
-    public ResponseEntity<UsuarioDto> getUsuario(@PathVariable String email) {
-        return ResponseEntity.ok(usuarioService.encontraPorEmail(email));
+    public UsuarioDto getUsuario(@PathVariable String email) {
+        return usuarioService.encontraPorEmail(email);
     }
 
     @GetMapping
-    public ResponseEntity<ArrayList<UsuarioDto>> getUsuarios() {
-        return ResponseEntity.ok(usuarioService.buscarTodos());
+    public List<UsuarioDto> getUsuarios() {
+        return usuarioService.listarTodos();
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioDto> postUsuario(@RequestBody UsuarioCadastroDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastra(dto));
+    public UsuarioDto postUsuario(@RequestBody UsuarioCadastroDto dto) {
+        return usuarioService.cadastra(dto);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UsuarioLoginDto dto) {
+        if (dto == null || dto.getEmail() == null || dto.getEmail().isBlank()
+                || dto.getSenha() == null || dto.getSenha().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("mensagem", "Informe e-mail e senha."));
+        }
+
+        try {
+            UsuarioDto usuario = usuarioService.login(dto);
+            return ResponseEntity.ok(usuario);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("mensagem", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{email}")
-    public ResponseEntity<String> deleteUsuario(@PathVariable String email) {
-        return ResponseEntity.ok(usuarioService.deleta(email));
+    public String deleteUsuario(@PathVariable String email) {
+        return usuarioService.deleta(email);
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<UsuarioDto> putUsuario(@PathVariable String email, @RequestBody UsuarioPutDto dto) {
-        return ResponseEntity.ok(usuarioService.altera(email, dto));
+    public UsuarioDto putUsuario(@PathVariable String email, @RequestBody UsuarioPutDto dto) {
+        return usuarioService.altera(email, dto);
     }
 }
+

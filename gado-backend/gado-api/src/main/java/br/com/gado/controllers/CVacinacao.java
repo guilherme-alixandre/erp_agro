@@ -5,7 +5,6 @@ import br.com.gado.application.services.SVacinacao;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/vacinacao")
 public class CVacinacao {
 
