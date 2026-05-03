@@ -63,7 +63,7 @@ public class SUsuario {
         }
 
         String emailNormalizado = dto.getEmail().trim();
-        if (usuarioInterface.existsByEmail(emailNormalizado)) {
+        if (usuarioInterface.existsByEmailAndStatus(emailNormalizado, EnStatus.A)) {
             throw new IllegalArgumentException("E-mail já cadastrado.");
         }
 
@@ -78,7 +78,7 @@ public class SUsuario {
 
     @Transactional
     public String deleta(String email) {
-        boolean existe = usuarioInterface.existsByEmail(email);
+        boolean existe = usuarioInterface.existsByEmailAndStatus(email, EnStatus.A);
         if (!existe) {
             return "Usuário não encontrado";
         }
