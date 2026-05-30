@@ -23,4 +23,7 @@ public class ELote extends EAbstract{
     @OneToMany(mappedBy = "lote")
     private List<ETransacao> transacoes = new ArrayList<>();
 
+    @ManyToOne
+    private ESetor eSetor;
+
 }
