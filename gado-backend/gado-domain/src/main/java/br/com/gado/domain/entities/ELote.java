@@ -24,6 +24,6 @@ public class ELote extends EAbstract{
     private List<ETransacao> transacoes = new ArrayList<>();
 
     @ManyToOne
-    private ESetor eSetor;
+    private ESetor setor;
 
 }
