@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "setor")
@@ -13,11 +16,14 @@ public class ESetor extends EAbstract{
 
     private String nome;
     private int capacidadeMaxima;
-    private String metaTexto; // não lembro o que isso faz, só copiei mesmo
+    private String metaTexto;
     private Double metaProducaoLeite;
     private Double metaArrobaAbate;
 
     @Enumerated(EnumType.STRING)
-    private EnTipoSetor setor;
+    private EnTipoSetor tipo;
 
+    @OneToMany(mappedBy = "setor")
+    private List<ELote> lotes = new ArrayList<>();
 }
+
