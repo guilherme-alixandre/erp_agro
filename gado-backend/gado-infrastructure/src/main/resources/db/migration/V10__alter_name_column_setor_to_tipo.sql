@@ -1,0 +1,1 @@
+ALTER TABLE setor RENAME COLUMN setor TO tipo;
