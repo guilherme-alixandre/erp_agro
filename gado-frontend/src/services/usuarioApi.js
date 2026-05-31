@@ -49,7 +49,10 @@ async function buscarUsuarioPorEmail(email) {
 async function cadastrarUsuario(usuario, adminEmail) {
   const payload = await request('/usuarios', {
     method: 'POST',
-    headers: adminHeaders(adminEmail),
+    headers:{
+      ...adminHeaders(adminEmail),
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(toCadastroPayload(usuario)),
   })
 
