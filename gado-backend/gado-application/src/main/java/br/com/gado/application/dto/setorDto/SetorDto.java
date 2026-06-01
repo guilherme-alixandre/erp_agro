@@ -1,4 +1,4 @@
-package br.com.gado.application.dto;
+package br.com.gado.application.dto.setorDto;
 
 import br.com.gado.domain.enums.EnTipoSetor;
 import lombok.Data;

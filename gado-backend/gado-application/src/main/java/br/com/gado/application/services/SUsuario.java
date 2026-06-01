@@ -100,6 +100,7 @@ public class SUsuario {
 
     private Map<String, Object> toUsuarioResponse(EUsuario usuario){
         Map<String, Object> usuarioResponse = new HashMap<>();
+        usuarioResponse.put("id", usuario.getId());
         usuarioResponse.put("nome", usuario.getNome());
         usuarioResponse.put("email", usuario.getEmail());
         usuarioResponse.put("perfil", usuario.getPerfil());

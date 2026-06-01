@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState, useMemo } from 'react'
 import AnimalCard from '../components/AnimalCard'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
@@ -62,7 +62,7 @@ function mergeByBrinco(current, animal) {
   return next
 }
 
-function AnimaisPage({ currentUser, onNavigate, onLogout }) {
+function AnimaisPage({ currentUser }) {
   const [search, setSearch] = useState('')
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -99,12 +99,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
   function openEditModal(animal) {
     setFormMode('edit')
+    setFormData(animal)
     setFormFeedback('')
-    setFormData({
-      ...defaultForm,
-      ...animal,
-      pesoAtual: String(animal.pesoAtual ?? ''),
-    })
     setModal({ type: 'form', animal })
   }
 
@@ -114,19 +110,31 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
   async function handleSearch(event) {
     event.preventDefault()
-    const brinco = search.trim()
-    if (!brinco) return
+    if (!search.trim()) {
+      setFeedback({ type: '', message: '' })
+      setAnimals([])
+      return
+    }
 
     setIsLoadingSearch(true)
     setFeedback({ type: '', message: '' })
+
     try {
-      const animal = await buscarAnimalPorBrinco(brinco)
-      setAnimals((current) => mergeByBrinco(current, animal))
+      const animal = await buscarAnimalPorBrinco(search.trim())
+      setAnimals([animal])
+      setFeedback({
+        type: 'info',
+        message: `Animal encontrado: ${animal.nome}`,
+      })
     } catch (error) {
+      const message = isBackendErrorMessage(error.message)
+        ? getBackendMessage(error.message)
+        : error.message || 'Animal não encontrado.'
       setFeedback({
         type: 'error',
-        message: error.message || 'Falha ao buscar animal.',
+        message,
       })
+      setAnimals([])
     } finally {
       setIsLoadingSearch(false)
     }
@@ -136,65 +144,60 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     event.preventDefault()
     setIsSaving(true)
     setFormFeedback('')
-    setFeedback({ type: '', message: '' })
 
     try {
+      const payload = formMode === 'create'
+        ? await cadastrarAnimal({
+            ...formData,
+            usuario_id: currentUser.id,
+          })
+        : await atualizarAnimal(formData.codigoBrinco, formData)
+
+      const isError = isBackendErrorMessage(payload)
+      if (isError) {
+        throw new Error(getBackendMessage(payload))
+      }
+
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(currentUser.email, formData)
-        if (isBackendErrorMessage(result)) {
-          throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
-        }
-
-        const loadedAnimal = await buscarAnimalPorBrinco(formData.codigoBrinco)
-        setAnimals((current) => mergeByBrinco(current, loadedAnimal))
-        setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
+        setAnimals((current) => mergeByBrinco(current, payload))
+        setFeedback({
+          type: 'info',
+          message: 'Animal cadastrado com sucesso!',
+        })
       } else {
-        const result = await atualizarAnimal(formData.codigoBrinco, formData)
-        if (isBackendErrorMessage(result)) {
-          throw new Error(getBackendMessage(result) || 'Falha ao atualizar animal.')
-        }
-
-        setAnimals((current) =>
-          current.map((animal) =>
-            animal.codigoBrinco === formData.codigoBrinco
-              ? {
-                  ...animal,
-                  ...formData,
-                  pesoAtual: Number(formData.pesoAtual),
-                }
-              : animal,
-          ),
-        )
-        setFeedback({ type: 'info', message: 'Animal atualizado com sucesso.' })
+        setAnimals((current) => mergeByBrinco(current, payload))
+        setFeedback({
+          type: 'info',
+          message: 'Animal atualizado com sucesso!',
+        })
       }
 
       closeModal()
     } catch (error) {
-      setFormFeedback(error.message || 'Falha ao salvar o animal.')
+      setFormFeedback(error.message || 'Falha ao salvar animal.')
     } finally {
       setIsSaving(false)
     }
   }
 
   async function handleDelete(animal) {
-    const confirmDelete = window.confirm(
-      `Deseja excluir o animal ${animal.codigoBrinco}?`,
-    )
-    if (!confirmDelete) return
+    if (!window.confirm(`Deseja excluir o animal "${animal.nome}"?`)) {
+      return
+    }
 
     setIsDeleting(true)
     setFeedback({ type: '', message: '' })
-    try {
-      const result = await deletarAnimal(animal.codigoBrinco)
-      if (isBackendErrorMessage(result)) {
-        throw new Error(getBackendMessage(result) || 'Falha ao excluir animal.')
-      }
 
+    try {
+      await deletarAnimal(animal.codigoBrinco)
       setAnimals((current) =>
-        current.filter((item) => item.codigoBrinco !== animal.codigoBrinco),
+        current.filter((item) => item.codigoBrinco !== animal.codigoBrinco)
       )
+      setFeedback({
+        type: 'info',
+        message: 'Animal excluído com sucesso!',
+      })
       closeModal()
-      setFeedback({ type: 'info', message: 'Animal excluído com sucesso.' })
     } catch (error) {
       setFeedback({
         type: 'error',
@@ -206,98 +209,61 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   }
 
   return (
-    <main className="animals-layout">
-      <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
-        <nav>
-          <button type="button" className="menu-item menu-item--active">
-            Animais
-          </button>
-          <button type="button" className="menu-item">
-            Lotes
-          </button>
-          <button type="button" className="menu-item">
-            Setores
-          </button>
-          <button type="button" className="menu-item">
-            Insumos
-          </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
-          <button
-            type="button"
-            className="menu-item"
-            onClick={() => onNavigate('perfil')}
-          >
-            Perfil
-          </button>
-        </nav>
-        <div className="sidebar-user">
-          <strong>{currentUser.nome}</strong>
-          <span>{currentUser.email}</span>
-          <button type="button" className="sidebar-logout" onClick={onLogout}>
-            Sair
-          </button>
-        </div>
-      </aside>
+    <section className="animals-content">
+      <header className="animals-header">
+        <h1>Animais</h1>
+        <span>{currentUser.email}</span>
+      </header>
 
-      <section className="animals-content">
-        <header className="animals-header">
-          <h1>Animais</h1>
-          <span>{currentUser.email}</span>
-        </header>
-
-        <form className="animals-search" onSubmit={handleSearch}>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pesquisar animal, lote, setor ou etiqueta"
-          />
-          <button type="submit" disabled={isLoadingSearch}>
-            {isLoadingSearch ? 'Buscando...' : 'Buscar'}
-          </button>
-        </form>
-
-        {feedback.message ? (
-          <p
-            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
-
-        {cards.length ? (
-          <div className="animals-grid">
-            {cards.map((animal) => (
-              <AnimalCard
-                key={animal.codigoBrinco}
-                animal={animal}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="animals-empty">
-            <p>Nenhum animal carregado.</p>
-            <span>
-              Busque por brinco para carregar um animal ou clique no botão +
-              para cadastrar.
-            </span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          className="fab-add"
-          aria-label="Adicionar animal"
-          onClick={openCreateModal}
-        >
-          +
+      <form className="animals-search" onSubmit={handleSearch}>
+        <input
+          type="text"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Pesquisar animal, lote, setor ou etiqueta"
+        />
+        <button type="submit" disabled={isLoadingSearch}>
+          {isLoadingSearch ? 'Buscando...' : 'Buscar'}
         </button>
-      </section>
+      </form>
+
+      {feedback.message ? (
+        <p
+          className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
+
+      {cards.length ? (
+        <div className="animals-grid">
+          {cards.map((animal) => (
+            <AnimalCard
+              key={animal.codigoBrinco}
+              animal={animal}
+              onDetalhes={openDetailsModal}
+              onEditar={openEditModal}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="animals-empty">
+          <p>Nenhum animal carregado.</p>
+          <span>
+            Busque por brinco para carregar um animal ou clique no botão +
+            para cadastrar.
+          </span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="fab-add"
+        aria-label="Adicionar animal"
+        onClick={openCreateModal}
+      >
+        +
+      </button>
 
       {modal.type === 'form' ? (
         <AnimalFormModal
@@ -321,7 +287,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           isDeleting={isDeleting}
         />
       ) : null}
-    </main>
+    </section>
   )
 }
 

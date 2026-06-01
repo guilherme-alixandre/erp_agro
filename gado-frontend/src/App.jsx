@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import AnimalPage from './features/animais/pages/AnimaisPage'
+import AnimaisPage from './features/animais/pages/AnimaisPage'
+import LotesPage from './features/lotes/pages/LotesPage'
+import SetoresPage from './features/setores/pages/SetoresPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
 import AuthPage from './features/auth/pages/AuthPage'
+import PageLayout from './components/PageLayout'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -47,22 +50,32 @@ function App() {
     return <AuthPage onLogin={handleLogin} sessionFeedback={sessionFeedback} />
   }
 
-  if (activePage === 'perfil') {
-    return (
+  let pageContent = null
+
+  if (activePage === 'animais') {
+    pageContent = <AnimaisPage currentUser={currentUser} />
+  } else if (activePage === 'lotes') {
+    pageContent = <LotesPage currentUser={currentUser} />
+  } else if (activePage === 'setores') {
+    pageContent = <SetoresPage currentUser={currentUser} />
+  } else if (activePage === 'perfil') {
+    pageContent = (
       <PerfilPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
       />
     )
   }
 
   return (
-    <AnimalPage
+    <PageLayout
       currentUser={currentUser}
-      onLogout={handleLogout}
+      currentPage={activePage}
       onNavigate={setActivePage}
-    />
+      onLogout={handleLogout}
+    >
+      {pageContent}
+    </PageLayout>
   )
 }
 

@@ -2,8 +2,8 @@
 // Se existir VITE_API_BASE_URL no ambiente, ela tem prioridade.
 // Caso contrario, usamos '/api' em dev (proxy do Vite) e localhost:8080/api em build.
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? '/api' : 'http://localhost:8080/api')
+    import.meta.env.VITE_API_BASE_URL ??
+    (import.meta.env.DEV ? '/api' : 'http://localhost:8080/api')
 
 // Função generica para chamadas HTTP ao backend.
 // Ela padroniza headers JSON, trata respostas de sucesso/erro
@@ -22,14 +22,22 @@ async function request(path, options = {}) {
     })
   } catch {
     throw new Error(
-      `Falha ao conectar com o backend em ${API_BASE_URL}. Verifique se a API está rodando, se a URL está correta e se o CORS permite o front.`,
+        `Falha ao conectar com o backend em ${API_BASE_URL}. Verifique se a API está rodando, se a URL está correta e se o CORS permite o front.`,
     )
   }
 
-  const contentType = response.headers.get('content-type') ?? ''
-  const payload = contentType.includes('application/json')
-    ? await response.json()
-    : await response.text()
+  const contentType = response.headers.get("content-type") ?? ""
+  let payload
+  if (contentType.includes("application/json")) {
+    payload = await response.json()
+  } else {
+    const textPayload = await response.text()
+    try {
+      payload = JSON.parse(textPayload)
+    } catch (e) {
+      payload = textPayload
+    }
+  }
 
   // caso dê erro para comunicar tá pelo menos inicialmente tratado isso aqui
   if (!response.ok) {
@@ -39,23 +47,23 @@ async function request(path, options = {}) {
       message = payload
     } else if (payload && typeof payload === 'object') {
       const mainMessage =
-        payload.message ?? payload.mensagem ?? payload.error ?? payload.detail
+          payload.message ?? payload.mensagem ?? payload.error ?? payload.detail
       if (typeof mainMessage === 'string' && mainMessage.trim()) {
         message = mainMessage.trim()
       }
 
       const fieldErrors = payload.errors ?? payload.erros
       if (
-        !message &&
-        Array.isArray(fieldErrors) &&
-        fieldErrors.length > 0
+          !message &&
+          Array.isArray(fieldErrors) &&
+          fieldErrors.length > 0
       ) {
         const firstFieldError = fieldErrors[0]
         if (typeof firstFieldError === 'string') {
           message = firstFieldError
         } else if (firstFieldError && typeof firstFieldError === 'object') {
           message =
-            firstFieldError.message ?? firstFieldError.mensagem ?? message
+              firstFieldError.message ?? firstFieldError.mensagem ?? message
         }
       }
     }

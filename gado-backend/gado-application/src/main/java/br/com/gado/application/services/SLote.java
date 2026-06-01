@@ -3,7 +3,9 @@ package br.com.gado.application.services;
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.application.dto.loteDto.LoteCadastroDto;
+import br.com.gado.application.dto.loteDto.LoteDto;
 import br.com.gado.application.dto.loteDto.LotePutDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioDto;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.transaction.Transactional;
@@ -11,9 +13,13 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SLote {
@@ -28,62 +34,95 @@ public class SLote {
     private ModelMapper modelMapper;
 
 
-    public Map<String, Object> buscaPorid(Long id){
-        Optional<ELote> loteOptional = loteInterface.findById(id);
-        Map<String, Object> response = new HashMap<>();
-
-        if(loteOptional.isEmpty()){
-            response.put("mensagem", "nenhum lote encontrado");
-        }
-        else {
-            ELote lote = loteOptional.get();
-            response.put("lote", lote);
-        }
-
-        return response;
+    public LoteDto buscaPorid(Long id){
+        ELote lote = loteInterface.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lote não encontrado"));
+        return modelMapper.map(lote, LoteDto.class);
     }
 
     @Transactional
-    public String cadastra(LoteCadastroDto dto){
+    public Map<String, Object> cadastra(LoteCadastroDto dto){
         Optional<EUsuario> usuarioOptional = usuarioInterface.findById(dto.getUsuario_id());
         if(usuarioOptional.isEmpty()){
-            return "Nenhum usuário com esse id foi encontrado";
+            throw new RuntimeException("Nenhum usuário com esse id foi encontrado");
         }
 
         ELote lote = modelMapper.map(dto, ELote.class);
         lote.setUsuario(usuarioOptional.get());
         loteInterface.save(lote);
-        return "lote criado com sucesso";
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("lote", modelMapper.map(lote, LoteDto.class));
+        return response;
     }
 
     @Transactional
-    public String deleta(Long id){
+    public void deleta(Long id){
 
         boolean existe = loteInterface.existsById(id);
         if(!existe){
-            return "nenhum lote foi encontrado";
+            throw new RuntimeException("Nenhum lote foi encontrado");
         }
 
         try{
             loteInterface.deleteById(id);
-            return "lote deletado com sucesso";
         } catch (Exception e){
-            return "Erro: esse lote possui transações vinculadas e não pode ser excluido";
+            throw new RuntimeException("Erro: esse lote possui transações vinculadas e não pode ser excluido");
         }
     }
 
+    public List<LoteDto> buscaLotes(Long id, String descricao) {
+        List<ELote> lotes = loteInterface.findByIdAndDescricaoPartialMatch(id, descricao);
+        return lotes.stream()
+                .map(lote -> modelMapper.map(lote, LoteDto.class))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    public String altera(Long id, LotePutDto dto){
+    public Map<String, Object> altera(Long id, LotePutDto dto){
 
         Optional<ELote> loteOptional = loteInterface.findById(id);
         if(loteOptional.isEmpty()){
-            return "nenhum lote encontrado";
+            throw new RuntimeException("Nenhum lote encontrado");
         }
 
         ELote lote = loteOptional.get();
         modelMapper.map(dto, lote);
         loteInterface.save(lote);
-        return "lote alterado com sucesso";
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("lote", modelMapper.map(lote, LoteDto.class));
+        return response;
+    }
+
+    public String exportAllLotesToCsv() {
+        List<ELote> lotes = loteInterface.findAll();
+
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.append("ID,Descrição,Raça Predominante,Status,Criado Em,Usuário ID,Usuário Nome\n");
+
+        for (ELote lote : lotes) {
+            csvContent.append(lote.getId()).append(",");
+            csvContent.append(escapeCsv(lote.getDescricao())).append(",");
+            csvContent.append(escapeCsv(lote.getRacaPredominante())).append(",");
+            csvContent.append(lote.getStatus()).append(",");
+            csvContent.append(lote.getCreatedAt()).append(",");
+            csvContent.append(lote.getUsuario() != null ? lote.getUsuario().getId() : "").append(",");
+            csvContent.append(lote.getUsuario() != null ? escapeCsv(lote.getUsuario().getNome()) : "");
+            csvContent.append("\n");
+        }
+        return csvContent.toString();
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        String escaped = value.replace("\"", "\"\""); // Escape double quotes
+        if (escaped.contains(",") || escaped.contains("\n") || escaped.contains("\r") || escaped.contains("\"")) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
     }
 
 }

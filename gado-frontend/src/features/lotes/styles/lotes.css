@@ -1,0 +1,335 @@
+.lotes-content {
+  padding: 14px 22px 24px;
+  position: relative;
+}
+
+.lotes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.lotes-header h1 {
+  margin: 0;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.lotes-header span {
+  font-weight: 500;
+}
+
+.lotes-search {
+  background: #ededed;
+  border-radius: 16px;
+  border: 1px solid #c7c7c7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+}
+
+.lotes-search input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 1.35rem;
+}
+
+.lotes-search button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  background: #c3c3c3;
+}
+
+.lotes-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lote-card {
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
+}
+
+.lote-card__top,
+.lote-card__middle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lote-card__top {
+  color: #9a9a9a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.lote-card__middle {
+  margin-top: 2px;
+  align-items: baseline;
+}
+
+.lote-card__middle strong {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.lote-card__vaccines {
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.lote-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.lote-card__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.45rem;
+  background: #d3d3d3;
+}
+
+.fab-add {
+  position: fixed;
+  right: 34px;
+  bottom: 32px;
+  width: 88px;
+  height: 88px;
+  border: 0;
+  border-radius: 12px;
+  background: #9fd155;
+  color: #1f4010;
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.lotes-empty {
+  margin-top: 22px;
+  background: #efefef;
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.lotes-empty p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.lotes-empty span {
+  color: #6a6a6a;
+}
+
+.feedback {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.feedback--info {
+  background: #e6ffe6;
+  border: 1px solid #b1dfb1;
+  color: #1f4010;
+}
+
+.feedback--error {
+  background: #fdecec;
+  border: 1px solid #f8b6b6;
+  color: #8e2222;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.modal-card {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  border: 0;
+  font-size: 1.4rem;
+  background: transparent;
+}
+
+.lote-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.lote-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.required-marker {
+  color: #b12a2a;
+  font-weight: 700;
+}
+
+.form-info {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eef5e6;
+  border: 1px solid #c8dfb1;
+  color: #2e4a14;
+  font-size: 0.9rem;
+}
+
+.form-info strong {
+  color: #1d300a;
+}
+
+.form-help {
+  margin: 6px 0 0;
+  color: #707070;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.lote-form input,
+.lote-form select {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.details-grid {
+  margin: 14px 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.details-grid dt {
+  font-size: 0.86rem;
+  color: #787878;
+}
+
+.details-grid dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.modal-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: #4f7f2f;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e2e2;
+}
+
+.btn-danger {
+  background: #cc4747;
+  color: #fff;
+}
+
+@media (max-width: 1300px) {
+  .lotes-layout {
+    grid-template-columns: 140px 1fr;
+  }
+
+  .lotes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .lotes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lotes-sidebar {
+    display: none;
+  }
+
+  .lotes-content {
+    padding: 14px;
+  }
+
+  .lotes-header h1 {
+    font-size: 2rem;
+  }
+
+  .lotes-search input {
+    font-size: 1rem;
+  }
+
+  .lotes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lote-card__top {
+    font-size: 0.95rem;
+  }
+
+  .lote-card__middle strong {
+    font-size: 1.45rem;
+  }
+
+  .lote-card__vaccines {
+    font-size: 1rem;
+  }
+
+  .lote-card__actions button {
+    font-size: 1rem;
+  }
+}
