@@ -8,7 +8,7 @@ import br.com.gado.application.dto.TrasacaoDTO;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import br.com.gado.infrastructure.persistence.repositories.ITrasacao;
-import jakarta.persistence.EntityNotFoundException;
+import javax.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

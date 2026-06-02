@@ -10,13 +10,16 @@ import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
+import org.springframework.data.domain.PageImpl;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -40,13 +43,22 @@ public class SSetor {
 
     @Transactional
     public Map<String, Object> cadastra(SetorCadastroDto dto){
-        Optional<EUsuario> usuarioOptional = usuarioInterface.findById(dto.getUsuario_id());
-        if(usuarioOptional.isEmpty()){
-            throw new RuntimeException("Nenhum usuário com esse id foi encontrado");
+        ESetor setor = new ESetor();
+        setor.setDescricao(dto.getDescricao());
+        setor.setCapacidadeMaxima(dto.getCapacidadeMaxima());
+        setor.setMetaTexto(dto.getMetaTexto());
+        setor.setMetaProducaoLeite(dto.getMetaProducaoLeite());
+        setor.setMetaArrobaAbate(dto.getMetaArrobaAbate());
+        setor.setSetor(dto.getSetor());
+
+        if (dto.getUsuario_id() != null) {
+            Optional<EUsuario> usuarioOptional = usuarioInterface.findById(dto.getUsuario_id());
+            if(usuarioOptional.isEmpty()){
+                throw new RuntimeException("Nenhum usuário com esse id foi encontrado");
+            }
+            setor.setUsuario(usuarioOptional.get());
         }
 
-        ESetor setor = modelMapper.map(dto, ESetor.class);
-        setor.setUsuario(usuarioOptional.get());
         setorInterface.save(setor);
 
         Map<String, Object> response = new HashMap<>();
@@ -99,7 +111,7 @@ public class SSetor {
 
         for (ESetor setor : setores) {
             csvContent.append(setor.getId()).append(",");
-            csvContent.append(escapeCsv(setor.getDescricao())).append(",");
+            csvContent.append(escapeCsv(setor.getDescricao() != null ? setor.getDescricao() : "")).append(",");
             csvContent.append(setor.getStatus()).append(",");
             csvContent.append(setor.getCreatedAt()).append(",");
             csvContent.append(setor.getUsuario() != null ? setor.getUsuario().getId() : "").append(",");

@@ -1,7 +1,7 @@
 package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.EnStatus;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;

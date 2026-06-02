@@ -1,7 +1,7 @@
 package br.com.gado.application.dto;
 
 import br.com.gado.domain.enums.EnStatus;
-import jakarta.persistence.MappedSuperclass;
+import javax.persistence.MappedSuperclass;
 import lombok.Data;
 
 import java.util.Date;

@@ -5,7 +5,7 @@ import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

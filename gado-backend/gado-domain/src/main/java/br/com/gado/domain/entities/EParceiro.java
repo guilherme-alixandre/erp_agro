@@ -1,7 +1,7 @@
 package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.EnTipoParceiro;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

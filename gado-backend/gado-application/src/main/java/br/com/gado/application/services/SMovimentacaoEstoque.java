@@ -4,7 +4,7 @@ import br.com.gado.domain.entities.EMovimentacaoEstoque;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import br.com.gado.infrastructure.persistence.repositories.IMovimentacaoEstoque;
-import jakarta.persistence.EntityNotFoundException;
+import javax.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

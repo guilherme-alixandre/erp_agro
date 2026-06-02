@@ -5,11 +5,14 @@ import lombok.Data;
 
 @Data
 public class SetorDto {
-    private String nome;
+    private Long id;
+    private String descricao;
+    private String status;
+    private java.util.Date createdAt;
+    private br.com.gado.application.dto.usuarioDto.UsuarioDto usuario;
     private int capacidadeMaxima;
     private String metaTexto;
     private Double metaProducaoLeite;
     private Double metaArrobaAbate;
     private EnTipoSetor setor;
-
 }

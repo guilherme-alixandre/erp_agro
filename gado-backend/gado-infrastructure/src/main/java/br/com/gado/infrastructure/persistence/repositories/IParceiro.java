@@ -1,7 +1,7 @@
 package br.com.gado.infrastructure.persistence.repositories;
 
 import br.com.gado.domain.entities.EParceiro;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;

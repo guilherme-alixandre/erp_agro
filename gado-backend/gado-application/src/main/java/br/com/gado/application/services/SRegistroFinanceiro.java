@@ -8,7 +8,7 @@ import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import br.com.gado.infrastructure.persistence.repositories.IRegistroFinanceiro;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
-import jakarta.persistence.EntityNotFoundException;
+import javax.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

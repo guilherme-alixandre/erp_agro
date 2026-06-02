@@ -10,4 +10,9 @@ import lombok.NoArgsConstructor;
 public class SetorCadastroDto {
     private String descricao;
     private Long usuario_id;
+    private int capacidadeMaxima;
+    private String metaTexto;
+    private Double metaProducaoLeite;
+    private Double metaArrobaAbate;
+    private br.com.gado.domain.enums.EnTipoSetor setor;
 }

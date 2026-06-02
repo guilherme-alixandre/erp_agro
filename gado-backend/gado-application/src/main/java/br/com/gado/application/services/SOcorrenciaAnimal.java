@@ -6,7 +6,7 @@ import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.application.dto.OcorrenciaAnimalDTO;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IOcorrenciaAnimal;
-import jakarta.persistence.EntityNotFoundException;
+import javax.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

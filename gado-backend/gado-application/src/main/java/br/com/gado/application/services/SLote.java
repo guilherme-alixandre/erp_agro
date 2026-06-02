@@ -8,7 +8,7 @@ import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioDto;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

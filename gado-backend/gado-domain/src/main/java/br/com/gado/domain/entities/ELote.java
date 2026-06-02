@@ -1,6 +1,6 @@
 package br.com.gado.domain.entities;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

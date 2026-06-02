@@ -2,7 +2,7 @@ package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.EnStatusDespesa;
 import br.com.gado.domain.enums.EnTipoDespesa;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

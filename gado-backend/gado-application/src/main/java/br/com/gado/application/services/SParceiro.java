@@ -4,7 +4,7 @@ import br.com.gado.domain.entities.EParceiro;
 import br.com.gado.application.dto.parcerioDto.ParceiroCadastroDto;
 import br.com.gado.application.dto.parcerioDto.ParceiroPutDto;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

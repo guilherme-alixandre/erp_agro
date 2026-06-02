@@ -2,7 +2,7 @@ package br.com.gado.domain.entities;
 
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatusAnimal;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
