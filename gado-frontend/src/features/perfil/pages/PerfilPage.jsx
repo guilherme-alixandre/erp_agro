@@ -17,6 +17,13 @@ function PerfilPage({ currentUser, onLogout, onNavigate }) {
             Setores
           </button>
           <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('metas')}
+          >
+            Metas
+          </button>
+          <button
             type="button"
             className="menu-item"
             onClick={() => onNavigate('insumos')}

@@ -1,0 +1,395 @@
+/* ═══════════════════════════════════════════════════════════════════
+   metas.css — Módulo de Metas de Setores
+   Herda o layout base (animals-layout, sidebar, header) de animais.css.
+   Define apenas o que é específico deste módulo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Lista de metas ───────────────────────────────────────────────── */
+
+.metas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+/* ── Card full-width ──────────────────────────────────────────────── */
+
+.meta-card {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s;
+}
+
+.meta-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Cabeçalho do card ────────────────────────────────────────────── */
+
+.meta-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.meta-card__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-card__title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.meta-card__subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.meta-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.meta-card__badge--leite {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.meta-card__badge--arroba {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── Barra de progresso ───────────────────────────────────────────── */
+
+.meta-progress {
+  margin-bottom: 1.25rem;
+}
+
+.meta-progress__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.meta-progress__label {
+  font-size: 0.82rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.meta-progress__pct {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.meta-progress__bar-track {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meta-progress__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.meta-progress__bar-fill--warning {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.meta-progress__bar-fill--over {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+/* ── Grid de stats ────────────────────────────────────────────────── */
+
+.meta-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.meta-stat {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+
+.meta-stat__label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+  font-weight: 500;
+}
+
+.meta-stat__value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ── Tabela de medições ───────────────────────────────────────────── */
+
+.meta-medicoes {
+  margin-top: 0.25rem;
+}
+
+.meta-medicoes__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #4b5563;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.meta-medicoes__toggle:hover {
+  color: #111827;
+}
+
+.meta-medicoes__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.meta-medicoes__table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.4rem 0.6rem;
+}
+
+.meta-medicoes__table td {
+  padding: 0.5rem 0.6rem;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.meta-medicoes__table tr:last-child td {
+  border-bottom: none;
+}
+
+.meta-medicoes__empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.82rem;
+  padding: 1rem 0;
+  font-style: italic;
+}
+
+/* ── Botão de deletar medição ─────────────────────────────────────── */
+
+.btn-del-medicao {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.btn-del-medicao:hover {
+  background: #fee2e2;
+}
+
+/* ── Ações do card ────────────────────────────────────────────────── */
+
+.meta-card__actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+}
+
+/* ── Filtro de setor ──────────────────────────────────────────────── */
+
+.metas-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.metas-filter label {
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.metas-filter select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  min-width: 200px;
+}
+
+/* ── Modal overlay (usado tanto no form de meta quanto na medição) ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-box h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ── Formulário (herda .animal-form, estende aqui) ────────────────── */
+
+.meta-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.meta-form label span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.meta-form input,
+.meta-form select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.meta-form input:focus,
+.meta-form select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.meta-form input.field-error,
+.meta-form select.field-error {
+  border-color: #ef4444;
+}
+
+.field-error-msg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.15rem;
+}
+
+/* ── Botões padrão do módulo ──────────────────────────────────────── */
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

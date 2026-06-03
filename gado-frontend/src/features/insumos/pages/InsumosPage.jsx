@@ -175,6 +175,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item">
             Setores
           </button>
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('metas')}
+          >
+            Metas
+          </button>
           <button type="button" className="menu-item menu-item--active">
             Insumos
           </button>
