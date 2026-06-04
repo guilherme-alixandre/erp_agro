@@ -1,19 +1,17 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.loteDto.LoteCadastroDto;
+import br.com.gado.application.dto.loteDto.LoteDto;
+import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EUsuario;
-import br.com.gado.application.dto.loteDto.LoteCadastroDto;
-import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class SLote {
@@ -27,63 +25,47 @@ public class SLote {
     @Autowired
     private ModelMapper modelMapper;
 
-
-    public Map<String, Object> buscaPorid(Long id){
-        Optional<ELote> loteOptional = loteInterface.findById(id);
-        Map<String, Object> response = new HashMap<>();
-
-        if(loteOptional.isEmpty()){
-            response.put("mensagem", "nenhum lote encontrado");
-        }
-        else {
-            ELote lote = loteOptional.get();
-            response.put("lote", lote);
-        }
-
-        return response;
+    public LoteDto buscaPorId(Long id) {
+        ELote lote = loteInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("nenhum lote encontrado"));
+        return modelMapper.map(lote, LoteDto.class);
     }
 
     @Transactional
-    public String cadastra(LoteCadastroDto dto){
-        Optional<EUsuario> usuarioOptional = usuarioInterface.findById(dto.getUsuario_id());
-        if(usuarioOptional.isEmpty()){
-            return "Nenhum usuário com esse id foi encontrado";
-        }
+    public LoteDto cadastra(LoteCadastroDto dto) {
+        EUsuario usuario = usuarioInterface.findById(dto.getUsuario_id())
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum usuário com esse id foi encontrado"));
 
         ELote lote = modelMapper.map(dto, ELote.class);
-        lote.setUsuario(usuarioOptional.get());
-        loteInterface.save(lote);
-        return "lote criado com sucesso";
+        lote.setUsuario(usuario);
+
+        ELote loteSalvo = loteInterface.save(lote);
+        return modelMapper.map(loteSalvo, LoteDto.class);
     }
 
     @Transactional
-    public String deleta(Long id){
-
-        boolean existe = loteInterface.existsById(id);
-        if(!existe){
+    public String deleta(Long id) {
+        // só refatorei esse if pra ficar menor, não mudei a lógica
+        if(!loteInterface.existsById(id)){
             return "nenhum lote foi encontrado";
         }
 
-        try{
+        try {
             loteInterface.deleteById(id);
             return "lote deletado com sucesso";
-        } catch (Exception e){
+        } catch (Exception e) {
             return "Erro: esse lote possui transações vinculadas e não pode ser excluido";
         }
     }
 
     @Transactional
-    public String altera(Long id, LotePutDto dto){
+    public LoteDto altera(Long id, LotePutDto dto) {
+        ELote lote = loteInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("nenhum lote encontrado"));
 
-        Optional<ELote> loteOptional = loteInterface.findById(id);
-        if(loteOptional.isEmpty()){
-            return "nenhum lote encontrado";
-        }
-
-        ELote lote = loteOptional.get();
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, lote);
-        loteInterface.save(lote);
-        return "lote alterado com sucesso";
+        ELote loteAtualizado = loteInterface.save(lote);
+        return modelMapper.map(loteAtualizado, LoteDto.class);
     }
-
 }

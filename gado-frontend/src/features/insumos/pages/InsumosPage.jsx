@@ -175,6 +175,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item">
             Setores
           </button>
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('metas')}
+          >
+            Metas
+          </button>
           <button type="button" className="menu-item menu-item--active">
             Insumos
           </button>
@@ -286,7 +293,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   <>
                     <p>Nenhuma vacina encontrada.</p>
                     <span>
-                      Nenhum resultado para "{activeSearch}". Ajuste a busca.
+                      Nenhum resultado para {`"${activeSearch}"`}. Ajuste a busca.
                     </span>
                   </>
                 ) : (

@@ -1,8 +1,7 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.SOcorrenciaAnimal;
-import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import br.com.gado.application.dto.OcorrenciaAnimalDTO;
+import br.com.gado.application.services.SOcorrenciaAnimal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -11,30 +10,27 @@ public class COcorrenciaAnimal {
 
     private final SOcorrenciaAnimal ocorrenciaAnimalService;
 
-    public COcorrenciaAnimal(SOcorrenciaAnimal ocorrenciaAnimalService){
+    public COcorrenciaAnimal(SOcorrenciaAnimal ocorrenciaAnimalService) {
         this.ocorrenciaAnimalService = ocorrenciaAnimalService;
     }
 
-
     @GetMapping("/{ocorrenciaAnimalId}")
-    public OcorrenciaAnimalDTO getMovimentacaoEsotque(@PathVariable OcorrenciaAnimalDTO ocorrenciaAnimalId){
+    public OcorrenciaAnimalDTO getMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId) {
         return ocorrenciaAnimalService.encontrarOcorrenciaAnimalPorId(ocorrenciaAnimalId);
     }
 
     @PostMapping("/")
-    public OcorrenciaAnimalDTO postMovimentacaoEsotque(@RequestBody OcorrenciaAnimalDTO ocorrenciaAnimalId){
+    public OcorrenciaAnimalDTO postMovimentacaoEsotque(@RequestBody OcorrenciaAnimalDTO ocorrenciaAnimalId) {
         return ocorrenciaAnimalService.criarOcorrenciaAnimal(ocorrenciaAnimalId);
     }
 
     @DeleteMapping("/{ocorrenciaAnimalId}")
-    public Boolean deleteMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId){
-
+    public String deleteMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId) {
         return ocorrenciaAnimalService.excluirOcorrenciaAnimal(ocorrenciaAnimalId);
     }
 
     @PutMapping("/{ocorrenciaAnimalId}")
-    public OcorrenciaAnimalDTO putMovimentacaoEsotque(@PathVariable OcorrenciaAnimalDTO ocorrenciaAnimalId){
-        return ocorrenciaAnimalService.atualizarOcorrenciaAnimal(ocorrenciaAnimalId);
+    public OcorrenciaAnimalDTO putMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId, @RequestBody OcorrenciaAnimalDTO dto) {
+        return ocorrenciaAnimalService.atualizarOcorrenciaAnimal(ocorrenciaAnimalId, dto);
     }
-
 }

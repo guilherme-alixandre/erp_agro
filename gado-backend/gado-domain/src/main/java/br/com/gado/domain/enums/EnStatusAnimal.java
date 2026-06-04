@@ -2,15 +2,11 @@ package br.com.gado.domain.enums;
 
 import lombok.Getter;
 
-
 @Getter
 public enum EnStatusAnimal {
     ATIVO,
-    OBSERVACAO,
+    OBERVACAO,
     VENDIDO,
-    ABATIDO,
     OBITO,
-
+    ABATIDO
 }
-
-

@@ -1,8 +1,8 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.VacinacaoDTO;
 import br.com.gado.domain.entities.EVacinacao;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.VacinacaoDTO;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 
 @Service
 public class SVacinacao {
@@ -36,16 +35,9 @@ public class SVacinacao {
     @Autowired
     private IInsumo insumoInterface;
 
-
     @Transactional
     public VacinacaoDTO criarVacinacao(VacinacaoDTO novaVacinacao) {
-
-        EVacinacao vacinacao = new EVacinacao();
-
-        vacinacao.setDataOcorrencia(novaVacinacao.getDataOcorrencia());
-        vacinacao.setUsuarioRelacionado(novaVacinacao.getUsuarioRelacionado());
-        vacinacao.setInsumoRelacionado(novaVacinacao.getInsumoRelacionado());
-        vacinacao.setInsumoRelacionado(novaVacinacao.getInsumoRelacionado());
+        EVacinacao vacinacao = modelMapper.map(novaVacinacao, EVacinacao.class);
 
         try {
             EVacinacao vaciacaoSalva = this.vacinacaoInterface.save(vacinacao);
@@ -56,26 +48,23 @@ public class SVacinacao {
         }
     }
 
-    public VacinacaoDTO buscarVacinacaoPorId(VacinacaoDTO vacinacao) {
-        EVacinacao existingEntitye = this.vacinacaoInterface
-                .findById(vacinacao.getId())
+    public VacinacaoDTO buscarVacinacaoPorId(Long vacinacaoId) {
+        EVacinacao existingEntity = this.vacinacaoInterface
+                .findById(vacinacaoId)
                 .orElseThrow(EntityNotFoundException::new);
-        return modelMapper.map(existingEntitye, VacinacaoDTO.class);
+        return modelMapper.map(existingEntity, VacinacaoDTO.class);
     }
 
-    public VacinacaoDTO atualizarVacinacaoPorId(VacinacaoDTO vacinacaoParaAtualizar) {
-        EVacinacao existingEntitye = this.vacinacaoInterface
-                .findById(vacinacaoParaAtualizar.getId())
+    public VacinacaoDTO atualizarVacinacaoPorId(Long vacinacaoId, VacinacaoDTO vacinacaoParaAtualizar) {
+        EVacinacao existingEntity = this.vacinacaoInterface
+                .findById(vacinacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
+        this.modelMapper.map(vacinacaoParaAtualizar, existingEntity);
 
-        this.modelMapper.map(vacinacaoParaAtualizar, existingEntitye);
-
-        EVacinacao vacinacaoAtualizada = modelMapper.map(existingEntitye, EVacinacao.class);
-
-        try{
-            EVacinacao vacinacaoSalva = this.vacinacaoInterface.save(vacinacaoAtualizada);
+        try {
+            EVacinacao vacinacaoSalva = this.vacinacaoInterface.save(existingEntity);
             return modelMapper.map(vacinacaoSalva, VacinacaoDTO.class);
         } catch (Exception e) {
             log.error("Erro ao atualizar vacinação: {}", e.getMessage(), e);
@@ -83,21 +72,19 @@ public class SVacinacao {
         }
     }
 
-    public boolean excluirVacinacaoPorId(Long vacinacaoId) {
-        EVacinacao existingEntitye = this.vacinacaoInterface
+    public String excluirVacinacaoPorId(Long vacinacaoId) {
+        EVacinacao existingEntity = this.vacinacaoInterface
                 .findById(vacinacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        existingEntity.setStatus(EnStatus.I);
 
-        try{
-            this.vacinacaoInterface.save(existingEntitye);
-            return true;
-        } catch (Exception e){
+        try {
+            this.vacinacaoInterface.save(existingEntity);
+            return "vacinação excluída com sucesso";
+        } catch (Exception e) {
             log.error("Erro ao excluir vacinação: {}", e.getMessage(), e);
+            return "erro ao excluir vacinação";
         }
-
-        return false;
-
     }
 }

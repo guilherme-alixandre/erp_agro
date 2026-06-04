@@ -1,17 +1,20 @@
 package br.com.gado.application.services;
 
-import br.com.gado.domain.entities.ESetor;
 import br.com.gado.application.dto.SetorDto;
+import br.com.gado.domain.entities.ESetor;
+import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SSetor {
 
@@ -21,53 +24,50 @@ public class SSetor {
     @Autowired
     private ModelMapper modelMapper;
 
+    public SetorDto procuraPorId(Long id) {
+        ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("nenhum setor encontrado"));
+        return modelMapper.map(setor, SetorDto.class);
+    }
 
-    public Map<String, Object> procuraPorId(Long id){
-        Optional<ESetor> setorOptional = setorInterface.findById(id);
-        Map<String, Object> response = new HashMap<>();
-
-        if(setorOptional.isEmpty()){
-            response.put("Erro", "nenhum setor encontrado");
+    @Transactional(readOnly = true)
+    public ArrayList<SetorDto> buscarTodos() {
+        ArrayList<ESetor> setores = setorInterface.findAllByStatus(EnStatus.A);
+        if (setores.isEmpty()) {
+            log.warn("Nenhum setor ativo cadastrado.");
+            return new ArrayList<>();
         }
-        else {
-            response.put("Setor", setorOptional.get());
-        }
-
-        return response;
+        return setores.stream()
+                .map(setor -> modelMapper.map(setor, SetorDto.class))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
-    public String cadastra(SetorDto dto){
+    public SetorDto cadastra(SetorDto dto) {
         ESetor setor = modelMapper.map(dto, ESetor.class);
+        ESetor setorSalvo = setorInterface.save(setor);
+        return modelMapper.map(setorSalvo, SetorDto.class);
+    }
+
+    @Transactional
+    public void deleta(Long id) {
+        ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Setor não encontrado ou inativo"));
+
+        setor.setStatus(EnStatus.I);
         setorInterface.save(setor);
-        return "Setor cadastrado com sucesso";
     }
 
     @Transactional
-    public String deleta(Long id){
-        boolean setor = setorInterface.existsById(id);
-        if(!setor){
-            return "nenhum setor encontrado";
-        }
+    public SetorDto altera(Long id, SetorDto dto) {
+        ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Setor encontrado"));
 
-        try{
-            setorInterface.deleteById(id);
-            return "setor deletado";
-        } catch (Exception e) {
-            return "não foi possível deletar porque o setor está vinculado com outras entidades";
-        }
-    }
-
-    @Transactional
-    public String altera(Long id, SetorDto dto){
-        Optional<ESetor> setorOptional = setorInterface.findById(id);
-        if(setorOptional.isEmpty()){
-            return "nenum setor encontrado";
-        }
-
-        ESetor setor = setorOptional.get();
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
+        dto.setId(id);
         modelMapper.map(dto, setor);
-        setorInterface.save(setor);
-        return "setor alterado com sucesso";
+
+        ESetor setorAtualizado = setorInterface.save(setor);
+        return modelMapper.map(setorAtualizado, SetorDto.class);
     }
 }

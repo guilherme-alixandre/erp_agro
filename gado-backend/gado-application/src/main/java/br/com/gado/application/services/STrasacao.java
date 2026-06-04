@@ -1,10 +1,10 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.TrasacaoDTO;
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.EParceiro;
 import br.com.gado.domain.entities.ETransacao;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.TrasacaoDTO;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
 import br.com.gado.infrastructure.persistence.repositories.ITrasacao;
@@ -38,72 +38,57 @@ public class STrasacao {
                 .findById(trasacaoDto.getLote().getId())
                 .orElseThrow(EntityNotFoundException::new);
 
-        ETransacao novaTransacao = new ETransacao();
-
+        ETransacao novaTransacao = modelMapper.map(trasacaoDto, ETransacao.class);
         novaTransacao.setLote(existingLote);
         novaTransacao.setParceiro(existingParceiro);
 
-        novaTransacao.setData(trasacaoDto.getData());
-        novaTransacao.setValor(trasacaoDto.getValor());
-
         try {
-            this.trasacaoInterface.save(novaTransacao);
-            return modelMapper.map(novaTransacao, TrasacaoDTO.class);
+            ETransacao transacaoSalva = this.trasacaoInterface.save(novaTransacao);
+            return modelMapper.map(transacaoSalva, TrasacaoDTO.class);
         } catch (Exception e) {
             log.error("Erro ao criar nova transação Id: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public TrasacaoDTO buscarTrasacaoPorId(TrasacaoDTO trasacaoDto) {
-
-        ETransacao existingEntitye = this.trasacaoInterface
-                .findById(trasacaoDto.getId())
+    public TrasacaoDTO buscarTrasacaoPorId(Long trasacaoId) {
+        ETransacao existingEntity = this.trasacaoInterface
+                .findById(trasacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        return modelMapper.map(existingEntitye, TrasacaoDTO.class);
+        return modelMapper.map(existingEntity, TrasacaoDTO.class);
     }
 
-    public TrasacaoDTO atualizarTrasacaoPorId(TrasacaoDTO trasacaoDto) {
-
-        ETransacao existingEntitye = this.trasacaoInterface
-                .findById(trasacaoDto.getId())
-                .orElseThrow(EntityNotFoundException::new);
-
-        EParceiro existingParceiro = this.parceiroInterface
-                .findByCpfCnpj(trasacaoDto.getParceiro().getCpfCnpj())
-                .orElseThrow(EntityNotFoundException::new);
-
-        ELote existingLote = this.loteInterface
-                .findById(trasacaoDto.getLote().getId())
+    public TrasacaoDTO atualizarTrasacaoPorId(Long trasacaoId, TrasacaoDTO trasacaoDto) {
+        ETransacao existingEntity = this.trasacaoInterface
+                .findById(trasacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        this.modelMapper.map(trasacaoDto, existingEntitye);
+        this.modelMapper.map(trasacaoDto, existingEntity);
 
         try {
-            this.trasacaoInterface.save(existingEntitye);
-            return modelMapper.map(existingEntitye, TrasacaoDTO.class);
+            ETransacao transacaoAtualizada = this.trasacaoInterface.save(existingEntity);
+            return modelMapper.map(transacaoAtualizada, TrasacaoDTO.class);
         } catch (Exception e) {
             log.error("Erro ao atualizar trasacao Id: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public boolean excluirTrasacaoPorId(Long trasacaoId) {
-        ETransacao existingEntitye = this.trasacaoInterface
+    public String excluirTrasacaoPorId(Long trasacaoId) {
+        ETransacao existingEntity = this.trasacaoInterface
                 .findById(trasacaoId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        existingEntity.setStatus(EnStatus.I);
 
         try {
-            this.trasacaoInterface.save(existingEntitye);
-            return true;
+            this.trasacaoInterface.save(existingEntity);
+            return "transação excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir trasacao Id: {}", e.getMessage(), e);
-            return false;
+            return "erro ao excluir transação";
         }
     }
 }

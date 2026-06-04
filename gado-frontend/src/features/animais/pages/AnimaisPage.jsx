@@ -244,6 +244,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             Setores
           </button>
           <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('metas')}
+          >
+            Metas
+          </button>
+          <button
             type="button"
             className="menu-item"
             onClick={() => onNavigate('insumos')}
@@ -334,7 +341,9 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             {activeSearch ? (
               <>
                 <p>Nenhum animal encontrado.</p>
-                <span>Nenhum resultado para "{activeSearch}". Ajuste o termo da busca.</span>
+                <span>
+                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo da busca.
+                </span>
               </>
             ) : (
               <>

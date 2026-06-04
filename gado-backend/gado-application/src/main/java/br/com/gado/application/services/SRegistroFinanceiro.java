@@ -1,10 +1,10 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.entities.ERegistroFinanceiro;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import br.com.gado.infrastructure.persistence.repositories.IRegistroFinanceiro;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
@@ -23,7 +23,6 @@ public class SRegistroFinanceiro {
     private static final Logger log = LoggerFactory.getLogger(SRegistroFinanceiro.class);
     private final ModelMapper modelMapper;
 
-
     public SRegistroFinanceiro(IRegistroFinanceiro registroFinanceiroInterface, IUsuario usuarioInterface, ICategoria categoriaInterface, ModelMapper modelMapper) {
         this.registroFinanceiroInterface = registroFinanceiroInterface;
         this.usuarioInterface = usuarioInterface;
@@ -32,76 +31,64 @@ public class SRegistroFinanceiro {
     }
 
     public RegistroFinanceiroDTO criarRegistroFinanceiro(RegistroFinanceiroDTO registroFinanceiroDto) {
-
         EUsuario existingUsuario = this.usuarioInterface
-                .findByEmail(registroFinanceiroDto.getUsuarioId().getEmail())
+                .findByEmailAndStatus(registroFinanceiroDto.getUsuarioId().getEmail(), registroFinanceiroDto.getUsuarioId().getStatus())
                 .orElseThrow(EntityNotFoundException::new);
 
         ECategoria existingCategoria = this.categoriaInterface
                 .findById(registroFinanceiroDto.getCategoriaId().getId())
                 .orElseThrow(EntityNotFoundException::new);
 
-        ERegistroFinanceiro novoRegistroFinanceiro = new ERegistroFinanceiro();
-
+        ERegistroFinanceiro novoRegistroFinanceiro = modelMapper.map(registroFinanceiroDto, ERegistroFinanceiro.class);
         novoRegistroFinanceiro.setUsuarioId(existingUsuario);
         novoRegistroFinanceiro.setCategoriaId(existingCategoria);
 
-        novoRegistroFinanceiro.setDescricao(registroFinanceiroDto.getDescricao());
-        novoRegistroFinanceiro.setTipoDespesa(registroFinanceiroDto.getTipoDespesa());
-        novoRegistroFinanceiro.setValor(registroFinanceiroDto.getValor());
-        novoRegistroFinanceiro.setDataPagamento(registroFinanceiroDto.getDataPagamento());
-        novoRegistroFinanceiro.setDataVencimento(registroFinanceiroDto.getDataVencimento());
-        novoRegistroFinanceiro.setStatusDespesa(registroFinanceiroDto.getStatusDespesa());
-
-        try{
+        try {
             ERegistroFinanceiro registroFinanceiroSalvo = this.registroFinanceiroInterface.save(novoRegistroFinanceiro);
             return modelMapper.map(registroFinanceiroSalvo, RegistroFinanceiroDTO.class);
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Erro ao salvar registro financeiro com Id: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public RegistroFinanceiroDTO buscarRegistroFinanceiroPorId(RegistroFinanceiroDTO registroFinanceiroDto) {
-        ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
-                .findById(registroFinanceiroDto.getId())
+    public RegistroFinanceiroDTO buscarRegistroFinanceiroPorId(Long registroFinanceiroId) {
+        ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
+                .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
-
-        return modelMapper.map(existingEntitye, RegistroFinanceiroDTO.class);
+        return modelMapper.map(existingEntity, RegistroFinanceiroDTO.class);
     }
 
-    public RegistroFinanceiroDTO atualizarRegistroFinanceiroPorId(RegistroFinanceiroDTO registroFinanceiroDto) {
-        ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
-                .findById(registroFinanceiroDto.getId())
+    public RegistroFinanceiroDTO atualizarRegistroFinanceiroPorId(Long registroFinanceiroId, RegistroFinanceiroDTO registroFinanceiroDto) {
+        ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
+                .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        this.modelMapper.map(registroFinanceiroDto, existingEntitye);
+        this.modelMapper.map(registroFinanceiroDto, existingEntity);
 
         try {
-            this.registroFinanceiroInterface.save(existingEntitye);
-            return modelMapper.map(existingEntitye, RegistroFinanceiroDTO.class);
-        }catch (Exception e){
+            ERegistroFinanceiro registroFinanceiroAtualizado = this.registroFinanceiroInterface.save(existingEntity);
+            return modelMapper.map(registroFinanceiroAtualizado, RegistroFinanceiroDTO.class);
+        } catch (Exception e) {
             log.error("Erro ao atualizar registro financeiro com Id: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public boolean excluirRegistroFinanceiroPorId(Long registroFinanceiroId) {
-
-        ERegistroFinanceiro existingEntitye = this.registroFinanceiroInterface
+    public String excluirRegistroFinanceiroPorId(Long registroFinanceiroId) {
+        ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
                 .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        existingEntity.setStatus(EnStatus.I);
 
         try {
-            this.registroFinanceiroInterface.save(existingEntitye);
-            return true;
-        }catch (Exception e){
+            this.registroFinanceiroInterface.save(existingEntity);
+            return "registro financeiro excluído com sucesso";
+        } catch (Exception e) {
             log.error("Erro ao excluir registro financeiro com Id: {}", e.getMessage(), e);
-            return false;
+            return "erro ao excluir registro financeiro";
         }
     }
 }

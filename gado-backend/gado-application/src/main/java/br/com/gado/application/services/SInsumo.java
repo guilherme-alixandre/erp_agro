@@ -1,21 +1,20 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.InsumoDto;
+import br.com.gado.application.dto.insumoDto.VacinaCadastroDto;
+import br.com.gado.application.dto.insumoDto.VacinaPutDto;
 import br.com.gado.domain.entities.EInsumo;
 import br.com.gado.domain.entities.EParceiro;
 import br.com.gado.domain.enums.EnTipoInsumo;
-import br.com.gado.application.dto.InsumoDto;
-import br.com.gado.application.dto.InsumoRespostaDto;
 import br.com.gado.infrastructure.persistence.repositories.IInsumo;
 import br.com.gado.infrastructure.persistence.repositories.IParceiro;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class SInsumo {
@@ -29,132 +28,124 @@ public class SInsumo {
     @Autowired
     private ModelMapper modelMapper;
 
+    public List<InsumoDto> listarVacinas(String busca) {
+        String termo = busca == null ? "" : busca.trim();
+        List<EInsumo> vacinas = termo.isBlank()
+                ? insumoInterface.findByTipoOrderByNomeAsc(EnTipoInsumo.VACINA)
+                : insumoInterface.findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(EnTipoInsumo.VACINA, termo);
 
-    public Map<String, Object> buscaPorId(Long id){
-        Map<String, Object> response = new HashMap<>();
-        Optional<EInsumo> insumo = insumoInterface.findById(id);
-
-        if(insumo.isEmpty()){
-            response.put("Erro", "Insumo não encontrado");
-        }
-        else {
-            response.put("insumo", insumo.get());
-        }
-
-        return response;
+        return vacinas.stream()
+                .map((vacina) -> modelMapper.map(vacina, InsumoDto.class))
+                .toList();
     }
 
     @Transactional
-    public String cadastraInsumo(InsumoDto dto){
-        EInsumo insumo = new EInsumo();
-
-        insumo.setNome(dto.getNome());
-        insumo.setEstoqueMinimo(dto.getEstoqueMinimo());
-        insumo.setSaldoAtual(dto.getSaldoAtual());
-
-        Optional<EParceiro> parceiroOptional = parceiroInterface.findById(dto.getParceiro_id());
-        if(parceiroOptional.isEmpty()){
-            return "Id do forcenedor não encontrado";
-        }
-        insumo.setParceiro(parceiroOptional.get());
-        insumo.setTipo(dto.getTipo());
-
-        insumoInterface.save(insumo);
-        return "insumo cadastrado";
-    }
-
-    @Transactional
-    public String deletaInsumo(Long id){
-        Optional<EInsumo> insumoOptional = insumoInterface.findById(id);
-
-        if(insumoOptional.isEmpty()){
-            return "nenhum insumo com esse id foi encontrado";
-        }
-
-        insumoInterface.deleteById(id);
-        return "insumo deletado com sucesso";
-    }
-
-    @Transactional
-    public String alteraInsumo(Long id, InsumoDto dto){
-        Optional<EInsumo> insumoOptional = insumoInterface.findById(id);
-
-        if(insumoOptional.isEmpty()){
-            return "nenhum insumo encontrado com esse id";
-        }
-
-        EInsumo insumo = insumoOptional.get();
-        modelMapper.map(dto, insumo);
-
-        insumoInterface.save(insumo);
-        return "insumo alterado com sucesso";
-    }
-
-    public List<InsumoRespostaDto> listarVacinas(String busca) {
-        List<EInsumo> vacinas;
-        if (busca == null || busca.trim().isEmpty()) {
-            vacinas = insumoInterface.findByTipoOrderByNomeAsc(EnTipoInsumo.VACINA);
-        } else {
-            vacinas = insumoInterface
-                    .findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(
-                            EnTipoInsumo.VACINA, busca.trim());
-        }
-        return vacinas.stream().map(this::toRespostaDto).toList();
-    }
-
-    @Transactional
-    public InsumoRespostaDto cadastraVacina(InsumoDto dto) {
-        if (dto.getNome() == null || dto.getNome().isBlank()) {
+    public InsumoDto criarVacina(VacinaCadastroDto dto) {
+        if (dto == null || dto.getNome() == null || dto.getNome().isBlank()) {
             throw new IllegalArgumentException("Informe o nome da vacina.");
         }
-        String nome = dto.getNome().trim();
 
-        Optional<EInsumo> existente = insumoInterface.findFirstByNomeIgnoreCase(nome);
-        if (existente.isPresent()) {
-            throw new IllegalArgumentException("Já existe uma vacina cadastrada com esse nome.");
+        String nome = dto.getNome().trim();
+        if (insumoInterface.findFirstByTipoAndNomeIgnoreCase(EnTipoInsumo.VACINA, nome).isPresent()) {
+            throw new IllegalArgumentException("Vacina já cadastrada.");
         }
 
         EInsumo vacina = new EInsumo();
         vacina.setNome(nome);
         vacina.setTipo(EnTipoInsumo.VACINA);
-        vacina.setPendente(Boolean.TRUE.equals(dto.getPendente()));
+        vacina.setPendente(dto.getPendente() != null ? dto.getPendente() : Boolean.FALSE);
+
         EInsumo salva = insumoInterface.save(vacina);
-        return toRespostaDto(salva);
+        return modelMapper.map(salva, InsumoDto.class);
     }
 
     @Transactional
-    public InsumoRespostaDto alteraVacina(Long id, InsumoDto dto) {
+    public InsumoDto atualizarVacina(Long id, VacinaPutDto dto) {
         EInsumo vacina = insumoInterface.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vacina não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Vacina não encontrada."));
 
-        if (dto.getNome() != null && !dto.getNome().isBlank()) {
-            vacina.setNome(dto.getNome().trim());
+        if (vacina.getTipo() != EnTipoInsumo.VACINA) {
+            throw new IllegalArgumentException("Insumo informado não é uma vacina.");
         }
+
+        if (dto == null) {
+            throw new IllegalArgumentException("Dados de atualização ausentes.");
+        }
+
+        if (dto.getNome() != null) {
+            String nome = dto.getNome().trim();
+            if (nome.isBlank()) {
+                throw new IllegalArgumentException("Informe o nome da vacina.");
+            }
+            vacina.setNome(nome);
+        }
+
         if (dto.getPendente() != null) {
             vacina.setPendente(dto.getPendente());
         }
-        vacina.setTipo(EnTipoInsumo.VACINA);
 
         EInsumo salva = insumoInterface.save(vacina);
-        return toRespostaDto(salva);
+        return modelMapper.map(salva, InsumoDto.class);
     }
 
     @Transactional
-    public String deletaVacina(Long id) {
-        if (insumoInterface.findById(id).isEmpty()) {
-            return "Vacina não encontrada.";
+    public String deletarVacina(Long id) {
+        EInsumo vacina = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vacina não encontrada."));
+
+        if (vacina.getTipo() != EnTipoInsumo.VACINA) {
+            throw new IllegalArgumentException("Insumo informado não é uma vacina.");
         }
+
         insumoInterface.deleteById(id);
-        return "vacina deletada";
+        return "Vacina deletada com sucesso";
     }
 
-    private InsumoRespostaDto toRespostaDto(EInsumo insumo) {
-        InsumoRespostaDto dto = new InsumoRespostaDto();
-        dto.setId(insumo.getId());
-        dto.setNome(insumo.getNome());
-        dto.setTipo(insumo.getTipo());
-        dto.setPendente(Boolean.TRUE.equals(insumo.getPendente()));
-        return dto;
+    public InsumoDto buscaPorId(Long id) {
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado."));
+        return modelMapper.map(insumo, InsumoDto.class);
     }
 
+    @Transactional
+    public InsumoDto cadastraInsumo(InsumoDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Dados de insumo ausentes.");
+        }
+        if (dto.getParceiro_id() == null) {
+            throw new IllegalArgumentException("Informe o fornecedor (parceiro_id).");
+        }
+
+        EInsumo insumo = modelMapper.map(dto, EInsumo.class);
+
+        EParceiro parceiro = parceiroInterface.findById(dto.getParceiro_id())
+                .orElseThrow(() -> new EntityNotFoundException("Id do fornecedor não encontrado."));
+
+        insumo.setParceiro(parceiro);
+
+        EInsumo insumoSalvo = insumoInterface.save(insumo);
+        return modelMapper.map(insumoSalvo, InsumoDto.class);
+    }
+
+    @Transactional
+    public String deletaInsumo(Long id) {
+        if (insumoInterface.findById(id).isEmpty()) {
+            return "Nenhum insumo com esse id foi encontrado";
+        }
+
+        insumoInterface.deleteById(id);
+        return "Insumo deletado com sucesso";
+    }
+
+    @Transactional
+    public InsumoDto alteraInsumo(Long id, InsumoDto dto) {
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum insumo encontrado com esse id"));
+
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
+        modelMapper.map(dto, insumo);
+        EInsumo insumoAtualizado = insumoInterface.save(insumo);
+        return modelMapper.map(insumoAtualizado, InsumoDto.class);
+    }
 }
+

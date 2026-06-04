@@ -16,7 +16,13 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Admin-Email"));
+        // Adicionado X-Usuario-Email para os endpoints de MetaSetor e MedicaoMeta
+        config.setAllowedHeaders(List.of(
+                "Content-Type",
+                "Authorization",
+                "X-Admin-Email",
+                "X-Usuario-Email"
+        ));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -24,4 +30,3 @@ public class CorsConfig {
         return new CorsFilter(source);
     }
 }
-

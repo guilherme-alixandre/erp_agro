@@ -1,8 +1,8 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.UnidadeMedidaDTO;
 import br.com.gado.domain.entities.EUnidadeMedida;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.UnidadeMedidaDTO;
 import br.com.gado.infrastructure.persistence.repositories.IUnidadeMedida;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -23,57 +23,54 @@ public class SUnidadeMedida {
     }
 
     public UnidadeMedidaDTO criarUnidadeMedida(UnidadeMedidaDTO unidadeMedidaDto) {
-        EUnidadeMedida novaUnidadeMedida = new EUnidadeMedida();
-
-        novaUnidadeMedida.setUnidade(unidadeMedidaDto.getUnidade());
+        EUnidadeMedida novaUnidadeMedida = modelMapper.map(unidadeMedidaDto, EUnidadeMedida.class);
 
         try {
-            this.unidadeMedidaInterface.save(novaUnidadeMedida);
-            return modelMapper.map(novaUnidadeMedida, UnidadeMedidaDTO.class);
+            EUnidadeMedida unidadeMedidaSalva = this.unidadeMedidaInterface.save(novaUnidadeMedida);
+            return modelMapper.map(unidadeMedidaSalva, UnidadeMedidaDTO.class);
         } catch (Exception e) {
             log.error("Erro ao criar nova unidade de medida: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public UnidadeMedidaDTO bucarUnidadeMedidaPorId(UnidadeMedidaDTO unidadeMedidaDto) {
-        EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
-                .findById(unidadeMedidaDto.getId())
+    public UnidadeMedidaDTO bucarUnidadeMedidaPorId(Long unidadeMedidaId) {
+        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
+                .findById(unidadeMedidaId)
                 .orElseThrow(EntityNotFoundException::new);
-        return modelMapper.map(existingEntitye, UnidadeMedidaDTO.class);
+        return modelMapper.map(existingEntity, UnidadeMedidaDTO.class);
     }
 
-    public UnidadeMedidaDTO atualizarUnidadeMedida(UnidadeMedidaDTO unidadeMedidaDto) {
-        EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
-                .findById(unidadeMedidaDto.getId())
+    public UnidadeMedidaDTO atualizarUnidadeMedida(Long unidadeMedidaId, UnidadeMedidaDTO unidadeMedidaDto) {
+        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
+                .findById(unidadeMedidaId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
+        this.modelMapper.map(unidadeMedidaDto, existingEntity);
 
-        this.modelMapper.map(unidadeMedidaDto, existingEntitye);
-
-        try{
-            this.unidadeMedidaInterface.save(existingEntitye);
-            return modelMapper.map(existingEntitye, UnidadeMedidaDTO.class);
+        try {
+            EUnidadeMedida unidadeMedidaAtualizada = this.unidadeMedidaInterface.save(existingEntity);
+            return modelMapper.map(unidadeMedidaAtualizada, UnidadeMedidaDTO.class);
         } catch (Exception e) {
             log.error("Erro ao atualizar unidade de medida: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public boolean excluirUnidadeMedida(Long unidadeMedidaId) {
-        EUnidadeMedida existingEntitye = this.unidadeMedidaInterface
+    public String excluirUnidadeMedida(Long unidadeMedidaId) {
+        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
                 .findById(unidadeMedidaId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        existingEntity.setStatus(EnStatus.I);
 
         try {
-            this.unidadeMedidaInterface.save(existingEntitye);
-            return true;
+            this.unidadeMedidaInterface.save(existingEntity);
+            return "unidade de medida excluída com sucesso";
         } catch (Exception e) {
             log.error("Erro ao excluir unidade de medida: {}", e.getMessage(), e);
-            return false;
+            return "erro ao excluir unidade de medida";
         }
     }
 }

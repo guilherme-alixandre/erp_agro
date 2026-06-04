@@ -1,8 +1,8 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import br.com.gado.domain.entities.EMovimentacaoEstoque;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.MovimentacaoEstoqueDTO;
 import br.com.gado.infrastructure.persistence.repositories.IMovimentacaoEstoque;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -22,19 +22,9 @@ public class SMovimentacaoEstoque {
     }
 
     public MovimentacaoEstoqueDTO criarMovimentacaoEstoque(MovimentacaoEstoqueDTO novaMovimentacaoEstoque) {
+        EMovimentacaoEstoque novaMovimentacao = modelMapper.map(novaMovimentacaoEstoque, EMovimentacaoEstoque.class);
 
-        EMovimentacaoEstoque novaMovimentacao = new EMovimentacaoEstoque();
-
-        novaMovimentacao.setEnTipoMovimentacaoEstoque(novaMovimentacaoEstoque.getEnTipoMovimentacaoEstoque());
-        novaMovimentacao.setQuantidade(novaMovimentacaoEstoque.getQuantidade());
-        novaMovimentacao.setValorUnitario(novaMovimentacaoEstoque.getValorUnitario());
-        novaMovimentacao.setDataMovimentacao(novaMovimentacaoEstoque.getDataMovimentacao());
-        novaMovimentacao.setLoteId(novaMovimentacaoEstoque.getLoteId());
-        novaMovimentacao.setParceiroId(novaMovimentacaoEstoque.getParceiroId());
-        novaMovimentacao.setId(novaMovimentacaoEstoque.getId());
-        novaMovimentacao.setAnimalId(novaMovimentacaoEstoque.getAnimalId());
-
-        try{
+        try {
             EMovimentacaoEstoque movimentacaoEstoque = this.movimentacaoEstoqueInterface.save(novaMovimentacao);
             return modelMapper.map(movimentacaoEstoque, MovimentacaoEstoqueDTO.class);
         } catch (Exception e) {
@@ -43,24 +33,23 @@ public class SMovimentacaoEstoque {
         }
     }
 
-    public MovimentacaoEstoqueDTO buscarMovimentacaoEstoquePorId(MovimentacaoEstoqueDTO movimentacaoEstoque) {
-        EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
-                .findById(movimentacaoEstoque.getId())
+    public MovimentacaoEstoqueDTO buscarMovimentacaoEstoquePorId(Long movimentacaoEstoqueId) {
+        EMovimentacaoEstoque existingEntity = this.movimentacaoEstoqueInterface
+                .findById(movimentacaoEstoqueId)
                 .orElseThrow(EntityNotFoundException::new);
-        return modelMapper.map(existingEntitye, MovimentacaoEstoqueDTO.class);
+        return modelMapper.map(existingEntity, MovimentacaoEstoqueDTO.class);
     }
 
-    public MovimentacaoEstoqueDTO atualizarMovimentacaoEstoquePorId(MovimentacaoEstoqueDTO movimentacaoEstoqueParaAtualizar) {
-        EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
-                .findById(movimentacaoEstoqueParaAtualizar.getId())
+    public MovimentacaoEstoqueDTO atualizarMovimentacaoEstoquePorId(Long movimentacaoEstoqueId, MovimentacaoEstoqueDTO movimentacaoEstoqueParaAtualizar) {
+        EMovimentacaoEstoque existingEntity = this.movimentacaoEstoqueInterface
+                .findById(movimentacaoEstoqueId)
                 .orElseThrow(EntityNotFoundException::new);
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        this.modelMapper.map(movimentacaoEstoqueParaAtualizar, existingEntitye);
+        this.modelMapper.map(movimentacaoEstoqueParaAtualizar, existingEntity);
 
         try {
-            EMovimentacaoEstoque movimentacaoEstoqueAtualizada = this.movimentacaoEstoqueInterface.save(existingEntitye);
+            EMovimentacaoEstoque movimentacaoEstoqueAtualizada = this.movimentacaoEstoqueInterface.save(existingEntity);
             return modelMapper.map(movimentacaoEstoqueAtualizada, MovimentacaoEstoqueDTO.class);
         } catch (Exception e) {
             log.error("Erro ao atualizar movimentacao estoque: {}", e.getMessage(), e);
@@ -68,20 +57,19 @@ public class SMovimentacaoEstoque {
         }
     }
 
-    public boolean excluirMovimentacaoEstoquePorId(Long movimentacaoEstoqueId) {
-        EMovimentacaoEstoque existingEntitye = this.movimentacaoEstoqueInterface
+    public String excluirMovimentacaoEstoquePorId(Long movimentacaoEstoqueId) {
+        EMovimentacaoEstoque existingEntity = this.movimentacaoEstoqueInterface
                 .findById(movimentacaoEstoqueId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        existingEntity.setStatus(EnStatus.I);
 
-        try{
-            this.movimentacaoEstoqueInterface.save(existingEntitye);
-            return true;
-        } catch (Exception e){
+        try {
+            this.movimentacaoEstoqueInterface.save(existingEntity);
+            return "movimentação de estoque excluída com sucesso";
+        } catch (Exception e) {
             log.error("Erro ao excluir movimentação de estoque: {}", e.getMessage(), e);
+            return "erro ao excluir movimentação de estoque";
         }
-
-        return false;
     }
 }

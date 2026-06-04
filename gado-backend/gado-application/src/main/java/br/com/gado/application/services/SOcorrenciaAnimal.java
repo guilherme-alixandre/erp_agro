@@ -1,9 +1,9 @@
 package br.com.gado.application.services;
 
+import br.com.gado.application.dto.OcorrenciaAnimalDTO;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EOcorrenciaAnimal;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.application.dto.OcorrenciaAnimalDTO;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IOcorrenciaAnimal;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,11 +14,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SOcorrenciaAnimal {
+    private static final Logger log = LoggerFactory.getLogger(SOcorrenciaAnimal.class);
     private final IOcorrenciaAnimal ocorrenciaAnimalInterface;
     private final IAnimal animalInterface;
-    private static final Logger log = LoggerFactory.getLogger(SOcorrenciaAnimal.class);
     private final ModelMapper modelMapper;
-
 
     public SOcorrenciaAnimal(IOcorrenciaAnimal correnciaAnimalInterface, IAnimal animalInterface, ModelMapper modelMapper) {
         this.ocorrenciaAnimalInterface = correnciaAnimalInterface;
@@ -27,71 +26,59 @@ public class SOcorrenciaAnimal {
     }
 
     public OcorrenciaAnimalDTO criarOcorrenciaAnimal(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
-
         EAnimal existingAnimal = this.animalInterface
-                .findByCodigoBrinco(ocorrenciaAnimalDto.getIdAnimal().getCodigoBrinco())
+                .findByCodigoBrincoAndStatus(ocorrenciaAnimalDto.getIdAnimal().getCodigoBrinco(), ocorrenciaAnimalDto.getIdAnimal().getStatus())
                 .orElseThrow(EntityNotFoundException::new);
 
-        EOcorrenciaAnimal novaOcorrenciaAnimal = new EOcorrenciaAnimal();
-
-        novaOcorrenciaAnimal.setTipoOcorrencia(ocorrenciaAnimalDto.getTipoOcorrencia());
-        novaOcorrenciaAnimal.setDataOcorrencia(ocorrenciaAnimalDto.getDataOcorrencia());
-        novaOcorrenciaAnimal.setObservacao(ocorrenciaAnimalDto.getObservacao());
+        EOcorrenciaAnimal novaOcorrenciaAnimal = this.modelMapper.map(ocorrenciaAnimalDto, EOcorrenciaAnimal.class);
         novaOcorrenciaAnimal.setIdAnimal(existingAnimal);
 
-        try{
+        try {
             EOcorrenciaAnimal ocorrenciaAnimalSalva = this.ocorrenciaAnimalInterface.save(novaOcorrenciaAnimal);
             return this.modelMapper.map(ocorrenciaAnimalSalva, OcorrenciaAnimalDTO.class);
-        } catch (Exception e){
-            log.error("Erro ao criar a correncia animal Id: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Erro ao criar a ocorrência animal Id: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    public OcorrenciaAnimalDTO encontrarOcorrenciaAnimalPorId(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
-        EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
-                .findById(ocorrenciaAnimalDto.getId())
+    public OcorrenciaAnimalDTO encontrarOcorrenciaAnimalPorId(Long ocorrenciaAnimalId) {
+        EOcorrenciaAnimal existingEntity = this.ocorrenciaAnimalInterface
+                .findById(ocorrenciaAnimalId)
                 .orElseThrow(EntityNotFoundException::new);
-
-        if(existingEntitye != null){
-            return this.modelMapper.map(existingEntitye, OcorrenciaAnimalDTO.class);
-        } else {
-            log.error("Erro, Ocorrencia não encontrada para o id {}", ocorrenciaAnimalDto.getId());
-            throw new EntityNotFoundException();
-        }
+        return this.modelMapper.map(existingEntity, OcorrenciaAnimalDTO.class);
     }
 
-    public OcorrenciaAnimalDTO atualizarOcorrenciaAnimal(OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
-        EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
-                .findById(ocorrenciaAnimalDto.getId())
-                .orElseThrow(EntityNotFoundException::new);
-
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-
-        this.modelMapper.map(ocorrenciaAnimalDto, existingEntitye);
-
-        try{
-            EOcorrenciaAnimal ocorenciaAnimalAtualizada = this.ocorrenciaAnimalInterface.save(existingEntitye);
-            return modelMapper.map(ocorenciaAnimalAtualizada, OcorrenciaAnimalDTO.class);
-        } catch (Exception e){
-            log.error("Erro ao atualizar a correncia animal Id: {}", e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    public boolean excluirOcorrenciaAnimal(Long ocorrenciaAnimalId) {
-        EOcorrenciaAnimal existingEntitye = this.ocorrenciaAnimalInterface
+    public OcorrenciaAnimalDTO atualizarOcorrenciaAnimal(Long ocorrenciaAnimalId, OcorrenciaAnimalDTO ocorrenciaAnimalDto) {
+        EOcorrenciaAnimal existingEntity = this.ocorrenciaAnimalInterface
                 .findById(ocorrenciaAnimalId)
                 .orElseThrow(EntityNotFoundException::new);
 
-        existingEntitye.setStatus(EnStatus.I);
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
+        this.modelMapper.map(ocorrenciaAnimalDto, existingEntity);
 
         try {
-            this.ocorrenciaAnimalInterface.save(existingEntitye);
-            return true;
-        } catch (Exception e){
-            log.error("Erro ao excluir a correncia animal Id: {}", e.getMessage(), e);
-            return false;
+            EOcorrenciaAnimal ocorenciaAnimalAtualizada = this.ocorrenciaAnimalInterface.save(existingEntity);
+            return modelMapper.map(ocorenciaAnimalAtualizada, OcorrenciaAnimalDTO.class);
+        } catch (Exception e) {
+            log.error("Erro ao atualizar a ocorrência animal Id: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    public String excluirOcorrenciaAnimal(Long ocorrenciaAnimalId) {
+        EOcorrenciaAnimal existingEntity = this.ocorrenciaAnimalInterface
+                .findById(ocorrenciaAnimalId)
+                .orElseThrow(EntityNotFoundException::new);
+
+        existingEntity.setStatus(EnStatus.I);
+
+        try {
+            this.ocorrenciaAnimalInterface.save(existingEntity);
+            return "ocorrência animal excluída com sucesso";
+        } catch (Exception e) {
+            log.error("Erro ao excluir a ocorrência animal Id: {}", e.getMessage(), e);
+            return "erro ao excluir ocorrência animal";
         }
     }
 }

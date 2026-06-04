@@ -1,13 +1,16 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.SUsuario;
 import br.com.gado.application.dto.usuarioDto.UsuarioCadastroDto;
+import br.com.gado.application.dto.usuarioDto.UsuarioDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.application.dto.usuarioDto.UsuarioPutDto;
-import br.com.gado.application.dto.usuarioDto.UsuarioRespostaDto;
+import br.com.gado.application.services.SUsuario;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,44 +21,46 @@ public class CUsuario {
     @Autowired
     private SUsuario usuarioService;
 
-    @GetMapping
-    public List<UsuarioRespostaDto> listarUsuarios(
-            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail){
-        usuarioService.validaAdmin(adminEmail);
-        return usuarioService.listarTodos();
-    }
-
     @GetMapping("/{email}")
-    public Map<String, Object> getUsuario(@PathVariable String email){
+    public UsuarioDto getUsuario(@PathVariable String email) {
         return usuarioService.encontraPorEmail(email);
     }
 
+    @GetMapping
+    public ArrayList<UsuarioDto> getUsuarios() {
+        return usuarioService.buscarTodos();
+    }
+
     @PostMapping
-    public String postUsuario(
-            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail,
-            @RequestBody UsuarioCadastroDto dto){
-        usuarioService.validaAdmin(adminEmail);
+    public UsuarioDto postUsuario(@RequestBody UsuarioCadastroDto dto) {
         return usuarioService.cadastra(dto);
     }
 
     @PostMapping("/login")
-    public Map<String, Object> postLogin(@RequestBody UsuarioLoginDto dto){
-        return usuarioService.login(dto);
+    public ResponseEntity<?> login(@RequestBody UsuarioLoginDto dto) {
+        if (dto == null || dto.getEmail() == null || dto.getEmail().isBlank()
+                || dto.getSenha() == null || dto.getSenha().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("mensagem", "Informe e-mail e senha."));
+        }
+
+        try {
+            UsuarioDto usuario = usuarioService.login(dto);
+            return ResponseEntity.ok(usuario);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("mensagem", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{email}")
-    public String deleteUsuario(
-            @RequestHeader(name = "X-Admin-Email", required = false) String adminEmail,
-            @PathVariable String email){
-        usuarioService.validaAdmin(adminEmail);
+    public String deleteUsuario(@PathVariable String email) {
         return usuarioService.deleta(email);
     }
 
     @PutMapping("/{email}")
-    public String putUsuario(@PathVariable String email,
-                             @RequestBody UsuarioPutDto dto)
-    {
+    public UsuarioDto putUsuario(@PathVariable String email, @RequestBody UsuarioPutDto dto) {
         return usuarioService.altera(email, dto);
     }
-
 }
+

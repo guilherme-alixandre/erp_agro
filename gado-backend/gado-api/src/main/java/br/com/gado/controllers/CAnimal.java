@@ -1,52 +1,43 @@
 package br.com.gado.controllers;
 
-import br.com.gado.application.services.SAnimal;
 import br.com.gado.application.dto.AnimalDto;
-import br.com.gado.application.dto.AnimalRespostaDto;
+import br.com.gado.application.services.SAnimal;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/animais")
 public class CAnimal {
 
-    private final SAnimal animalService;
-
-    public CAnimal(SAnimal animalService){
-        this.animalService = animalService;
-    }
-
-
-    @GetMapping
-    public List<AnimalRespostaDto> buscarAnimais(
-            @RequestParam(name = "busca", required = false, defaultValue = "") String busca){
-        return animalService.buscarPorTermo(busca);
-    }
+    @Autowired
+    private SAnimal animalService;
 
     @GetMapping("/{brinco}")
-    public Map<String, Object> getAnimal(@PathVariable String brinco){
-        return animalService.buscarPorBrinco(brinco);
+    public ResponseEntity<AnimalDto> getAnimal(@PathVariable String brinco) {
+        return ResponseEntity.ok(animalService.buscarPorBrinco(brinco));
+    }
+
+    @GetMapping
+    public ResponseEntity<ArrayList<AnimalDto>> getAnimals(){
+        return ResponseEntity.ok(animalService.buscarTodosAnimais());
     }
 
     @PostMapping("/usuarios/{email}")
-    public String postAnimal(@PathVariable String email,
-                             @RequestBody AnimalDto animal)
-    {
-        return animalService.cadastraAnimal(email, animal);
+    public ResponseEntity<AnimalDto> postAnimal(@PathVariable String email, @RequestBody AnimalDto animal) throws Exception {
+        return ResponseEntity.status(HttpStatus.CREATED).body(animalService.cadastraAnimal(email, animal));
     }
 
     @DeleteMapping("/{brinco}")
-    public String deleteAnimal(@PathVariable String brinco){
-        return animalService.deletaAnimal(brinco);
+    public ResponseEntity<String> deleteAnimal(@PathVariable String brinco) {
+        return ResponseEntity.ok(animalService.deletaAnimal(brinco));
     }
 
     @PutMapping("/{brinco}")
-    public String putAnimal(@PathVariable String brinco,
-                            @RequestBody AnimalDto animal)
-    {
-        return animalService.alteraAnimal(brinco, animal);
+    public ResponseEntity<AnimalDto> putAnimal(@PathVariable String brinco, @RequestBody AnimalDto animal) {
+        return ResponseEntity.ok(animalService.alteraAnimal(brinco, animal));
     }
-
 }
