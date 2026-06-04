@@ -1,4 +1,4 @@
-﻿package br.com.gado.mappers;
+package br.com.gado.mappers;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;

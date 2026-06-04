@@ -1,4 +1,4 @@
-﻿package br.com.gado.dto.parcerioDto;
+package br.com.gado.dto.parcerioDto;
 
 import br.com.gado.dto.AbstractDTO;
 import br.com.gado.enums.EnTipoParceiro;

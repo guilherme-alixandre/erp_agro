@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { request } from '../../../integration/apiClient'
 
 const MIN_BIRTH_YEAR = 1990
 

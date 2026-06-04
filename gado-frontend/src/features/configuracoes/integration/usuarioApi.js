@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { request } from '../../../integration/apiClient'
 
 function toCadastroPayload(usuario) {
   return {

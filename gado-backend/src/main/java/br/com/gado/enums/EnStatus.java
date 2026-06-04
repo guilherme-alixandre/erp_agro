@@ -1,4 +1,4 @@
-﻿package br.com.gado.enums;
+package br.com.gado.enums;
 
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-﻿package br.com.gado.services;
+package br.com.gado.services;
 
 import br.com.gado.dto.RegistroFinanceiroDTO;
 import br.com.gado.entities.ECategoria;

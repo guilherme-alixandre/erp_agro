@@ -1,4 +1,4 @@
-﻿package br.com.gado.controllers;
+package br.com.gado.controllers;
 
 import br.com.gado.dto.VacinacaoDTO;
 import br.com.gado.services.SVacinacao;

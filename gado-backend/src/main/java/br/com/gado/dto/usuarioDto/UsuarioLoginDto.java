@@ -1,4 +1,4 @@
-﻿package br.com.gado.dto.usuarioDto;
+package br.com.gado.dto.usuarioDto;
 
 import lombok.Data;
 

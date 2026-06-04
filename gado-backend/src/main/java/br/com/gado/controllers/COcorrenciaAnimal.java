@@ -1,4 +1,4 @@
-﻿package br.com.gado.controllers;
+package br.com.gado.controllers;
 
 import br.com.gado.dto.OcorrenciaAnimalDTO;
 import br.com.gado.services.SOcorrenciaAnimal;

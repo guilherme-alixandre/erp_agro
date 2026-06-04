@@ -1,4 +1,4 @@
-﻿package br.com.gado.dto;
+package br.com.gado.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

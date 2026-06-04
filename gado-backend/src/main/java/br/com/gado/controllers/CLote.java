@@ -1,4 +1,4 @@
-﻿package br.com.gado.controllers;
+package br.com.gado.controllers;
 
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;

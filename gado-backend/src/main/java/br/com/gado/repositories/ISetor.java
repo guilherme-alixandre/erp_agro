@@ -1,4 +1,4 @@
-﻿package br.com.gado.repositories;
+package br.com.gado.repositories;
 
 import br.com.gado.entities.ESetor;
 import br.com.gado.enums.EnStatus;

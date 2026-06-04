@@ -1,4 +1,4 @@
-﻿package br.com.gado.entities;
+package br.com.gado.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;

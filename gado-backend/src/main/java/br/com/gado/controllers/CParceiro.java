@@ -1,4 +1,4 @@
-﻿package br.com.gado.controllers;
+package br.com.gado.controllers;
 
 import br.com.gado.dto.parcerioDto.ParceiroCadastroDto;
 import br.com.gado.dto.parcerioDto.ParceiroDto;

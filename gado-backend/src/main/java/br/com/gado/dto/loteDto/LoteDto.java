@@ -1,4 +1,4 @@
-﻿package br.com.gado.dto.loteDto;
+package br.com.gado.dto.loteDto;
 
 import br.com.gado.dto.AbstractDTO;
 import br.com.gado.entities.EUsuario;

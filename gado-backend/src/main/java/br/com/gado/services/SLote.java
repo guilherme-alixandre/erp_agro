@@ -1,4 +1,4 @@
-﻿package br.com.gado.services;
+package br.com.gado.services;
 
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;

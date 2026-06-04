@@ -1,4 +1,4 @@
-﻿package br.com.gado.services;
+package br.com.gado.services;
 
 import br.com.gado.dto.OcorrenciaAnimalDTO;
 import br.com.gado.entities.EAnimal;

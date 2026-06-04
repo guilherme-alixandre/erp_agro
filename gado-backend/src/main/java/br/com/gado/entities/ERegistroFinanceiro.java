@@ -1,4 +1,4 @@
-﻿package br.com.gado.entities;
+package br.com.gado.entities;
 
 import br.com.gado.enums.EnStatusDespesa;
 import br.com.gado.enums.EnTipoDespesa;

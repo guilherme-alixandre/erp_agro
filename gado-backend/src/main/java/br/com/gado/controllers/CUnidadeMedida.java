@@ -1,4 +1,4 @@
-﻿package br.com.gado.controllers;
+package br.com.gado.controllers;
 
 import br.com.gado.dto.UnidadeMedidaDTO;
 import br.com.gado.services.SUnidadeMedida;

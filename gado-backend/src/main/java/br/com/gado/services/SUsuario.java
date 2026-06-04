@@ -1,4 +1,4 @@
-﻿package br.com.gado.services;
+package br.com.gado.services;
 
 import br.com.gado.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.dto.usuarioDto.UsuarioDto;

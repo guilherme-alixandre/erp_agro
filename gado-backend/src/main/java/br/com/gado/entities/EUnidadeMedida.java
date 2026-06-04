@@ -1,4 +1,4 @@
-﻿package br.com.gado.entities;
+package br.com.gado.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;

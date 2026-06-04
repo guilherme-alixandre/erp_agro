@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { request } from '../../../integration/apiClient'
 
 function sanitizeText(value) {
   return String(value ?? '').trim()

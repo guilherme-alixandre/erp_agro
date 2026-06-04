@@ -1,4 +1,4 @@
-﻿package br.com.gado.entities;
+package br.com.gado.entities;
 
 import br.com.gado.enums.EnTipoInsumo;
 import jakarta.persistence.*;

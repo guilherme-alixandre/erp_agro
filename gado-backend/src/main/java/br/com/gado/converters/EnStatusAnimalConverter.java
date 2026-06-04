@@ -1,4 +1,4 @@
-﻿package br.com.gado.converters;
+package br.com.gado.converters;
 
 import br.com.gado.enums.EnStatusAnimal;
 import jakarta.persistence.AttributeConverter;
