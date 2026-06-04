@@ -24,6 +24,6 @@ public class ESetor extends EAbstract{
     private EnTipoSetor tipo;
 
     @OneToMany(mappedBy = "setor")
-    private List<ELote> lotes = new ArrayList<>();
+    private List<ELoteSetor> lotes = new ArrayList<>();
 }
 
