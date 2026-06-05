@@ -6,6 +6,7 @@ function normalizeSetor(raw) {
   return {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
+    capacidadeMaxima: raw?.capacidadeMaxima ?? 0,
   }
 }
 
