@@ -31,13 +31,16 @@ function normalizeLoteSetor(raw) {
 }
 
 export function normalizeSetorCompleto(raw) {
+  const statusRaw = raw?.status
+  const status = statusRaw === 'A' ? 'ATIVO' : statusRaw === 'I' ? 'INATIVO' : (statusRaw ?? 'ATIVO')
+
   return {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     capacidadeMaxima: raw?.capacidadeMaxima ?? 0,
     tipo: raw?.tipo ?? '',
     metaTexto: raw?.metaTexto ?? '',
-    status: 'ATIVO',
+    status,
     criadoPorNome: raw?.criadoPorNome ?? '',
     criadoPorEmail: raw?.criadoPorEmail ?? '',
     alteradoPorNome: raw?.alteradoPorNome ?? null,

@@ -1,9 +1,8 @@
-// Ajuste os valores para corresponder exatamente ao enum EnTipoSetor do backend.
 const TIPOS_SETOR = [
-  { value: 'LEITE', label: 'Leite' },
-  { value: 'ABATE', label: 'Abate' },
-  { value: 'CRIA', label: 'Cria' },
-  { value: 'RECRIA', label: 'Recria' },
+  { value: 'PASTO', label: 'Pasto' },
+  { value: 'GALPAO', label: 'Galpão' },
+  { value: 'CONFINAMENTO', label: 'Confinamento' },
+  { value: 'PATIO', label: 'Pátio' },
 ]
 
 function RequiredLabel({ children }) {

@@ -1,8 +1,8 @@
 const TIPO_LABEL = {
-  LEITE: 'Leite',
-  ABATE: 'Abate',
-  CRIA: 'Cria',
-  RECRIA: 'Recria',
+  PASTO: 'Pasto',
+  GALPAO: 'Galpão',
+  CONFINAMENTO: 'Confinamento',
+  PATIO: 'Pátio',
 }
 
 function SetorCard({ setor, onDetalhes, onEditar }) {

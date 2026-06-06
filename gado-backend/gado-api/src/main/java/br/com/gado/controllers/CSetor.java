@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+
 @RestController
 @RequestMapping("/api/setores")
 public class CSetor {
@@ -19,9 +21,16 @@ public class CSetor {
         return ResponseEntity.ok(setorService.procuraPorId(id));
     }
 
+    @GetMapping
+    public ResponseEntity<ArrayList<SetorDto>> getListaSetor() {
+        return ResponseEntity.ok(setorService.buscarTodos());
+    }
+
     @PostMapping
-    public ResponseEntity<SetorDto> postSetor(@RequestBody SetorDto dto) {
-        SetorDto criado = setorService.cadastra(dto);
+    public ResponseEntity<SetorDto> postSetor(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String email,
+            @RequestBody SetorDto dto) {
+        SetorDto criado = setorService.cadastra(dto, email);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
@@ -36,7 +45,10 @@ public class CSetor {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SetorDto> putSetor(@PathVariable Long id, @RequestBody SetorDto dto) {
-        return ResponseEntity.ok(setorService.altera(id, dto));
+    public ResponseEntity<SetorDto> putSetor(
+            @PathVariable Long id,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String email,
+            @RequestBody SetorDto dto) {
+        return ResponseEntity.ok(setorService.altera(id, dto, email));
     }
 }

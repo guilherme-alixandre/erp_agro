@@ -2,8 +2,10 @@ package br.com.gado.application.services;
 
 import br.com.gado.application.dto.SetorDto;
 import br.com.gado.domain.entities.ESetor;
+import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
+import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -22,31 +24,38 @@ public class SSetor {
     private ISetor setorInterface;
 
     @Autowired
+    private IUsuario usuarioInterface;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     public SetorDto procuraPorId(Long id) {
         ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("nenhum setor encontrado"));
-        return modelMapper.map(setor, SetorDto.class);
+        return toSetorDto(setor);
     }
 
     @Transactional(readOnly = true)
     public ArrayList<SetorDto> buscarTodos() {
-        ArrayList<ESetor> setores = setorInterface.findAllByStatus(EnStatus.A);
-        if (setores.isEmpty()) {
-            log.warn("Nenhum setor ativo cadastrado.");
-            return new ArrayList<>();
-        }
-        return setores.stream()
-                .map(setor -> modelMapper.map(setor, SetorDto.class))
+        return setorInterface.findAll().stream()
+                .map(this::toSetorDto)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
-    public SetorDto cadastra(SetorDto dto) {
-        ESetor setor = modelMapper.map(dto, ESetor.class);
-        ESetor setorSalvo = setorInterface.save(setor);
-        return modelMapper.map(setorSalvo, SetorDto.class);
+    public SetorDto cadastra(SetorDto dto, String email) {
+        EUsuario usuario = resolveUsuario(email);
+
+        ESetor setor = new ESetor();
+        setor.setNome(dto.getNome());
+        setor.setCapacidadeMaxima(dto.getCapacidadeMaxima());
+        setor.setMetaTexto(dto.getMetaTexto());
+        setor.setMetaProducaoLeite(dto.getMetaProducaoLeite());
+        setor.setMetaArrobaAbate(dto.getMetaArrobaAbate());
+        setor.setTipo(dto.getTipo());
+        setor.setCriadoPor(usuario);
+
+        return toSetorDto(setorInterface.save(setor));
     }
 
     @Transactional
@@ -59,15 +68,57 @@ public class SSetor {
     }
 
     @Transactional
-    public SetorDto altera(Long id, SetorDto dto) {
+    public SetorDto altera(Long id, SetorDto dto, String email) {
+        EUsuario usuario = resolveUsuario(email);
+
         ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
-                .orElseThrow(() -> new EntityNotFoundException("Setor encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Setor não encontrado"));
 
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-        dto.setId(id);
-        modelMapper.map(dto, setor);
+        if (dto.getNome() != null && !dto.getNome().isBlank()) {
+            setor.setNome(dto.getNome());
+        }
+        if (dto.getCapacidadeMaxima() > 0) {
+            setor.setCapacidadeMaxima(dto.getCapacidadeMaxima());
+        }
+        if (dto.getTipo() != null) {
+            setor.setTipo(dto.getTipo());
+        }
+        setor.setMetaTexto(dto.getMetaTexto());
+        setor.setAlteradoPor(usuario);
 
-        ESetor setorAtualizado = setorInterface.save(setor);
-        return modelMapper.map(setorAtualizado, SetorDto.class);
+        return toSetorDto(setorInterface.save(setor));
+    }
+
+    private EUsuario resolveUsuario(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .orElse(null);
+    }
+
+    private SetorDto toSetorDto(ESetor setor) {
+        SetorDto dto = new SetorDto();
+        dto.setId(setor.getId());
+        dto.setStatus(setor.getStatus());
+        dto.setCreatedAt(setor.getCreatedAt());
+        dto.setUpdatedAt(setor.getUpdatedAt());
+        dto.setNome(setor.getNome());
+        dto.setCapacidadeMaxima(setor.getCapacidadeMaxima());
+        dto.setMetaTexto(setor.getMetaTexto());
+        dto.setMetaProducaoLeite(setor.getMetaProducaoLeite());
+        dto.setMetaArrobaAbate(setor.getMetaArrobaAbate());
+        dto.setTipo(setor.getTipo());
+
+        if (setor.getCriadoPor() != null) {
+            dto.setCriadoPorNome(setor.getCriadoPor().getNome());
+            dto.setCriadoPorEmail(setor.getCriadoPor().getEmail());
+        }
+        if (setor.getAlteradoPor() != null) {
+            dto.setAlteradoPorNome(setor.getAlteradoPor().getNome());
+            dto.setAlteradoPorEmail(setor.getAlteradoPor().getEmail());
+        }
+
+        return dto;
     }
 }

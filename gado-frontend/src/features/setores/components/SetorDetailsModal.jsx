@@ -1,8 +1,8 @@
 const TIPO_LABEL = {
-  PASTO: 'Patio',
+  PASTO: 'Pasto',
   GALPAO: 'Galpão',
-  CONFINAMENTO: 'Confinamiento',
-  PATIO: 'Patio',
+  CONFINAMENTO: 'Confinamento',
+  PATIO: 'Pátio',
 }
 
 function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting }) {
