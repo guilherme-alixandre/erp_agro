@@ -52,7 +52,10 @@ export async function buscarMetaPorId(id) {
 export function cadastrarMeta(emailUsuario, dto) {
   return request('/metas-setor', {
     method: 'POST',
-    headers: { 'X-Usuario-Email': emailUsuario },
+    headers: {
+      'X-Usuario-Email': emailUsuario,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(dto),
   })
 }
@@ -60,7 +63,10 @@ export function cadastrarMeta(emailUsuario, dto) {
 export function atualizarMeta(id, emailUsuario, dto) {
   return request(`/metas-setor/${id}`, {
     method: 'PUT',
-    headers: { 'X-Usuario-Email': emailUsuario },
+    headers: {
+      'X-Usuario-Email': emailUsuario,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(dto),
   })
 }
@@ -77,7 +83,10 @@ export function deletarMeta(id, emailUsuario) {
 export function cadastrarMedicao(emailUsuario, dto) {
   return request('/metas-setor/medicoes', {
     method: 'POST',
-    headers: { 'X-Usuario-Email': emailUsuario },
+    headers: {
+      'X-Usuario-Email': emailUsuario,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(dto),
   })
 }

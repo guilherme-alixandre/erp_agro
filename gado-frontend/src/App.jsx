@@ -7,7 +7,8 @@ import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import MetasPage from './features/metas/pages/MetasPage'
 import LotesPage from './features/lotes/pages/LotesPage'
 import SetoresPage from './features/setores/pages/SetoresPage'
-import { listarSetores, listarLotes } from './services/setorApi'
+import { listarSetores } from './services/setorApi'
+import { listarLotesCompletos } from './services/loteApi'
 import { useRefresh } from './contexts/RefreshContext.jsx'
 
 const STORAGE_KEY = 'erp_agro_current_user'
@@ -49,7 +50,7 @@ function App() {
       .then(setSetores)
       .catch(() => setSetores([]))
 
-    listarLotes()
+    listarLotesCompletos()
       .then(setLotes)
       .catch(() => setLotes([]))
   }, [currentUser, refreshGlobal])
