@@ -5,6 +5,7 @@ import {
   validarFormMeta,
   TIPOS_GADO,
 } from '../../../services/metaSetorApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 
 const defaultForm = {
   setorId: '',
@@ -28,6 +29,8 @@ const defaultForm = {
  *  - onSaved      → fn() — chamado após salvar com sucesso
  */
 function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) {
+  const { dispararRefresh } = useRefresh()
+
   const [form, setForm] = useState(defaultForm)
   const [erros, setErros] = useState({})
   const [isSaving, setIsSaving] = useState(false)
@@ -95,6 +98,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
         await atualizarMeta(meta.id, emailUsuario, putDto)
       }
 
+      dispararRefresh()
       onSaved()
     } catch (error) {
       setFeedback(error.message || 'Falha ao salvar a meta.')

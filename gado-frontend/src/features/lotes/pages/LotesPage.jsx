@@ -9,6 +9,7 @@ import {
   atualizarLote,
   deletarLote,
 } from '../../../services/loteApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/lotes.css'
 
@@ -36,6 +37,8 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState([])
+
+  const { refreshGlobal, dispararRefresh } = useRefresh()
 
   const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
 
@@ -68,7 +71,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchLotes()
-  }, [fetchLotes])
+  }, [fetchLotes, refreshGlobal])
 
   async function carregarAnimaisDisponiveis() {
     try {
@@ -161,6 +164,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
         await atualizarLote(modal.lote.id, currentUser.email, formData)
         setFeedback({ type: 'info', message: 'Lote atualizado com sucesso.' })
       }
+      dispararRefresh()
       closeModal()
       await fetchLotes()
     } catch (error) {

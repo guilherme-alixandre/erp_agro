@@ -11,6 +11,7 @@ import {
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import { listarVacinas } from '../../../services/insumoApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../styles/animais.css'
 
 const defaultForm = {
@@ -68,6 +69,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [formFeedback, setFormFeedback] = useState('')
   const [vacinasDisponiveis, setVacinasDisponiveis] = useState([])
 
+  const { refreshGlobal, dispararRefresh } = useRefresh()
+
   const cards = useMemo(() => animals.map(toCardAnimal), [animals])
 
   const fetchAnimals = useCallback(async (termo) => {
@@ -88,7 +91,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchAnimals('')
-  }, [fetchAnimals])
+  }, [fetchAnimals, refreshGlobal])
 
   function handleSearchSubmit(event) {
     event.preventDefault()
@@ -193,6 +196,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         setFeedback({ type: 'info', message: 'Animal atualizado com sucesso.' })
       }
 
+      dispararRefresh()
       closeModal()
       await fetchAnimals(activeSearch)
     } catch (error) {

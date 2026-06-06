@@ -8,6 +8,7 @@ import {
   atualizarSetor,
   deletarSetor,
 } from '../../../services/setorApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/setores.css'
 
@@ -32,6 +33,8 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [formMode, setFormMode] = useState('create')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
+
+  const { refreshGlobal, dispararRefresh } = useRefresh()
 
   const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
 
@@ -64,7 +67,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchSetores()
-  }, [fetchSetores])
+  }, [fetchSetores, refreshGlobal])
 
   function handleSearchSubmit(event) {
     event.preventDefault()
@@ -124,6 +127,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
         await atualizarSetor(modal.setor.id, currentUser.email, formData)
         setFeedback({ type: 'info', message: 'Setor atualizado com sucesso.' })
       }
+      dispararRefresh()
       closeModal()
       await fetchSetores()
     } catch (error) {
