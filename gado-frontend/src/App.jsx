@@ -7,7 +7,9 @@ import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import MetasPage from './features/metas/pages/MetasPage'
 import LotesPage from './features/lotes/pages/LotesPage'
 import SetoresPage from './features/setores/pages/SetoresPage'
-import { listarSetores, listarLotes } from './services/setorApi'
+import { listarSetores } from './services/setorApi'
+import { listarLotesCompletos } from './services/loteApi'
+import { useRefresh } from './contexts/RefreshContext.jsx'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -27,6 +29,8 @@ function App() {
   const [setores, setSetores] = useState([])
   const [lotes, setLotes] = useState([])
 
+  const { refreshGlobal } = useRefresh()
+
   useEffect(() => {
     const storedUser = localStorage.getItem(STORAGE_KEY)
     if (storedUser) {
@@ -38,7 +42,7 @@ function App() {
     }
   }, [])
 
-  // Carrega setores e lotes assim que o usuário logar
+  // Carrega setores e lotes assim que o usuário logar; re-executa no refresh global
   useEffect(() => {
     if (!currentUser) return
 
@@ -46,10 +50,10 @@ function App() {
       .then(setSetores)
       .catch(() => setSetores([]))
 
-    listarLotes()
+    listarLotesCompletos()
       .then(setLotes)
       .catch(() => setLotes([]))
-  }, [currentUser])
+  }, [currentUser, refreshGlobal])
 
   function handleLogin(usuario) {
     const safeUser = sanitizeUser(usuario)

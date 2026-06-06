@@ -30,7 +30,7 @@ export function normalizeLote(raw) {
     racaPredominante: raw?.racaPredominante ?? '',
     corBrinco: raw?.corBrinco ?? '',
     dataCriacao: raw?.dataCriacao ?? '',
-    statusLote: raw?.statusLote ?? 'ATIVO',
+    statusLote: raw?.statusLote === 'A' ? 'ATIVO' : raw?.statusLote === 'I' ? 'INATIVO' : 'ATIVO',
     criadoPorNome: raw?.criadoPorNome ?? '',
     criadoPorEmail: raw?.criadoPorEmail ?? '',
     alteradoPorNome: raw?.alteradoPorNome ?? null,

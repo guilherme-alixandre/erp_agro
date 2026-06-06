@@ -32,8 +32,12 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
 
   // ── Lotes do setor selecionado ────────────────────────────────────────
   const lotesDoSetor = setorSelecionado
-    ? lotes.filter((l) => String(l.setorId) === String(setorSelecionado))
-    : lotes
+    ? lotes.filter(
+        (l) =>
+          l.statusLote === 'ATIVO' &&
+          l.alocacoes.some((a) => String(a.setorId) === String(setorSelecionado))
+      )
+    : lotes.filter((l) => l.statusLote === 'ATIVO')
 
   // ── Carregar metas ────────────────────────────────────────────────────
   const fetchMetas = useCallback(async (setorId) => {
