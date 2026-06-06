@@ -1,65 +1,61 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import LoteCard from '../components/LoteCard'
-import LoteFormModal from '../components/LoteFormModal'
-import LoteDetailsModal from '../components/LoteDetailsModal'
+import SetorCard from '../components/SetorCard'
+import SetorFormModal from '../components/SetorFormModal'
+import SetorDetailsModal from '../components/SetorDetailsModal'
 import {
-  listarLotesCompletos,
-  listarAnimaisParaLote,
-  cadastrarLote,
-  atualizarLote,
-  deletarLote,
-} from '../../../services/loteApi'
+  listarSetoresCompletos,
+  cadastrarSetor,
+  atualizarSetor,
+  deletarSetor,
+} from '../../../services/setorApi'
 import '../../animais/styles/animais.css'
-import '../styles/lotes.css'
+import '../styles/setores.css'
 
 const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR']
 
 const defaultForm = {
-  codigo: '',
-  corBrinco: '',
-  descricao: '',
-  racaPredominante: '',
-  dataCriacao: '',
-  alocacoes: [],
+  nome: '',
+  capacidadeMaxima: '',
+  tipo: '',
+  metaTexto: '',
 }
 
-function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
+function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
-  const [lotes, setLotes] = useState([])
-  const [modal, setModal] = useState({ type: null, lote: null })
+  const [setores, setSetores] = useState([])
+  const [modal, setModal] = useState({ type: null, setor: null })
   const [formMode, setFormMode] = useState('create')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
-  const [animaisDisponiveis, setAnimaisDisponiveis] = useState([])
 
   const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
 
-  const filteredLotes = useMemo(() => {
+  const filteredSetores = useMemo(() => {
     const termo = activeSearch.toLowerCase()
-    if (!termo) return lotes
-    return lotes.filter(
-      (l) =>
-        l.codigo.toLowerCase().includes(termo) ||
-        l.corBrinco.toLowerCase().includes(termo) ||
-        l.criadoPorNome.toLowerCase().includes(termo),
+    if (!termo) return setores
+    return setores.filter(
+      (s) =>
+        s.nome.toLowerCase().includes(termo) ||
+        s.tipo.toLowerCase().includes(termo) ||
+        s.criadoPorNome.toLowerCase().includes(termo),
     )
-  }, [lotes, activeSearch])
+  }, [setores, activeSearch])
 
-  const fetchLotes = useCallback(async () => {
+  const fetchSetores = useCallback(async () => {
     setIsLoading(true)
     setFeedback({ type: '', message: '' })
     try {
-      const list = await listarLotesCompletos()
-      setLotes(list)
+      const list = await listarSetoresCompletos()
+      setSetores(list)
     } catch (error) {
       setFeedback({
         type: 'error',
-        message: error.message || 'Falha ao carregar lotes.',
+        message: error.message || 'Falha ao carregar setores.',
       })
     } finally {
       setIsLoading(false)
@@ -67,17 +63,8 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   }, [])
 
   useEffect(() => {
-    fetchLotes()
-  }, [fetchLotes])
-
-  async function carregarAnimaisDisponiveis() {
-    try {
-      const lista = await listarAnimaisParaLote()
-      setAnimaisDisponiveis(lista)
-    } catch {
-      setAnimaisDisponiveis([])
-    }
-  }
+    fetchSetores()
+  }, [fetchSetores])
 
   function handleSearchSubmit(event) {
     event.preventDefault()
@@ -90,7 +77,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   }
 
   function closeModal() {
-    setModal({ type: null, lote: null })
+    setModal({ type: null, setor: null })
     setFormData(defaultForm)
     setFormFeedback('')
   }
@@ -100,91 +87,69 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     setFormData((current) => ({ ...current, [name]: value }))
   }
 
-  function handleAlocacoesChange(newAlocacoes) {
-    setFormData((current) => ({ ...current, alocacoes: newAlocacoes }))
-  }
-
   function openCreateModal() {
     setFormMode('create')
     setFormData(defaultForm)
     setFormFeedback('')
-    setModal({ type: 'form', lote: null })
-    carregarAnimaisDisponiveis()
+    setModal({ type: 'form', setor: null })
   }
 
-  function openEditModal(lote) {
+  function openEditModal(setor) {
     setFormMode('edit')
     setFormFeedback('')
     setFormData({
-      ...defaultForm,
-      codigo: lote.codigo,
-      corBrinco: lote.corBrinco,
-      descricao: lote.descricao,
-      racaPredominante: lote.racaPredominante,
-      dataCriacao: lote.dataCriacao,
-      alocacoes: lote.alocacoes.map((aloc) => ({
-        setorId: aloc.setorId,
-        animaisIds: aloc.animais.map((a) => a.id),
-      })),
+      id: setor.id,
+      nome: setor.nome,
+      capacidadeMaxima: setor.capacidadeMaxima,
+      tipo: setor.tipo,
+      metaTexto: setor.metaTexto ?? '',
     })
-    setModal({ type: 'form', lote })
-    carregarAnimaisDisponiveis()
+    setModal({ type: 'form', setor })
   }
 
-  function openDetailsModal(lote) {
-    setModal({ type: 'details', lote })
+  function openDetailsModal(setor) {
+    setModal({ type: 'details', setor })
   }
 
   async function handleSubmitForm(event) {
     event.preventDefault()
     setFormFeedback('')
     setFeedback({ type: '', message: '' })
-
-    // Validação: cada setor selecionado deve ter pelo menos um animal
-    for (const aloc of formData.alocacoes) {
-      if (!Array.isArray(aloc.animaisIds) || aloc.animaisIds.length === 0) {
-        const setor = setores.find((s) => s.id === aloc.setorId)
-        const nome = setor?.nome ?? `setor ${aloc.setorId}`
-        setFormFeedback(
-          `O setor "${nome}" não tem animais selecionados. Adicione pelo menos um animal ou remova o setor.`,
-        )
-        return
-      }
-    }
-
     setIsSaving(true)
     try {
       if (formMode === 'create') {
-        await cadastrarLote(currentUser.email, formData)
-        setFeedback({ type: 'info', message: 'Lote cadastrado com sucesso.' })
+        await cadastrarSetor(currentUser.email, formData)
+        setFeedback({ type: 'info', message: 'Setor cadastrado com sucesso.' })
       } else {
-        await atualizarLote(modal.lote.id, currentUser.email, formData)
-        setFeedback({ type: 'info', message: 'Lote atualizado com sucesso.' })
+        await atualizarSetor(modal.setor.id, currentUser.email, formData)
+        setFeedback({ type: 'info', message: 'Setor atualizado com sucesso.' })
       }
       closeModal()
-      await fetchLotes()
+      await fetchSetores()
     } catch (error) {
-      setFormFeedback(error.message || 'Falha ao salvar o lote.')
+      setFormFeedback(error.message || 'Falha ao salvar o setor.')
     } finally {
       setIsSaving(false)
     }
   }
 
-  async function handleDelete(lote) {
-    const confirmDelete = window.confirm(`Deseja excluir o lote ${lote.codigo}?`)
+  async function handleDelete(setor) {
+    const confirmDelete = window.confirm(
+      `Deseja excluir o setor "${setor.nome}"?`,
+    )
     if (!confirmDelete) return
 
     setIsDeleting(true)
     setFeedback({ type: '', message: '' })
     try {
-      await deletarLote(lote.id, currentUser.email)
+      await deletarSetor(setor.id, currentUser.email)
       closeModal()
-      setFeedback({ type: 'info', message: 'Lote excluído com sucesso.' })
-      await fetchLotes()
+      setFeedback({ type: 'info', message: 'Setor excluído com sucesso.' })
+      await fetchSetores()
     } catch (error) {
       setFeedback({
         type: 'error',
-        message: error.message || 'Falha ao excluir lote.',
+        message: error.message || 'Falha ao excluir setor.',
       })
     } finally {
       setIsDeleting(false)
@@ -203,14 +168,14 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           >
             Animais
           </button>
-          <button type="button" className="menu-item menu-item--active">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('lotes')}
+          >
             Lotes
           </button>
-          <button
-              type="button"
-              className="menu-item"
-              onClick={() => onNavigate('setores')}
-          >
+          <button type="button" className="menu-item menu-item--active">
             Setores
           </button>
           <button
@@ -258,7 +223,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
 
       <section className="animals-content">
         <header className="animals-header">
-          <h1>Lotes</h1>
+          <h1>Setores</h1>
           <span>{currentUser.email}</span>
         </header>
 
@@ -267,7 +232,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por código, cor ou criado por"
+            placeholder="Buscar por nome, tipo ou criado por"
           />
           <button type="submit" disabled={isLoading}>
             {isLoading ? 'Buscando...' : 'Buscar'}
@@ -287,8 +252,8 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           {isLoading
             ? 'Carregando...'
             : activeSearch
-              ? `${filteredLotes.length} ${filteredLotes.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${filteredLotes.length} ${filteredLotes.length === 1 ? 'lote cadastrado' : 'lotes cadastrados'}`}
+              ? `${filteredSetores.length} ${filteredSetores.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
+              : `${filteredSetores.length} ${filteredSetores.length === 1 ? 'setor cadastrado' : 'setores cadastrados'}`}
         </p>
 
         {feedback.message ? (
@@ -299,12 +264,12 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           </p>
         ) : null}
 
-        {filteredLotes.length ? (
+        {filteredSetores.length ? (
           <div className="animals-grid">
-            {filteredLotes.map((lote) => (
-              <LoteCard
-                key={lote.id}
-                lote={lote}
+            {filteredSetores.map((setor) => (
+              <SetorCard
+                key={setor.id}
+                setor={setor}
                 onDetalhes={openDetailsModal}
                 onEditar={openEditModal}
               />
@@ -314,16 +279,16 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           <div className="animals-empty">
             {activeSearch ? (
               <>
-                <p>Nenhum lote encontrado.</p>
+                <p>Nenhum setor encontrado.</p>
                 <span>
-                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo da
-                  busca.
+                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo
+                  da busca.
                 </span>
               </>
             ) : (
               <>
-                <p>Nenhum lote cadastrado.</p>
-                <span>Clique no botão + para cadastrar o primeiro lote.</span>
+                <p>Nenhum setor cadastrado.</p>
+                <span>Clique no botão + para cadastrar o primeiro setor.</span>
               </>
             )}
           </div>
@@ -333,7 +298,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           <button
             type="button"
             className="fab-add"
-            aria-label="Adicionar lote"
+            aria-label="Adicionar setor"
             onClick={openCreateModal}
           >
             +
@@ -342,26 +307,23 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
       </section>
 
       {modal.type === 'form' ? (
-        <LoteFormModal
+        <SetorFormModal
           mode={formMode}
           formData={formData}
           isSaving={isSaving}
           feedback={formFeedback}
-          setoresDisponiveis={setores}
-          animaisDisponiveis={animaisDisponiveis}
           currentUser={currentUser}
           onClose={closeModal}
           onChange={handleFormChange}
-          onChangeAlocacoes={handleAlocacoesChange}
           onSubmit={handleSubmitForm}
         />
       ) : null}
 
-      {modal.type === 'details' && modal.lote ? (
-        <LoteDetailsModal
-          lote={modal.lote}
+      {modal.type === 'details' && modal.setor ? (
+        <SetorDetailsModal
+          setor={modal.setor}
           onClose={closeModal}
-          onEdit={() => openEditModal(modal.lote)}
+          onEdit={() => openEditModal(modal.setor)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
         />
@@ -370,4 +332,4 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   )
 }
 
-export default LotesPage
+export default SetoresPage

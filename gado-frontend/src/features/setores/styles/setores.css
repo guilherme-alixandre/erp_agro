@@ -1,0 +1,162 @@
+/* ═══════════════════════════════════════════════════════════════════
+   setores.css — Módulo de Setores
+   Herda o layout base (animals-layout, sidebar, modais, botões) de animais.css.
+   Define apenas o que é específico deste módulo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── SetorCard ────────────────────────────────────────────────────── */
+
+.setor-card-item {
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
+}
+
+.setor-card-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.setor-card-item__nome {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: #244011;
+}
+
+.setor-card-item__status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.setor-card-item__status--ativo {
+  background: #dff5cc;
+  color: #2a5a0e;
+}
+
+.setor-card-item__status--inativo {
+  background: #f9e8e8;
+  color: #8e2222;
+}
+
+.setor-card-item__tipo {
+  margin-top: 6px;
+}
+
+.setor-card-item__tipo strong {
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.setor-card-item__info {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  color: #8a8a8a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.setor-card-item__criado {
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.1rem;
+}
+
+.setor-card-item__criado strong {
+  color: #333;
+}
+
+.setor-card-item__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.setor-card-item__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.35rem;
+  background: #d3d3d3;
+}
+
+/* ── Formulário de Setor ──────────────────────────────────────────── */
+
+.setor-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.setor-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.setor-form input,
+.setor-form select,
+.setor-form textarea {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+/* ── Detalhes — Lotes por Setor ───────────────────────────────────── */
+
+.details-grid__full {
+  grid-column: 1 / -1;
+}
+
+.setor-lotes {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.setor-lote-item {
+  border: 1px solid #c8dfb1;
+  border-radius: 10px;
+  background: #f5faf0;
+  padding: 10px 12px;
+}
+
+.setor-lote-item__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.setor-lote-item__header strong {
+  flex: 1;
+  color: #244011;
+}
+
+.setor-lote-item__cor {
+  font-size: 0.85rem;
+  color: #555;
+  background: #eee;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.setor-lote-item__animais {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dff5cc;
+  color: #2a5a0e;
+  white-space: nowrap;
+}

@@ -131,7 +131,10 @@ export function cadastrarLote(email, formData) {
 
   return request('/lotes', {
     method: 'POST',
-    headers: { 'X-Usuario-Email': emailLimpo },
+    headers: {
+      'X-Usuario-Email': emailLimpo,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(toCreatePayload(formData)),
   })
 }
@@ -142,7 +145,10 @@ export function atualizarLote(id, email, formData) {
 
   return request(`/lotes/${id}`, {
     method: 'PUT',
-    headers: { 'X-Usuario-Email': emailLimpo },
+    headers: {
+      'X-Usuario-Email': emailLimpo,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(toUpdatePayload(formData)),
   })
 }

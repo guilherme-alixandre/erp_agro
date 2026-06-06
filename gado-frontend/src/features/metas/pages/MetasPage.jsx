@@ -105,10 +105,18 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           >
             Animais
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('lotes')}
+          >
             Lotes
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('setores')}
+          >
             Setores
           </button>
           <button

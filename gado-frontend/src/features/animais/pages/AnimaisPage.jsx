@@ -244,7 +244,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           >
             Lotes
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('setores')}
+          >
             Setores
           </button>
           <button

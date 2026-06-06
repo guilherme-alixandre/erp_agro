@@ -6,6 +6,7 @@ import InsumosPage from './features/insumos/pages/InsumosPage'
 import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import MetasPage from './features/metas/pages/MetasPage'
 import LotesPage from './features/lotes/pages/LotesPage'
+import SetoresPage from './features/setores/pages/SetoresPage'
 import { listarSetores, listarLotes } from './services/setorApi'
 
 const STORAGE_KEY = 'erp_agro_current_user'
@@ -108,6 +109,16 @@ function App() {
       <LotesPage
         currentUser={currentUser}
         setores={setores}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'setores') {
+    return (
+      <SetoresPage
+        currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
