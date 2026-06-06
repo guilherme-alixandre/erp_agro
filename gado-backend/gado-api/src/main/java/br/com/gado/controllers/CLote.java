@@ -1,10 +1,13 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.dto.loteDto.LoteCadastroDto;
-import br.com.gado.application.dto.loteDto.LoteDto;
 import br.com.gado.application.dto.loteDto.LotePutDto;
+import br.com.gado.application.dto.loteDto.LoteRespostaDto;
 import br.com.gado.application.services.SLote;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/lotes")
@@ -16,23 +19,59 @@ public class CLote {
         this.loteService = loteService;
     }
 
+    /**
+     * Lista todos os lotes ativos.
+     * GET /api/lotes
+     */
+    @GetMapping
+    public List<LoteRespostaDto> getLotes() {
+        return loteService.listarTodos();
+    }
+
+    /**
+     * Busca um lote ativo pelo ID, com todas as alocações e animais.
+     * GET /api/lotes/{id}
+     */
     @GetMapping("/{id}")
-    public LoteDto getLote(@PathVariable Long id) {
-        return loteService.buscaPorId(id);
+    public LoteRespostaDto getLote(@PathVariable Long id) {
+        return loteService.buscaPorid(id);
     }
 
-    @PostMapping("/")
-    public LoteDto postLote(@RequestBody LoteCadastroDto dto) {
-        return loteService.cadastra(dto);
+    /**
+     * Cadastra um novo lote com alocações em setores.
+     * O e-mail do responsável é obrigatório e enviado no header X-Usuario-Email.
+     * POST /api/lotes
+     */
+    @PostMapping
+    public String postLote(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @Valid @RequestBody LoteCadastroDto dto) {
+        return loteService.cadastra(emailUsuario, dto);
     }
 
-    @DeleteMapping("/{id}")
-    public String deleteLote(@PathVariable Long id) {
-        return loteService.deleta(id);
-    }
-
+    /**
+     * Atualiza corBrinco e/ou redistribui as alocações de um lote ativo.
+     * O código (LOTxxx) e o criadoPor são imutáveis.
+     * PUT /api/lotes/{id}
+     */
     @PutMapping("/{id}")
-    public LoteDto putLote(@PathVariable Long id, @RequestBody LotePutDto dto) {
-        return loteService.altera(id, dto);
+    public String putLote(
+            @PathVariable Long id,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @Valid @RequestBody LotePutDto dto) {
+        return loteService.altera(id, emailUsuario, dto);
+    }
+
+    /**
+     * Remove o lote:
+     *  - Hard delete se não houver vínculos com metas ou movimentações.
+     *  - Soft delete (inativação) caso contrário.
+     * DELETE /api/lotes/{id}
+     */
+    @DeleteMapping("/{id}")
+    public String deleteLote(
+            @PathVariable Long id,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+        return loteService.deleta(id, emailUsuario);
     }
 }
