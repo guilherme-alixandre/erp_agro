@@ -37,7 +37,7 @@ public class SSetor {
 
     @Transactional(readOnly = true)
     public ArrayList<SetorDto> buscarTodos() {
-        return setorInterface.findAll().stream()
+        return setorInterface.findAllByStatus(EnStatus.A).stream()
                 .map(this::toSetorDto)
                 .collect(Collectors.toCollection(ArrayList::new));
     }

@@ -1,9 +1,12 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.dto.SetorDto;
+import br.com.gado.application.services.SPdfRelatorio;
 import br.com.gado.application.services.SSetor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,18 @@ public class CSetor {
 
     @Autowired
     private SSetor setorService;
+
+    @Autowired
+    private SPdfRelatorio pdfService;
+
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> getPdfSetores() {
+        byte[] pdf = pdfService.gerarRelatorioSetores();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"relatorio-setores.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<SetorDto> getSetor(@PathVariable Long id) {

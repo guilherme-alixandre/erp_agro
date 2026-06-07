@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { API_BASE_URL, request } from './apiClient'
 
 // ── Normalização ──────────────────────────────────────────────────────────────
 
@@ -161,4 +161,39 @@ export function deletarLote(id, email) {
     method: 'DELETE',
     headers: { 'X-Usuario-Email': emailLimpo },
   })
+}
+
+// ── Exportação ─────────────────────────────────────────────────────────────
+
+export function exportarLotesCSV(lotes) {
+  const cabecalho = [
+    'Código', 'Descrição', 'Raça Predominante', 'Cor Brinco',
+    'Total Animais', 'Data Criação', 'Status', 'Criado Por',
+  ]
+  const linhas = lotes.map((l) =>
+    [
+      l.codigo, l.descricao ?? '', l.racaPredominante ?? '', l.corBrinco,
+      l.totalAnimais, l.dataCriacao ?? '', l.statusLote, l.criadoPorNome,
+    ]
+      .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+      .join(';'),
+  )
+  const csv = '﻿' + [cabecalho.join(';'), ...linhas].join('\n')
+  triggerDownload(csv, 'lotes.csv')
+}
+
+export function exportarLotesPDF() {
+  window.open(`${API_BASE_URL}/lotes/pdf`, '_blank')
+}
+
+function triggerDownload(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
