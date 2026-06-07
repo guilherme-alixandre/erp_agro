@@ -4,7 +4,11 @@ import br.com.gado.application.dto.loteDto.LoteCadastroDto;
 import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.application.dto.loteDto.LoteRespostaDto;
 import br.com.gado.application.services.SLote;
+import br.com.gado.application.services.SPdfRelatorio;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +18,20 @@ import java.util.List;
 public class CLote {
 
     private final SLote loteService;
+    private final SPdfRelatorio pdfService;
 
-    public CLote(SLote loteService) {
+    public CLote(SLote loteService, SPdfRelatorio pdfService) {
         this.loteService = loteService;
+        this.pdfService = pdfService;
+    }
+
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> getPdfLotes() {
+        byte[] pdf = pdfService.gerarRelatorioLotes();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"relatorio-lotes.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     /**

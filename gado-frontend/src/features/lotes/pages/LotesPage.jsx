@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import LoteCard from '../components/LoteCard'
 import LoteFormModal from '../components/LoteFormModal'
 import LoteDetailsModal from '../components/LoteDetailsModal'
@@ -8,6 +8,8 @@ import {
   cadastrarLote,
   atualizarLote,
   deletarLote,
+  exportarLotesCSV,
+  exportarLotesPDF,
 } from '../../../services/loteApi'
 import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
@@ -37,10 +39,33 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState([])
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef(null)
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
   const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [exportMenuOpen])
+
+  function handleExportarCSV() {
+    exportarLotesCSV(filteredLotes)
+    setExportMenuOpen(false)
+  }
+
+  function handleExportarPDF() {
+    exportarLotesPDF()
+    setExportMenuOpen(false)
+  }
 
   const filteredLotes = useMemo(() => {
     const termo = activeSearch.toLowerCase()
@@ -266,26 +291,57 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           <span>{currentUser.email}</span>
         </header>
 
-        <form className="animals-search" onSubmit={handleSearchSubmit}>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por código, cor ou criado por"
-          />
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Buscando...' : 'Buscar'}
-          </button>
-          {activeSearch ? (
+        <div className="search-toolbar">
+          <form className="animals-search" onSubmit={handleSearchSubmit}>
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por código, cor ou criado por"
+            />
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Buscando...' : 'Buscar'}
+            </button>
+            {activeSearch ? (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                disabled={isLoading}
+              >
+                Limpar
+              </button>
+            ) : null}
+          </form>
+
+          <div className="export-wrapper" ref={exportMenuRef}>
             <button
               type="button"
-              onClick={handleClearSearch}
-              disabled={isLoading}
+              className="export-btn"
+              onClick={() => setExportMenuOpen((v) => !v)}
             >
-              Limpar
+              Exportar ▾
             </button>
-          ) : null}
-        </form>
+            {exportMenuOpen && (
+              <div className="export-menu">
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarCSV}
+                >
+                  Exportar como CSV
+                </button>
+                <hr className="export-menu__separator" />
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarPDF}
+                >
+                  Exportar como PDF
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         <p className="animals-count">
           {isLoading

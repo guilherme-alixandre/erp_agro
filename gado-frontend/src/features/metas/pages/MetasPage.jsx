@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import MetaCard from '../components/MetaCard'
 import MetaFormModal from '../components/MetaFormModal'
 import {
   listarMetasPorSetor,
   deletarMeta,
+  exportarMetasCSV,
+  exportarMetasPDF,
 } from '../../../services/metaSetorApi'
 import '../../animais/styles/animais.css'
 import '../styles/metas.css'
@@ -25,6 +27,8 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [modal, setModal] = useState({ type: null, meta: null })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef(null)
 
   // ── Permissões ───────────────────────────────────────────────────────
   const podeGerenciar =
@@ -38,6 +42,27 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           l.alocacoes.some((a) => String(a.setorId) === String(setorSelecionado))
       )
     : lotes.filter((l) => l.statusLote === 'ATIVO')
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [exportMenuOpen])
+
+  function handleExportarCSV() {
+    exportarMetasCSV(metas)
+    setExportMenuOpen(false)
+  }
+
+  function handleExportarPDF() {
+    exportarMetasPDF(setorSelecionado)
+    setExportMenuOpen(false)
+  }
 
   // ── Carregar metas ────────────────────────────────────────────────────
   const fetchMetas = useCallback(async (setorId) => {
@@ -173,21 +198,53 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           <span>{currentUser.email}</span>
         </header>
 
-        {/* Filtro por setor */}
-        <div className="metas-filter">
-          <label htmlFor="filtro-setor">Setor:</label>
-          <select
-            id="filtro-setor"
-            value={setorSelecionado}
-            onChange={(e) => setSetorSelecionado(e.target.value)}
-          >
-            <option value="">Selecione um setor para ver as metas...</option>
-            {setores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
+        {/* Filtro por setor + botão exportar */}
+        <div className="search-toolbar">
+          <div className="metas-filter" style={{ flex: 1 }}>
+            <label htmlFor="filtro-setor">Setor:</label>
+            <select
+              id="filtro-setor"
+              value={setorSelecionado}
+              onChange={(e) => setSetorSelecionado(e.target.value)}
+            >
+              <option value="">Selecione um setor para ver as metas...</option>
+              {setores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="export-wrapper" ref={exportMenuRef}>
+            <button
+              type="button"
+              className="export-btn"
+              disabled={!setorSelecionado || metas.length === 0}
+              onClick={() => setExportMenuOpen((v) => !v)}
+            >
+              Exportar ▾
+            </button>
+            {exportMenuOpen && (
+              <div className="export-menu">
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarCSV}
+                >
+                  Exportar como CSV
+                </button>
+                <hr className="export-menu__separator" />
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarPDF}
+                >
+                  Exportar como PDF
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Contagem e estado */}

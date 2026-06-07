@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { API_BASE_URL, request } from './apiClient'
 
 // ── Normalização de resposta ───────────────────────────────────────────────
 
@@ -173,4 +173,41 @@ export function formatarNumero(valor, casas = 2) {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas,
   })
+}
+
+// ── Exportação ─────────────────────────────────────────────────────────────
+
+export function exportarMetasCSV(metas) {
+  const cabecalho = [
+    'Setor', 'Tipo Meta', 'Data Inicial', 'Data Final',
+    'Qtd. Esperada', 'Qtd. Realizada', 'Progresso (%)',
+    'Valor Esperado (R$)', 'Valor Realizado (R$)',
+  ]
+  const linhas = metas.map((m) =>
+    [
+      m.setorNome, m.tipoMeta, m.dataInicial, m.dataFinal,
+      m.quantidadeEsperada, m.quantidadeRealizada, m.percentualProgresso,
+      m.valorEsperado, m.valorRealizado,
+    ]
+      .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+      .join(';'),
+  )
+  const csv = '﻿' + [cabecalho.join(';'), ...linhas].join('\n')
+  triggerDownload(csv, 'metas.csv')
+}
+
+export function exportarMetasPDF(setorId) {
+  window.open(`${API_BASE_URL}/metas-setor/pdf?setorId=${setorId}`, '_blank')
+}
+
+function triggerDownload(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }

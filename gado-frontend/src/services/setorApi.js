@@ -1,4 +1,4 @@
-import { request } from './apiClient'
+import { API_BASE_URL, request } from './apiClient'
 
 // ── Normalização resumida (App.jsx — estado compartilhado) ────────────────
 
@@ -161,4 +161,33 @@ export function deletarSetor(id, email) {
     method: 'DELETE',
     headers: { 'X-Usuario-Email': emailLimpo },
   })
+}
+
+// ── Exportação ─────────────────────────────────────────────────────────────
+
+export function exportarSetoresCSV(setores) {
+  const cabecalho = ['Nome', 'Tipo', 'Capacidade Máxima', 'Status', 'Meta Texto', 'Criado Por']
+  const linhas = setores.map((s) =>
+    [s.nome, s.tipo, s.capacidadeMaxima, s.status, s.metaTexto ?? '', s.criadoPorNome]
+      .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+      .join(';'),
+  )
+  const csv = '﻿' + [cabecalho.join(';'), ...linhas].join('\n')
+  triggerDownload(csv, 'setores.csv')
+}
+
+export function exportarSetoresPDF() {
+  window.open(`${API_BASE_URL}/setores/pdf`, '_blank')
+}
+
+function triggerDownload(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }

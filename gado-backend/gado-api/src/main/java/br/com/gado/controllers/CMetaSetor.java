@@ -5,8 +5,12 @@ import br.com.gado.application.dto.metaSetorDto.MetaSetorCadastroDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorPutDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorRespostaDto;
 import br.com.gado.application.services.SMetaSetor;
+import br.com.gado.application.services.SPdfRelatorio;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +22,20 @@ public class CMetaSetor {
     @Autowired
     private SMetaSetor metaSetorService;
 
+    @Autowired
+    private SPdfRelatorio pdfService;
+
     // ── MetaSetor ─────────────────────────────────────────────────────────────
+
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> getPdfMetas(
+            @RequestParam(name = "setorId") Long setorId) {
+        byte[] pdf = pdfService.gerarRelatorioMetas(setorId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"relatorio-metas.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 
     /**
      * Lista todas as metas de um setor específico.
