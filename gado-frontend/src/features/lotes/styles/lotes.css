@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════════
+   lotes.css — Módulo de Lotes
+   Herda o layout base (animals-layout, sidebar, modais, botões) de animais.css.
+   Define apenas o que é específico deste módulo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── LoteCard ─────────────────────────────────────────────────────── */
+
+.lote-card {
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
+}
+
+.lote-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.lote-card__codigo {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: #244011;
+}
+
+.lote-card__status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lote-card__status--ativo {
+  background: #dff5cc;
+  color: #2a5a0e;
+}
+
+.lote-card__status--inativo {
+  background: #f9e8e8;
+  color: #8e2222;
+}
+
+.lote-card__cor {
+  margin-top: 6px;
+}
+
+.lote-card__cor strong {
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.lote-card__info {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  color: #8a8a8a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.lote-card__criado {
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.1rem;
+}
+
+.lote-card__criado strong {
+  color: #333;
+}
+
+.lote-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.lote-card__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.35rem;
+  background: #d3d3d3;
+}
+
+/* ── Modal de tamanho aumentado ───────────────────────────────────── */
+
+.modal-card--wide {
+  width: min(760px, 100%);
+}
+
+/* ── Formulário de Lote ───────────────────────────────────────────── */
+
+.lote-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.lote-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.lote-form input,
+.lote-form select {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* ── Fieldset de Setores ──────────────────────────────────────────── */
+
+.setores-fieldset {
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.setores-fieldset legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #244011;
+}
+
+.setores-fieldset__select {
+  display: grid;
+  gap: 4px;
+}
+
+.setores-cards {
+  display: grid;
+  gap: 12px;
+}
+
+/* ── Card de Setor (dentro do formulário) ─────────────────────────── */
+
+.setor-card {
+  border: 1px solid #c8dfb1;
+  border-radius: 10px;
+  background: #f5faf0;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.setor-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setor-card__nome {
+  flex: 1;
+  font-size: 1.05rem;
+  color: #244011;
+}
+
+.setor-card__capacidade {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dff5cc;
+  color: #2a5a0e;
+  white-space: nowrap;
+}
+
+.setor-card__capacidade--excedido {
+  background: #ffeaea;
+  color: #8e2222;
+}
+
+.setor-card__remover {
+  border: 0;
+  background: #e8e8e8;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setor-card__label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.setor-card__aviso {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8e2222;
+  font-weight: 600;
+}
+
+/* ── MultiSelectDropdown ──────────────────────────────────────────── */
+
+.multiselect {
+  position: relative;
+}
+
+.multiselect__trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.multiselect__placeholder {
+  color: #999;
+}
+
+.multiselect__arrow {
+  color: #777;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.multiselect__list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.multiselect__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.multiselect__item:hover {
+  background: #eef5e7;
+}
+
+.multiselect__item input[type='checkbox'] {
+  accent-color: #4f7f2f;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.multiselect__empty {
+  padding: 8px 10px;
+  color: #6a6a6a;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* ── Detalhes — Alocações por Setor ──────────────────────────────── */
+
+.lote-alocacoes {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.lote-alocacao {
+  border: 1px solid #c8dfb1;
+  border-radius: 10px;
+  background: #f5faf0;
+  padding: 10px 12px;
+}
+
+.lote-alocacao__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.lote-alocacao__capacidade {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dff5cc;
+  color: #2a5a0e;
+  white-space: nowrap;
+}
+
+.lote-alocacao__animais {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.lote-alocacao__animais li {
+  background: #fff;
+  border: 1px solid #d8ecc4;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+/* ── Responsividade ───────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .setor-card__header {
+    flex-wrap: wrap;
+  }
+
+  .lote-alocacao__header {
+    flex-wrap: wrap;
+  }
+}

@@ -8,6 +8,7 @@ import {
   deletarVacina,
   listarVacinas,
 } from '../../../services/insumoApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/insumos.css'
 
@@ -18,6 +19,8 @@ const defaultForm = {
 }
 
 function InsumosPage({ currentUser, onNavigate, onLogout }) {
+  const { refreshGlobal, dispararRefresh } = useRefresh()
+
   const [activeTab, setActiveTab] = useState('vacinas')
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -49,7 +52,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchVacinas('')
-  }, [fetchVacinas])
+  }, [fetchVacinas, refreshGlobal])
 
   function handleSearchSubmit(event) {
     event.preventDefault()
@@ -107,6 +110,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         await atualizarVacina(formData.id, { nome: formData.nome })
         setFeedback({ type: 'info', message: 'Vacina atualizada com sucesso.' })
       }
+      dispararRefresh()
       closeModal()
       await fetchVacinas(activeSearch)
     } catch (error) {
@@ -169,10 +173,18 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           >
             Animais
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('lotes')}
+          >
             Lotes
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('setores')}
+          >
             Setores
           </button>
           <button
