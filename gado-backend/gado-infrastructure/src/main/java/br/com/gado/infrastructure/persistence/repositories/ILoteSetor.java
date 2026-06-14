@@ -14,4 +14,6 @@ public interface ILoteSetor extends JpaRepository<ELoteSetor, Long> {
     List<ELoteSetor> findBySetor_Id(Long setorId);
 
     boolean existsByLote_IdAndSetor_Id(Long loteId, Long setorId);
+
+    List<ELoteSetor> findByAnimais_IdAndLote_IdNot(Long animalId, Long loteId);
 }
