@@ -50,7 +50,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (iUsuario.count() <= 1) {
+        if (iUsuario.count() != 1) {
             return;
         }
         seed();
