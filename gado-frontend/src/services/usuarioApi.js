@@ -49,10 +49,14 @@ async function buscarUsuarioPorEmail(email) {
 async function cadastrarUsuario(usuario, adminEmail) {
   const payload = await request('/usuarios', {
     method: 'POST',
-    headers: adminHeaders(adminEmail),
+    headers: {
+      ...adminHeaders(adminEmail),       // <-- Espalha os cabeçalhos de autenticação
+      'Content-Type': 'application/json' // <-- Adiciona o aviso de que o body é JSON
+    },
     body: JSON.stringify(toCadastroPayload(usuario)),
   })
 
+  // Processa a resposta normalmente
   const created = getUsuarioDoPayload(payload)
   return created ?? payload
 }
