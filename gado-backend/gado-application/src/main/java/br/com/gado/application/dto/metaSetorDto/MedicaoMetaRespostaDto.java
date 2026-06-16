@@ -15,6 +15,8 @@ public class MedicaoMetaRespostaDto {
     /** Quantidade já convertida para a unidade da meta (Litros ou Arrobas). */
     private Double quantidadeConvertida;
 
+    private String criadoPorEmail;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -32,4 +34,7 @@ public class MedicaoMetaRespostaDto {
 
     public Double getQuantidadeConvertida() { return quantidadeConvertida; }
     public void setQuantidadeConvertida(Double quantidadeConvertida) { this.quantidadeConvertida = quantidadeConvertida; }
+
+    public String getCriadoPorEmail() { return criadoPorEmail; }
+    public void setCriadoPorEmail(String criadoPorEmail) { this.criadoPorEmail = criadoPorEmail; }
 }

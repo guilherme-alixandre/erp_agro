@@ -341,7 +341,7 @@ class SMetaSetorTest {
         @Test
         void cadastrarMedicao_LancaExcecao_MetaNaoEncontrada() {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.empty());
-            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto));
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com"));
         }
 
         @Test
@@ -349,7 +349,7 @@ class SMetaSetorTest {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
             when(loteInterface.findById(ID_GENERICO)).thenReturn(Optional.empty());
 
-            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto));
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com"));
         }
 
         @Test
@@ -357,7 +357,7 @@ class SMetaSetorTest {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
             when(loteInterface.findById(ID_GENERICO)).thenReturn(Optional.of(loteEntity));
 
-            String msg = sMetaSetor.cadastrarMedicao(medicaoDto);
+            String msg = sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com");
 
             assertEquals("Medição cadastrada com sucesso.", msg);
             verify(medicaoMetaInterface, times(1)).save(any(EMedicaoMeta.class));

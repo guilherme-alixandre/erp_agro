@@ -32,4 +32,10 @@ public class EMedicaoMeta extends EAbstract {
      */
     @Column(name = "quantidade_lancada", nullable = false)
     private Double quantidadeLancada;
+
+    @Column(name = "criado_por_email")
+    private String criadoPorEmail;
+
+    public String getCriadoPorEmail() { return criadoPorEmail; }
+    public void setCriadoPorEmail(String criadoPorEmail) { this.criadoPorEmail = criadoPorEmail; }
 }

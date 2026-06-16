@@ -10,6 +10,7 @@ function normalizeMedicao(raw) {
     dataMedicao: raw?.dataMedicao ?? '',
     quantidadeLancada: raw?.quantidadeLancada ?? 0,
     quantidadeConvertida: raw?.quantidadeConvertida ?? 0,
+    criadoPorEmail: raw?.criadoPorEmail ?? null,
   }
 }
 
@@ -83,6 +84,17 @@ export function deletarMeta(id, emailUsuario) {
 export function cadastrarMedicao(emailUsuario, dto) {
   return request('/metas-setor/medicoes', {
     method: 'POST',
+    headers: {
+      'X-Usuario-Email': emailUsuario,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(dto),
+  })
+}
+
+export function atualizarMedicao(emailUsuario, medicaoId, dto) {
+  return request(`/metas-setor/medicoes/${medicaoId}`, {
+    method: 'PUT',
     headers: {
       'X-Usuario-Email': emailUsuario,
       'Content-Type': 'application/json',

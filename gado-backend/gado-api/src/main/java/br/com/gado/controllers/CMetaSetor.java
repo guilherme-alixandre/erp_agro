@@ -1,6 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.application.dto.metaSetorDto.MedicaoMetaCadastroDto;
+import br.com.gado.application.dto.metaSetorDto.MedicaoMetaPutDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorCadastroDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorPutDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorRespostaDto;
@@ -100,7 +101,7 @@ public class CMetaSetor {
 
     /**
      * Cadastra uma nova medição em uma meta.
-     * Permitido a ADMINISTRADOR, GERENTE e CASEIRO.
+     * Permitido a qualquer usuário ativo.
      * POST /api/metas-setor/medicoes
      */
     @PostMapping("/medicoes")
@@ -108,7 +109,21 @@ public class CMetaSetor {
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @Valid @RequestBody MedicaoMetaCadastroDto dto) {
         metaSetorService.validaQualquerPerfil(emailUsuario);
-        return metaSetorService.cadastrarMedicao(dto);
+        return metaSetorService.cadastrarMedicao(dto, emailUsuario);
+    }
+
+    /**
+     * Atualiza uma medição existente.
+     * ADMINISTRADOR, GERENTE, CUIDADOR_CHEFE: podem editar qualquer medição.
+     * CUIDADOR: só pode editar a própria.
+     * PUT /api/metas-setor/medicoes/{medicaoId}
+     */
+    @PutMapping("/medicoes/{medicaoId}")
+    public String atualizarMedicao(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long medicaoId,
+            @Valid @RequestBody MedicaoMetaPutDto dto) {
+        return metaSetorService.validarEAtualizarMedicao(medicaoId, dto, emailUsuario);
     }
 
     /**

@@ -12,18 +12,31 @@ import MedicaoModal from './MedicaoModal'
  * Card full-width para uma MetaSetor.
  *
  * Props:
- *  - meta         → objeto MetaSetor normalizado
- *  - lotes        → lista [{ id, descricao }] do setor
- *  - emailUsuario → string com o email do usuário logado
- *  - podeGerenciar→ boolean — ADMINISTRADOR ou GERENTE
- *  - onEditar     → fn(meta) — abre modal de edição
- *  - onDeletar    → fn(meta) — solicita exclusão
- *  - onRefresh    → fn() — recarrega a lista após mudança
+ *  - meta          → objeto MetaSetor normalizado
+ *  - lotes         → lista [{ id, descricao }] do setor
+ *  - currentUser   → objeto do usuário logado { email, perfil, ... }
+ *  - podeGerenciar → boolean — ADMINISTRADOR ou GERENTE
+ *  - onEditar      → fn(meta) — abre modal de edição
+ *  - onDeletar     → fn(meta) — solicita exclusão
+ *  - onRefresh     → fn() — recarrega a lista após mudança
  */
-function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeletar, onRefresh }) {
+function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar, onRefresh }) {
+  const emailUsuario = currentUser.email
+  const perfil = currentUser.perfil
+
   const [showMedicoes, setShowMedicoes] = useState(false)
   const [showMedicaoModal, setShowMedicaoModal] = useState(false)
+  const [medicaoEditando, setMedicaoEditando] = useState(null)
   const [deletandoMedicao, setDeletandoMedicao] = useState(null)
+
+  const podeEditarQualquerMedicao =
+    perfil === 'ADMINISTRADOR' || perfil === 'GERENTE' || perfil === 'CUIDADOR_CHEFE'
+
+  function podeEditarMedicao(medicao) {
+    if (podeEditarQualquerMedicao) return true
+    if (perfil === 'CUIDADOR' && medicao.criadoPorEmail === emailUsuario) return true
+    return false
+  }
 
   // ── Barra de progresso ───────────────────────────────────────────────
   const pct = Math.min(meta.percentualProgresso ?? 0, 100)
@@ -65,6 +78,7 @@ function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeleta
 
   function handleMedicaoSalva() {
     setShowMedicaoModal(false)
+    setMedicaoEditando(null)
     onRefresh()
   }
 
@@ -162,7 +176,7 @@ function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeleta
                     <th>Lote</th>
                     <th>Lançado</th>
                     <th>Convertido</th>
-                    {podeGerenciar && <th></th>}
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,8 +191,18 @@ function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeleta
                       <td>
                         {formatarNumero(m.quantidadeConvertida)} {unidade}
                       </td>
-                      {podeGerenciar && (
-                        <td>
+                      <td>
+                        {podeEditarMedicao(m) && (
+                          <button
+                            type="button"
+                            className="btn-edit-medicao"
+                            onClick={() => setMedicaoEditando(m)}
+                            aria-label="Editar medição"
+                          >
+                            ✎
+                          </button>
+                        )}
+                        {podeGerenciar && (
                           <button
                             type="button"
                             className="btn-del-medicao"
@@ -188,8 +212,8 @@ function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeleta
                           >
                             {deletandoMedicao === m.id ? '...' : '✕'}
                           </button>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -233,13 +257,25 @@ function MetaCard({ meta, lotes, emailUsuario, podeGerenciar, onEditar, onDeleta
         </div>
       </article>
 
-      {/* ── Modal de medição ─────────────────────────────────────────── */}
+      {/* ── Modal de nova medição ────────────────────────────────────── */}
       {showMedicaoModal && (
         <MedicaoModal
           meta={meta}
           lotes={lotes}
           emailUsuario={emailUsuario}
           onClose={() => setShowMedicaoModal(false)}
+          onSaved={handleMedicaoSalva}
+        />
+      )}
+
+      {/* ── Modal de edição de medição ───────────────────────────────── */}
+      {medicaoEditando && (
+        <MedicaoModal
+          meta={meta}
+          lotes={lotes}
+          emailUsuario={emailUsuario}
+          medicaoParaEditar={medicaoEditando}
+          onClose={() => setMedicaoEditando(null)}
           onSaved={handleMedicaoSalva}
         />
       )}

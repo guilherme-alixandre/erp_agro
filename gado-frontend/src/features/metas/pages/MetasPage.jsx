@@ -275,7 +275,7 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
                 key={meta.id}
                 meta={meta}
                 lotes={lotesDoSetor}
-                emailUsuario={currentUser.email}
+                currentUser={currentUser}
                 podeGerenciar={podeGerenciar}
                 onEditar={(m) => setModal({ type: 'edit', meta: m })}
                 onDeletar={handleDeletar}
