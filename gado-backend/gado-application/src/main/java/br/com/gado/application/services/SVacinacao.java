@@ -3,9 +3,6 @@ package br.com.gado.application.services;
 import br.com.gado.application.dto.VacinacaoDTO;
 import br.com.gado.domain.entities.EVacinacao;
 import br.com.gado.domain.enums.EnStatus;
-import br.com.gado.infrastructure.persistence.repositories.IInsumo;
-import br.com.gado.infrastructure.persistence.repositories.ILote;
-import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import br.com.gado.infrastructure.persistence.repositories.IVacinacao;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -25,15 +22,6 @@ public class SVacinacao {
 
     @Autowired
     private IVacinacao vacinacaoInterface;
-
-    @Autowired
-    private IUsuario usuarioInterface;
-
-    @Autowired
-    private ILote loteInterface;
-
-    @Autowired
-    private IInsumo insumoInterface;
 
     @Transactional
     public VacinacaoDTO criarVacinacao(VacinacaoDTO novaVacinacao) {
