@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AnimalCard from '../components/AnimalCard'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
 import {
@@ -11,6 +10,7 @@ import {
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import { listarVacinas } from '../../../services/insumoApi'
+import { atualizarLote, listarLotesCompletos } from '../../../services/loteApi'
 import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../styles/animais.css'
 
@@ -55,6 +55,8 @@ function toCardAnimal(animal) {
   }
 }
 
+const ROWS_PER_PAGE = 10
+
 function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -68,10 +70,34 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
   const [vacinasDisponiveis, setVacinasDisponiveis] = useState([])
+  const [lotesDisponiveis, setLotesDisponiveis] = useState([])
+  const [loteVinculo, setLoteVinculo] = useState(null)
+  const [setorVinculo, setSetorVinculo] = useState(null)
+  const [filterSexo, setFilterSexo] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [page, setPage] = useState(0)
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
   const cards = useMemo(() => animals.map(toCardAnimal), [animals])
+
+  const filteredCards = useMemo(() => {
+    return cards.filter((a) => {
+      if (filterSexo && a.sexo !== filterSexo) return false
+      if (filterStatus && a.statusAnimal !== filterStatus) return false
+      if (dateFrom && a.dataNascimento && a.dataNascimento < dateFrom) return false
+      if (dateTo && a.dataNascimento && a.dataNascimento > dateTo) return false
+      return true
+    })
+  }, [cards, filterSexo, filterStatus, dateFrom, dateTo])
+
+  const totalPages = Math.max(1, Math.ceil(filteredCards.length / ROWS_PER_PAGE))
+  const paginatedCards = filteredCards.slice(
+    page * ROWS_PER_PAGE,
+    (page + 1) * ROWS_PER_PAGE,
+  )
 
   const fetchAnimals = useCallback(async (termo) => {
     setIsLoading(true)
@@ -97,12 +123,14 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     event.preventDefault()
     const termo = search.trim()
     setActiveSearch(termo)
+    setPage(0)
     fetchAnimals(termo)
   }
 
   function handleClearSearch() {
     setSearch('')
     setActiveSearch('')
+    setPage(0)
     fetchAnimals('')
   }
 
@@ -110,6 +138,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     setModal({ type: null, animal: null })
     setFormData(defaultForm)
     setFormFeedback('')
+    setLoteVinculo(null)
+    setSetorVinculo(null)
   }
 
   function handleFormChange(event) {
@@ -151,12 +181,35 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     }
   }
 
+  async function carregarLotesDisponiveis() {
+    try {
+      const lista = await listarLotesCompletos()
+      setLotesDisponiveis(lista.filter((l) => l.statusLote === 'ATIVO'))
+    } catch {
+      setLotesDisponiveis([])
+    }
+  }
+
+  function handleChangeLoteVinculo(e) {
+    const val = e.target.value
+    setLoteVinculo(val ? Number(val) : null)
+    setSetorVinculo(null)
+  }
+
+  function handleChangeSetorVinculo(e) {
+    const val = e.target.value
+    setSetorVinculo(val ? Number(val) : null)
+  }
+
   function openCreateModal() {
     setFormMode('create')
     setFormData(defaultForm)
     setFormFeedback('')
+    setLoteVinculo(null)
+    setSetorVinculo(null)
     setModal({ type: 'form', animal: null })
     carregarVacinasDisponiveis()
+    carregarLotesDisponiveis()
   }
 
   function openEditModal(animal) {
@@ -177,6 +230,12 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
   async function handleSubmitForm(event) {
     event.preventDefault()
+
+    if (formMode === 'create' && loteVinculo && !setorVinculo) {
+      setFormFeedback('Selecione um setor para vincular ao lote.')
+      return
+    }
+
     setIsSaving(true)
     setFormFeedback('')
     setFeedback({ type: '', message: '' })
@@ -187,7 +246,39 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
-        setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
+
+        if (loteVinculo && setorVinculo) {
+          try {
+            const novoAnimalId = result?.id ?? result?.mensagem?.id ?? null
+            if (novoAnimalId !== null) {
+              const lote = lotesDisponiveis.find((l) => l.id === loteVinculo)
+              if (lote) {
+                const alocacoesUpdate = lote.alocacoes.map((aloc) => ({
+                  setorId: aloc.setorId,
+                  animaisIds: [
+                    ...aloc.animais.map((a) => a.id).filter((id) => id !== null),
+                    ...(Number(aloc.loteSectorId) === setorVinculo ? [novoAnimalId] : []),
+                  ],
+                }))
+                await atualizarLote(lote.id, currentUser.email, {
+                  corBrinco: lote.corBrinco,
+                  descricao: lote.descricao,
+                  racaPredominante: lote.racaPredominante,
+                  alocacoes: alocacoesUpdate,
+                })
+                setFeedback({ type: 'info', message: 'Animal cadastrado e vinculado ao lote com sucesso.' })
+              } else {
+                setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
+              }
+            } else {
+              setFeedback({ type: 'info', message: 'Animal cadastrado. Vincule-o ao lote manualmente na página de Lotes.' })
+            }
+          } catch (loteError) {
+            setFeedback({ type: 'info', message: `Animal cadastrado, mas falha ao vincular ao lote: ${loteError.message}` })
+          }
+        } else {
+          setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
+        }
       } else {
         const result = await atualizarAnimal(formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {
@@ -233,6 +324,29 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     }
   }
 
+  function exportCSV() {
+    const headers = ['Código Brinco', 'Nome', 'Raça', 'Sexo', 'Peso (KG)', 'Nascimento', 'Status']
+    const rows = filteredCards.map((a) => [
+      a.codigoBrinco,
+      a.nome || '',
+      a.raca || '',
+      a.sexo === 'M' ? 'Macho' : 'Fêmea',
+      Number(a.pesoAtual || 0).toFixed(0),
+      a.dataNascimento || '',
+      a.statusAnimal,
+    ])
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'animais.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
@@ -249,16 +363,16 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             Lotes
           </button>
           <button
-              type="button"
-              className="menu-item"
-              onClick={() => onNavigate('setores')}
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('setores')}
           >
             Setores
           </button>
           <button
-              type="button"
-              className="menu-item"
-              onClick={() => onNavigate('metas')}
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('metas')}
           >
             Metas
           </button>
@@ -299,35 +413,9 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Animais</h1>
-          <span>{currentUser.email}</span>
         </header>
-
-        <form className="animals-search" onSubmit={handleSearchSubmit}>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por nome ou código do brinco"
-          />
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Buscando...' : 'Buscar'}
-          </button>
-          {activeSearch ? (
-            <button type="button" onClick={handleClearSearch} disabled={isLoading}>
-              Limpar
-            </button>
-          ) : null}
-        </form>
-
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : activeSearch
-              ? `${cards.length} ${cards.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${cards.length} ${cards.length === 1 ? 'animal cadastrado' : 'animais cadastrados'}`}
-        </p>
 
         {feedback.message ? (
           <p
@@ -337,43 +425,189 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           </p>
         ) : null}
 
-        {cards.length ? (
-          <div className="animals-grid">
-            {cards.map((animal) => (
-              <AnimalCard
-                key={animal.codigoBrinco}
-                animal={animal}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="animals-empty">
+        <div className="data-toolbar">
+          <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou código do brinco"
+            />
             {activeSearch ? (
-              <>
-                <p>Nenhum animal encontrado.</p>
-                <span>
-                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo da busca.
-                </span>
-              </>
-            ) : (
-              <>
-                <p>Nenhum animal cadastrado.</p>
-                <span>Clique no botão + para cadastrar o primeiro animal.</span>
-              </>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                className="toolbar-search__clear"
+                onClick={handleClearSearch}
+                aria-label="Limpar busca"
+              >
+                ✕
+              </button>
+            ) : null}
+          </form>
 
-        <button
-          type="button"
-          className="fab-add"
-          aria-label="Adicionar animal"
-          onClick={openCreateModal}
-        >
-          +
-        </button>
+          <select
+            className="toolbar-select"
+            value={filterSexo}
+            onChange={(e) => {
+              setFilterSexo(e.target.value)
+              setPage(0)
+            }}
+          >
+            <option value="">Todos os Sexos</option>
+            <option value="M">Macho</option>
+            <option value="F">Fêmea</option>
+          </select>
+
+          <select
+            className="toolbar-select"
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value)
+              setPage(0)
+            }}
+          >
+            <option value="">Todos os Status</option>
+            <option value="ATIVO">Ativo</option>
+            <option value="OBSERVACAO">Observação</option>
+            <option value="VENDIDO">Vendido</option>
+            <option value="OBITO">Obito</option>
+            <option value="ABATIDO">Abatido</option>
+          </select>
+
+          <input
+            type="date"
+            className="toolbar-date"
+            value={dateFrom}
+            title="Nascimento de"
+            onChange={(e) => {
+              setDateFrom(e.target.value)
+              setPage(0)
+            }}
+          />
+
+          <input
+            type="date"
+            className="toolbar-date"
+            value={dateTo}
+            title="Nascimento até"
+            onChange={(e) => {
+              setDateTo(e.target.value)
+              setPage(0)
+            }}
+          />
+
+          <button type="button" className="btn-export-csv" onClick={exportCSV}>
+            Exportar CSV
+          </button>
+
+          <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+            + Novo Animal
+          </button>
+        </div>
+
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Código Brinco</th>
+                <th>Nome</th>
+                <th>Raça</th>
+                <th>Sexo</th>
+                <th>Peso</th>
+                <th>Idade</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="table-loading">
+                    Carregando...
+                  </td>
+                </tr>
+              ) : paginatedCards.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="table-empty">
+                    {activeSearch
+                      ? `Nenhum resultado para "${activeSearch}".`
+                      : 'Nenhum animal cadastrado. Clique em "+ Novo Animal" para começar.'}
+                  </td>
+                </tr>
+              ) : (
+                paginatedCards.map((animal) => (
+                  <tr key={animal.codigoBrinco}>
+                    <td className="td-mono">{animal.codigoBrinco}</td>
+                    <td>{animal.nome || '—'}</td>
+                    <td>{animal.raca || '—'}</td>
+                    <td>{animal.sexo === 'M' ? 'Macho' : 'Fêmea'}</td>
+                    <td>{animal.pesoLabel}</td>
+                    <td>{animal.idadeLabel}</td>
+                    <td>
+                      <span
+                        className={`status-pill ${
+                          animal.statusAnimal === 'ATIVO'
+                            ? 'status-pill--ativo'
+                            : 'status-pill--inativo'
+                        }`}
+                      >
+                        {animal.statusAnimal}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="btn-row"
+                          onClick={() => openDetailsModal(animal)}
+                        >
+                          Detalhes
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-row btn-row--edit"
+                          onClick={() => openEditModal(animal)}
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? ''
+              : `${filteredCards.length} ${filteredCards.length === 1 ? 'registro' : 'registros'}`}
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-pages">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo →
+            </button>
+          </div>
+        </footer>
       </section>
 
       {modal.type === 'form' ? (
@@ -384,12 +618,17 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           feedback={formFeedback}
           userEmail={currentUser.email}
           vacinasDisponiveis={vacinasDisponiveis}
+          lotesDisponiveis={lotesDisponiveis}
+          loteVinculo={loteVinculo}
+          setorVinculo={setorVinculo}
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
           onAddVacina={handleAddVacina}
           onChangeVacina={handleChangeVacina}
           onRemoveVacina={handleRemoveVacina}
+          onChangeLote={handleChangeLoteVinculo}
+          onChangeSetor={handleChangeSetorVinculo}
         />
       ) : null}
 

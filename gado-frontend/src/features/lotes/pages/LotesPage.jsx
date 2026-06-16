@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import LoteCard from '../components/LoteCard'
 import LoteFormModal from '../components/LoteFormModal'
 import LoteDetailsModal from '../components/LoteDetailsModal'
 import {
@@ -26,6 +25,15 @@ const defaultForm = {
   alocacoes: [],
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  return `${parts[2]}/${parts[1]}/${parts[0]}`
+}
+
+const ROWS_PER_PAGE = 10
+
 function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -41,6 +49,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState([])
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const exportMenuRef = useRef(null)
+  const [page, setPage] = useState(0)
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
@@ -78,6 +87,12 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     )
   }, [lotes, activeSearch])
 
+  const totalPages = Math.max(1, Math.ceil(filteredLotes.length / ROWS_PER_PAGE))
+  const paginatedLotes = filteredLotes.slice(
+    page * ROWS_PER_PAGE,
+    (page + 1) * ROWS_PER_PAGE,
+  )
+
   const fetchLotes = useCallback(async () => {
     setIsLoading(true)
     setFeedback({ type: '', message: '' })
@@ -98,10 +113,16 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     fetchLotes()
   }, [fetchLotes, refreshGlobal])
 
-  async function carregarAnimaisDisponiveis() {
+  async function carregarAnimaisParaLote(loteAtualId) {
     try {
       const lista = await listarAnimaisParaLote()
-      setAnimaisDisponiveis(lista)
+      const ocupados = new Set(
+        lotes
+          .filter((l) => l.id !== loteAtualId)
+          .flatMap((l) => l.alocacoes.flatMap((aloc) => aloc.animais.map((a) => a.id)))
+          .filter((id) => id !== null),
+      )
+      setAnimaisDisponiveis(lista.filter((a) => !ocupados.has(a.id)))
     } catch {
       setAnimaisDisponiveis([])
     }
@@ -110,11 +131,13 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   function handleSearchSubmit(event) {
     event.preventDefault()
     setActiveSearch(search.trim())
+    setPage(0)
   }
 
   function handleClearSearch() {
     setSearch('')
     setActiveSearch('')
+    setPage(0)
   }
 
   function closeModal() {
@@ -137,7 +160,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     setFormData(defaultForm)
     setFormFeedback('')
     setModal({ type: 'form', lote: null })
-    carregarAnimaisDisponiveis()
+    carregarAnimaisParaLote(null)
   }
 
   function openEditModal(lote) {
@@ -156,7 +179,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
       })),
     })
     setModal({ type: 'form', lote })
-    carregarAnimaisDisponiveis()
+    carregarAnimaisParaLote(lote.id)
   }
 
   function openDetailsModal(lote) {
@@ -236,9 +259,9 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
             Lotes
           </button>
           <button
-              type="button"
-              className="menu-item"
-              onClick={() => onNavigate('setores')}
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('setores')}
           >
             Setores
           </button>
@@ -286,29 +309,35 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Lotes</h1>
-          <span>{currentUser.email}</span>
         </header>
 
-        <div className="search-toolbar">
-          <form className="animals-search" onSubmit={handleSearchSubmit}>
+        {feedback.message ? (
+          <p
+            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+          >
+            {feedback.message}
+          </p>
+        ) : null}
+
+        <div className="data-toolbar">
+          <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
             <input
               type="text"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por código, cor ou criado por"
             />
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Buscando...' : 'Buscar'}
-            </button>
             {activeSearch ? (
               <button
                 type="button"
+                className="toolbar-search__clear"
                 onClick={handleClearSearch}
-                disabled={isLoading}
+                aria-label="Limpar busca"
               >
-                Limpar
+                ✕
               </button>
             ) : null}
           </form>
@@ -316,12 +345,12 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           <div className="export-wrapper" ref={exportMenuRef}>
             <button
               type="button"
-              className="export-btn"
+              className="btn-export-csv"
               onClick={() => setExportMenuOpen((v) => !v)}
             >
               Exportar ▾
             </button>
-            {exportMenuOpen && (
+            {exportMenuOpen ? (
               <div className="export-menu">
                 <button
                   type="button"
@@ -339,66 +368,114 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
                   Exportar como PDF
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
+
+          {canEdit ? (
+            <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+              + Novo Lote
+            </button>
+          ) : null}
         </div>
 
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : activeSearch
-              ? `${filteredLotes.length} ${filteredLotes.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${filteredLotes.length} ${filteredLotes.length === 1 ? 'lote cadastrado' : 'lotes cadastrados'}`}
-        </p>
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Cor Brinco</th>
+                <th>Raça Predominante</th>
+                <th>Setores</th>
+                <th>Total Animais</th>
+                <th>Data Criação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="table-loading">
+                    Carregando...
+                  </td>
+                </tr>
+              ) : paginatedLotes.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="table-empty">
+                    {activeSearch
+                      ? `Nenhum resultado para "${activeSearch}".`
+                      : 'Nenhum lote cadastrado. Clique em "+ Novo Lote" para começar.'}
+                  </td>
+                </tr>
+              ) : (
+                paginatedLotes.map((lote) => {
+                  const totalAnimais = lote.alocacoes.reduce(
+                    (sum, aloc) => sum + (aloc.animais?.length || 0),
+                    0,
+                  )
+                  return (
+                    <tr key={lote.id}>
+                      <td className="td-mono">{lote.codigo}</td>
+                      <td>{lote.corBrinco || '—'}</td>
+                      <td>{lote.racaPredominante || '—'}</td>
+                      <td>{lote.alocacoes.length}</td>
+                      <td>{totalAnimais}</td>
+                      <td>{formatDate(lote.dataCriacao)}</td>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-row"
+                            onClick={() => openDetailsModal(lote)}
+                          >
+                            Detalhes
+                          </button>
+                          {canEdit ? (
+                            <button
+                              type="button"
+                              className="btn-row btn-row--edit"
+                              onClick={() => openEditModal(lote)}
+                            >
+                              Editar
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {feedback.message ? (
-          <p
-            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
-
-        {filteredLotes.length ? (
-          <div className="animals-grid">
-            {filteredLotes.map((lote) => (
-              <LoteCard
-                key={lote.id}
-                lote={lote}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? ''
+              : `${filteredLotes.length} ${filteredLotes.length === 1 ? 'registro' : 'registros'}`}
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-pages">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo →
+            </button>
           </div>
-        ) : (
-          <div className="animals-empty">
-            {activeSearch ? (
-              <>
-                <p>Nenhum lote encontrado.</p>
-                <span>
-                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo da
-                  busca.
-                </span>
-              </>
-            ) : (
-              <>
-                <p>Nenhum lote cadastrado.</p>
-                <span>Clique no botão + para cadastrar o primeiro lote.</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {canEdit ? (
-          <button
-            type="button"
-            className="fab-add"
-            aria-label="Adicionar lote"
-            onClick={openCreateModal}
-          >
-            +
-          </button>
-        ) : null}
+        </footer>
       </section>
 
       {modal.type === 'form' ? (

@@ -1,6 +1,7 @@
 package br.com.gado.application.services;
 
 import br.com.gado.application.dto.metaSetorDto.MedicaoMetaCadastroDto;
+import br.com.gado.application.dto.metaSetorDto.MedicaoMetaPutDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorCadastroDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorPutDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorRespostaDto;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -176,6 +178,77 @@ class SMetaSetorTest {
             when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
             assertDoesNotThrow(() -> sMetaSetor.validaQualquerPerfil(EMAIL_CASEIRO));
         }
+
+        @Test
+        void validaQualquerPerfil_DeveLancarExcecao_QuandoEmailBlank() {
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.validaQualquerPerfil("   "));
+        }
+
+        @Test
+        void validaQualquerPerfil_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.empty());
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaQualquerPerfil(EMAIL_CASEIRO));
+            assertEquals("Usuário não encontrado.", ex.getMessage());
+        }
+
+        @Test
+        void validaAdminOuGerente_DevePassar_QuandoGerente() {
+            usuarioAdmin.setPerfil(EnPerfilUsuario.GERENTE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+            assertDoesNotThrow(() -> sMetaSetor.validaAdminOuGerente(EMAIL_ADMIN));
+        }
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoEmailNuloOuBlank() {
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.validaEdicaoMedicao(null, medicaoLeite));
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.validaEdicaoMedicao("   ", medicaoLeite));
+        }
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.empty());
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaEdicaoMedicao(EMAIL_ADMIN, medicaoLeite));
+            assertEquals("Usuário não encontrado.", ex.getMessage());
+        }
+
+        @Test
+        void validaEdicaoMedicao_DevePassar_QuandoGerenteOuCuidadorChefe() {
+            EUsuario gerente = new EUsuario();
+            gerente.setEmail("gerente@gado.com");
+            gerente.setPerfil(EnPerfilUsuario.GERENTE);
+            when(usuarioInterface.findByEmailAndStatus("gerente@gado.com", EnStatus.A)).thenReturn(Optional.of(gerente));
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao("gerente@gado.com", medicaoLeite));
+
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A)).thenReturn(Optional.of(cuidadorChefe));
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+        }
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoCuidadorEMedicaoSemCriadoPorEmail() {
+            medicaoLeite.setCriadoPorEmail(null);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaEdicaoMedicao(EMAIL_CASEIRO, medicaoLeite));
+            assertEquals("Você só pode editar medições que você mesmo criou.", ex.getMessage());
+        }
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoPerfilNaoPermitido() {
+            EUsuario financeiro = new EUsuario();
+            financeiro.setEmail("fin@gado.com");
+            financeiro.setPerfil(EnPerfilUsuario.FINANCEIRO);
+            when(usuarioInterface.findByEmailAndStatus("fin@gado.com", EnStatus.A)).thenReturn(Optional.of(financeiro));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaEdicaoMedicao("fin@gado.com", medicaoLeite));
+            assertEquals("Seu perfil não permite editar medições.", ex.getMessage());
+        }
     }
 
     @Nested
@@ -257,6 +330,26 @@ class SMetaSetorTest {
             assertEquals("Meta do setor atualizada com sucesso.", msg);
             verify(metaSetorInterface, times(1)).save(metaArroba);
         }
+
+        @Test
+        void alterar_NaoDeveAlterarNenhumCampo_QuandoDtoForVazio() {
+            when(metaSetorInterface.findById(11L)).thenReturn(Optional.of(metaArroba));
+
+            LocalDate dataInicialOriginal = metaArroba.getDataInicial();
+            LocalDate dataFinalOriginal = metaArroba.getDataFinal();
+            Double quantidadeOriginal = metaArroba.getQuantidadeEsperada();
+            Double precoOriginal = metaArroba.getPrecoMedio();
+            var tipoGadoOriginal = metaArroba.getTipoGado();
+
+            String msg = sMetaSetor.alterar(11L, new MetaSetorPutDto());
+
+            assertEquals("Meta do setor atualizada com sucesso.", msg);
+            assertEquals(dataInicialOriginal, metaArroba.getDataInicial());
+            assertEquals(dataFinalOriginal, metaArroba.getDataFinal());
+            assertEquals(quantidadeOriginal, metaArroba.getQuantidadeEsperada());
+            assertEquals(precoOriginal, metaArroba.getPrecoMedio());
+            assertEquals(tipoGadoOriginal, metaArroba.getTipoGado());
+        }
     }
 
     @Nested
@@ -318,6 +411,29 @@ class SMetaSetorTest {
             MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
             assertEquals(0.0, dto.getPercentualProgresso()); // Validando a segurança contra divisão por zero
         }
+
+        @Test
+        void buscarPorId_DeveIncluirNomeDoCriador_QuandoMedicaoTemCriadoPorEmail() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            usuarioCaseiro.setNome("Caseiro Teste");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertEquals("Caseiro Teste", dto.getMedicoes().get(0).getCriadoPorNome());
+        }
+
+        @Test
+        void buscarPorId_DeveRetornarNomeNulo_QuandoMedicaoSemCriadoPorEmail() {
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertNull(dto.getMedicoes().get(0).getCriadoPorNome());
+        }
     }
 
     @Nested
@@ -341,7 +457,7 @@ class SMetaSetorTest {
         @Test
         void cadastrarMedicao_LancaExcecao_MetaNaoEncontrada() {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.empty());
-            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto));
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com"));
         }
 
         @Test
@@ -349,7 +465,7 @@ class SMetaSetorTest {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
             when(loteInterface.findById(ID_GENERICO)).thenReturn(Optional.empty());
 
-            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto));
+            assertThrows(IllegalArgumentException.class, () -> sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com"));
         }
 
         @Test
@@ -357,23 +473,144 @@ class SMetaSetorTest {
             when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
             when(loteInterface.findById(ID_GENERICO)).thenReturn(Optional.of(loteEntity));
 
-            String msg = sMetaSetor.cadastrarMedicao(medicaoDto);
+            String msg = sMetaSetor.cadastrarMedicao(medicaoDto, "usuario@teste.com");
 
             assertEquals("Medição cadastrada com sucesso.", msg);
             verify(medicaoMetaInterface, times(1)).save(any(EMedicaoMeta.class));
         }
 
         @Test
-        void deletarMedicao_NaoEncontrada_RetornaMensagem() {
-            when(medicaoMetaInterface.existsById(20L)).thenReturn(false);
-            assertEquals("Medição não encontrada para o ID: 20", sMetaSetor.deletarMedicao(20L));
+        void cadastrarMedicao_DeveSalvarComCriadoPorEmailNulo_QuandoEmailCriadorForNulo() {
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(loteInterface.findById(ID_GENERICO)).thenReturn(Optional.of(loteEntity));
+
+            ArgumentCaptor<EMedicaoMeta> captor = ArgumentCaptor.forClass(EMedicaoMeta.class);
+
+            String msg = sMetaSetor.cadastrarMedicao(medicaoDto, null);
+
+            assertEquals("Medição cadastrada com sucesso.", msg);
+            verify(medicaoMetaInterface).save(captor.capture());
+            assertNull(captor.getValue().getCriadoPorEmail());
         }
 
         @Test
-        void deletarMedicao_Encontrada_RemoveComSucesso() {
-            when(medicaoMetaInterface.existsById(20L)).thenReturn(true);
-            assertEquals("Medição removida com sucesso.", sMetaSetor.deletarMedicao(20L));
+        void deletarMedicao_LancaExcecao_QuandoNaoEncontrada() {
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.empty());
+            assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEDeletarMedicao(20L, EMAIL_ADMIN));
+        }
+
+        @Test
+        void deletarMedicao_RemoveComSucesso_QuandoAdmin() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+
+            String msg = sMetaSetor.validarEDeletarMedicao(20L, EMAIL_ADMIN);
+
+            assertEquals("Medição removida com sucesso.", msg);
             verify(medicaoMetaInterface, times(1)).deleteById(20L);
+        }
+
+        @Test
+        void deletarMedicao_RemoveComSucesso_QuandoCuidadorExcluiPropriaMedicao() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            String msg = sMetaSetor.validarEDeletarMedicao(20L, EMAIL_CASEIRO);
+
+            assertEquals("Medição removida com sucesso.", msg);
+            verify(medicaoMetaInterface, times(1)).deleteById(20L);
+        }
+
+        @Test
+        void deletarMedicao_LancaExcecao_QuandoCuidadorTentaExcluirMedicaoDeOutro() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_ADMIN);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEDeletarMedicao(20L, EMAIL_CASEIRO));
+            verify(medicaoMetaInterface, never()).deleteById(any());
+        }
+    }
+
+    @Nested
+    class ValidarEAtualizarMedicaoTests {
+        @Test
+        void deveLancarExcecao_QuandoMedicaoNaoEncontrada() {
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEAtualizarMedicao(20L, new MedicaoMetaPutDto(), EMAIL_ADMIN));
+            assertEquals("Medição não encontrada para o ID: 20", ex.getMessage());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoUsuarioSemPermissao() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_ADMIN);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEAtualizarMedicao(20L, new MedicaoMetaPutDto(), EMAIL_CASEIRO));
+            verify(medicaoMetaInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoNovoLoteNaoEncontrado() {
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+            when(loteInterface.findById(99L)).thenReturn(Optional.empty());
+
+            MedicaoMetaPutDto dto = new MedicaoMetaPutDto();
+            dto.setLoteId(99L);
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEAtualizarMedicao(20L, dto, EMAIL_ADMIN));
+            assertEquals("Lote não encontrado para o ID: 99", ex.getMessage());
+        }
+
+        @Test
+        void deveAtualizarTodosOsCampos_QuandoInformados() {
+            ELote novoLote = new ELote();
+            novoLote.setId(77L);
+
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+            when(loteInterface.findById(77L)).thenReturn(Optional.of(novoLote));
+
+            MedicaoMetaPutDto dto = new MedicaoMetaPutDto();
+            dto.setLoteId(77L);
+            LocalDate novaData = LocalDate.now().plusDays(5);
+            dto.setDataMedicao(novaData);
+            dto.setQuantidadeLancada(123.0);
+
+            String msg = sMetaSetor.validarEAtualizarMedicao(20L, dto, EMAIL_ADMIN);
+
+            assertEquals("Medição atualizada com sucesso.", msg);
+            assertEquals(novoLote, medicaoLeite.getLote());
+            assertEquals(novaData, medicaoLeite.getDataMedicao());
+            assertEquals(123.0, medicaoLeite.getQuantidadeLancada());
+            verify(medicaoMetaInterface, times(1)).save(medicaoLeite);
+        }
+
+        @Test
+        void naoDeveAlterarCampos_QuandoDtoForVazio() {
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+
+            ELote loteOriginal = medicaoLeite.getLote();
+            Double quantidadeOriginal = medicaoLeite.getQuantidadeLancada();
+
+            String msg = sMetaSetor.validarEAtualizarMedicao(20L, new MedicaoMetaPutDto(), EMAIL_ADMIN);
+
+            assertEquals("Medição atualizada com sucesso.", msg);
+            assertEquals(loteOriginal, medicaoLeite.getLote());
+            assertNull(medicaoLeite.getDataMedicao());
+            assertEquals(quantidadeOriginal, medicaoLeite.getQuantidadeLancada());
+            verify(loteInterface, never()).findById(any());
         }
     }
 }

@@ -643,3 +643,383 @@
     font-size: 1rem;
   }
 }
+
+/* ── Data Table Layout ──────────────────────────────────────────────────── */
+
+.page-header {
+  margin-bottom: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #1d1d1d;
+  line-height: 1;
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────────────── */
+
+.data-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.toolbar-search {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.toolbar-search__icon {
+  font-size: 0.9rem;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.toolbar-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.92rem;
+  color: #1d1d1d;
+}
+
+.toolbar-search__clear {
+  border: none;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toolbar-search__clear:hover {
+  color: #555;
+}
+
+.toolbar-select,
+.toolbar-date {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: #1d1d1d;
+  outline: none;
+  height: 38px;
+  cursor: pointer;
+}
+
+.toolbar-date {
+  width: 144px;
+}
+
+.btn-export-csv {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 38px;
+}
+
+.btn-export-csv:hover {
+  background: #f5f5f5;
+}
+
+.btn-new-entity {
+  border: none;
+  border-radius: 8px;
+  padding: 0 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #4f7f2f;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 38px;
+  margin-left: auto;
+}
+
+.btn-new-entity:hover {
+  background: #3d6322;
+}
+
+/* ── Data Table ─────────────────────────────────────────────────────────── */
+
+.data-table-wrapper {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table thead {
+  background: #f9f9f9;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.data-table th {
+  padding: 11px 14px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b6b6b;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1d1d1d;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover td {
+  background: #f8fdf5;
+}
+
+.td-mono {
+  font-family: monospace;
+  font-size: 0.88rem;
+  color: #555;
+  font-weight: 600;
+}
+
+/* ── Status Pills ────────────────────────────────────────────────────────── */
+
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.status-pill--ativo {
+  background: #e8f5e2;
+  color: #2e7d0e;
+  border-color: #b9e0a4;
+}
+
+.status-pill--inativo {
+  background: #fdf0f0;
+  color: #b42929;
+  border-color: #f3bdbd;
+}
+
+.status-pill--pendente {
+  background: #fff8e1;
+  color: #8a5a00;
+  border-color: #f3d774;
+}
+
+/* ── Row Actions ─────────────────────────────────────────────────────────── */
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-row {
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-row:hover {
+  background: #e8e8e8;
+}
+
+.btn-row--edit {
+  background: #eef5e6;
+  color: #2e5c12;
+  border-color: #c4deb0;
+}
+
+.btn-row--edit:hover {
+  background: #ddeece;
+}
+
+/* ── Empty / Loading states ─────────────────────────────────────────────── */
+
+.table-loading,
+.table-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #999;
+  font-size: 0.92rem;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+
+.data-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 2px 2px;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #6b6b6b;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination-btn {
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #fff;
+  color: #1d1d1d;
+  cursor: pointer;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pagination-btn:not(:disabled):hover {
+  background: #f5f5f5;
+}
+
+.pagination-pages {
+  font-size: 0.85rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .data-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-new-entity {
+    margin-left: 0;
+  }
+
+  .toolbar-date {
+    width: 100%;
+  }
+
+  .data-pagination {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+/* ── Perfil Pills (Configurações) ───────────────────────────────────────── */
+
+.perfil-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.perfil-pill--admin {
+  background: #f0eaff;
+  color: #5b21b6;
+  border-color: #d4bbff;
+}
+
+.perfil-pill--gerente {
+  background: #e8f0ff;
+  color: #1d4bb5;
+  border-color: #b3caff;
+}
+
+.perfil-pill--cuidador {
+  background: #e8f5e2;
+  color: #2e7d0e;
+  border-color: #b9e0a4;
+}
+
+/* ── Danger action button ────────────────────────────────────────────────── */
+
+.btn-row--danger {
+  background: #fdf0f0;
+  color: #b42929;
+  border-color: #f3bdbd;
+}
+
+.btn-row--danger:hover:not(:disabled) {
+  background: #f8d8d8;
+}
+
+.btn-row--danger:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+/* ── Current user badge ──────────────────────────────────────────────────── */
+
+.current-user-badge {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 400;
+}
+
+/* ── Truncated text cell ─────────────────────────────────────────────────── */
+
+.td-truncate {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

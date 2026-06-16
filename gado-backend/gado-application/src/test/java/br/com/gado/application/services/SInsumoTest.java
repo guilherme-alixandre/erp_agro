@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -131,6 +132,20 @@ class SInsumoTest {
             assertNotNull(resultado);
             verify(insumoInterface, times(1)).save(any(EInsumo.class));
         }
+
+        @Test
+        void deveCriarVacinaComPendenteFalse_QuandoPendenteNaoForInformado() {
+            vacinaCadastroDto.setPendente(null);
+            when(insumoInterface.findFirstByTipoAndNomeIgnoreCase(EnTipoInsumo.VACINA, NOME_VACINA))
+                    .thenReturn(Optional.empty());
+            when(insumoInterface.save(any(EInsumo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            ArgumentCaptor<EInsumo> captor = ArgumentCaptor.forClass(EInsumo.class);
+            sInsumo.criarVacina(vacinaCadastroDto);
+
+            verify(insumoInterface).save(captor.capture());
+            assertEquals(Boolean.FALSE, captor.getValue().getPendente());
+        }
     }
 
     @Nested
@@ -176,10 +191,43 @@ class SInsumoTest {
             assertNotNull(resultado);
             verify(insumoInterface, times(1)).save(vacinaEntity);
         }
+
+        @Test
+        void deveManterNomeOriginal_QuandoNomeNaoForInformado() {
+            vacinaPutDto.setNome(null);
+            when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.of(vacinaEntity));
+            when(insumoInterface.save(any(EInsumo.class))).thenReturn(vacinaEntity);
+
+            sInsumo.atualizarVacina(ID_TESTE, vacinaPutDto);
+
+            assertEquals(NOME_VACINA, vacinaEntity.getNome());
+            assertEquals(vacinaPutDto.getPendente(), vacinaEntity.getPendente());
+        }
+
+        @Test
+        void deveManterPendenteOriginal_QuandoPendenteNaoForInformado() {
+            vacinaPutDto.setPendente(null);
+            when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.of(vacinaEntity));
+            when(insumoInterface.save(any(EInsumo.class))).thenReturn(vacinaEntity);
+
+            sInsumo.atualizarVacina(ID_TESTE, vacinaPutDto);
+
+            assertEquals(vacinaPutDto.getNome(), vacinaEntity.getNome());
+            assertEquals(false, vacinaEntity.getPendente());
+        }
     }
 
     @Nested
     class DeletarVacinaTests {
+        @Test
+        void deveLancarExcecao_QuandoVacinaNaoEncontrada() {
+            when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.empty());
+
+            EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> sInsumo.deletarVacina(ID_TESTE));
+            assertEquals("Vacina não encontrada.", ex.getMessage());
+            verify(insumoInterface, never()).deleteById(anyLong());
+        }
+
         @Test
         void deveDeletarVacina_QuandoSucesso() {
             when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.of(vacinaEntity));

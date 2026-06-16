@@ -135,6 +135,27 @@ class SRegistroFinanceiroTest {
             assertThrows(EntityNotFoundException.class,
                     () -> sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO));
         }
+
+        @Test
+        void criarRegistroFinanceiro_DeveLancarExcecao_QuandoSaveFalhar() {
+
+            when(usuarioInterface.findByEmailAndStatus(
+                    usuarioEntity.getEmail(),
+                    usuarioEntity.getStatus()
+            )).thenReturn(Optional.of(usuarioEntity));
+
+            when(categoriaInterface.findById(ID))
+                    .thenReturn(Optional.of(categoriaEntity));
+
+            when(modelMapper.map(registroFinanceiroDTO, ERegistroFinanceiro.class))
+                    .thenReturn(registroFinanceiroEntity);
+
+            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
+                    .thenThrow(new RuntimeException("Erro ao salvar"));
+
+            assertThrows(RuntimeException.class,
+                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO));
+        }
     }
 
     @Nested
@@ -206,6 +227,28 @@ class SRegistroFinanceiroTest {
                     .thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
+                    () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(ID, registroFinanceiroDTO));
+        }
+
+        @Test
+        void atualizarRegistroFinanceiroPorId_DeveLancarExcecao_QuandoSaveFalhar() {
+
+            when(registroFinanceiroInterface.findById(ID))
+                    .thenReturn(Optional.of(registroFinanceiroEntity));
+
+            when(modelMapper.getConfiguration())
+                    .thenReturn(configuration);
+
+            when(configuration.setSkipNullEnabled(true))
+                    .thenReturn(configuration);
+
+            doNothing().when(modelMapper)
+                    .map(any(RegistroFinanceiroDTO.class), any(ERegistroFinanceiro.class));
+
+            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
+                    .thenThrow(new RuntimeException("Erro ao atualizar"));
+
+            assertThrows(RuntimeException.class,
                     () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(ID, registroFinanceiroDTO));
         }
     }

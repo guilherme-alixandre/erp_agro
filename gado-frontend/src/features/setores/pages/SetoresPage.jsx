@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import SetorCard from '../components/SetorCard'
 import SetorFormModal from '../components/SetorFormModal'
 import SetorDetailsModal from '../components/SetorDetailsModal'
 import {
@@ -23,6 +22,8 @@ const defaultForm = {
   metaTexto: '',
 }
 
+const ROWS_PER_PAGE = 10
+
 function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -37,6 +38,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [formFeedback, setFormFeedback] = useState('')
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const exportMenuRef = useRef(null)
+  const [page, setPage] = useState(0)
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
@@ -74,6 +76,12 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
     )
   }, [setores, activeSearch])
 
+  const totalPages = Math.max(1, Math.ceil(filteredSetores.length / ROWS_PER_PAGE))
+  const paginatedSetores = filteredSetores.slice(
+    page * ROWS_PER_PAGE,
+    (page + 1) * ROWS_PER_PAGE,
+  )
+
   const fetchSetores = useCallback(async () => {
     setIsLoading(true)
     setFeedback({ type: '', message: '' })
@@ -97,11 +105,13 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   function handleSearchSubmit(event) {
     event.preventDefault()
     setActiveSearch(search.trim())
+    setPage(0)
   }
 
   function handleClearSearch() {
     setSearch('')
     setActiveSearch('')
+    setPage(0)
   }
 
   function closeModal() {
@@ -251,29 +261,35 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Setores</h1>
-          <span>{currentUser.email}</span>
         </header>
 
-        <div className="search-toolbar">
-          <form className="animals-search" onSubmit={handleSearchSubmit}>
+        {feedback.message ? (
+          <p
+            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+          >
+            {feedback.message}
+          </p>
+        ) : null}
+
+        <div className="data-toolbar">
+          <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
             <input
               type="text"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome, tipo ou criado por"
             />
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Buscando...' : 'Buscar'}
-            </button>
             {activeSearch ? (
               <button
                 type="button"
+                className="toolbar-search__clear"
                 onClick={handleClearSearch}
-                disabled={isLoading}
+                aria-label="Limpar busca"
               >
-                Limpar
+                ✕
               </button>
             ) : null}
           </form>
@@ -281,12 +297,12 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           <div className="export-wrapper" ref={exportMenuRef}>
             <button
               type="button"
-              className="export-btn"
+              className="btn-export-csv"
               onClick={() => setExportMenuOpen((v) => !v)}
             >
               Exportar ▾
             </button>
-            {exportMenuOpen && (
+            {exportMenuOpen ? (
               <div className="export-menu">
                 <button
                   type="button"
@@ -304,66 +320,106 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                   Exportar como PDF
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
+
+          {canEdit ? (
+            <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+              + Novo Setor
+            </button>
+          ) : null}
         </div>
 
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : activeSearch
-              ? `${filteredSetores.length} ${filteredSetores.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${filteredSetores.length} ${filteredSetores.length === 1 ? 'setor cadastrado' : 'setores cadastrados'}`}
-        </p>
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Cap. Máxima</th>
+                <th>Meta</th>
+                <th>Criado Por</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="table-loading">
+                    Carregando...
+                  </td>
+                </tr>
+              ) : paginatedSetores.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="table-empty">
+                    {activeSearch
+                      ? `Nenhum resultado para "${activeSearch}".`
+                      : 'Nenhum setor cadastrado. Clique em "+ Novo Setor" para começar.'}
+                  </td>
+                </tr>
+              ) : (
+                paginatedSetores.map((setor) => (
+                  <tr key={setor.id}>
+                    <td>{setor.nome}</td>
+                    <td>{setor.tipo || '—'}</td>
+                    <td>{setor.capacidadeMaxima ?? '—'}</td>
+                    <td className="td-truncate">{setor.metaTexto || '—'}</td>
+                    <td>{setor.criadoPorNome || '—'}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="btn-row"
+                          onClick={() => openDetailsModal(setor)}
+                        >
+                          Detalhes
+                        </button>
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            className="btn-row btn-row--edit"
+                            onClick={() => openEditModal(setor)}
+                          >
+                            Editar
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {feedback.message ? (
-          <p
-            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
-
-        {filteredSetores.length ? (
-          <div className="animals-grid">
-            {filteredSetores.map((setor) => (
-              <SetorCard
-                key={setor.id}
-                setor={setor}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? ''
+              : `${filteredSetores.length} ${filteredSetores.length === 1 ? 'registro' : 'registros'}`}
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-pages">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo →
+            </button>
           </div>
-        ) : (
-          <div className="animals-empty">
-            {activeSearch ? (
-              <>
-                <p>Nenhum setor encontrado.</p>
-                <span>
-                  Nenhum resultado para {`"${activeSearch}"`}. Ajuste o termo
-                  da busca.
-                </span>
-              </>
-            ) : (
-              <>
-                <p>Nenhum setor cadastrado.</p>
-                <span>Clique no botão + para cadastrar o primeiro setor.</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {canEdit ? (
-          <button
-            type="button"
-            className="fab-add"
-            aria-label="Adicionar setor"
-            onClick={openCreateModal}
-          >
-            +
-          </button>
-        ) : null}
+        </footer>
       </section>
 
       {modal.type === 'form' ? (

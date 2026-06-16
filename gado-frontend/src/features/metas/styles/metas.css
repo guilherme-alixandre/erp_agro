@@ -217,7 +217,23 @@
   font-style: italic;
 }
 
-/* ── Botão de deletar medição ─────────────────────────────────────── */
+/* ── Botões de ação em linha da medição ───────────────────────────── */
+
+.btn-edit-medicao {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #3b82f6;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+  margin-right: 0.25rem;
+}
+
+.btn-edit-medicao:hover {
+  background: #dbeafe;
+}
 
 .btn-del-medicao {
   background: none;

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   cadastrarMedicao,
+  atualizarMedicao,
   validarFormMedicao,
   labelQuantidade,
 } from '../../../services/metaSetorApi'
@@ -12,17 +13,28 @@ const defaultForm = {
 }
 
 /**
- * Modal para registrar uma nova MedicaoMeta dentro de uma meta existente.
+ * Modal para registrar ou editar uma MedicaoMeta.
  *
  * Props:
- *  - meta        → objeto MetaSetor normalizado (id, tipoMeta, setorId)
- *  - lotes       → lista de lotes disponíveis para seleção
- *  - emailUsuario→ string com o email do usuário logado
- *  - onClose     → fn() — fecha o modal sem salvar
- *  - onSaved     → fn() — chamado após salvar com sucesso (dispara reload)
+ *  - meta               → objeto MetaSetor normalizado (id, tipoMeta, setorNome)
+ *  - lotes              → lista de lotes disponíveis para seleção
+ *  - emailUsuario       → string com o email do usuário logado
+ *  - medicaoParaEditar  → objeto de medição existente (opcional — ausente = modo criação)
+ *  - onClose            → fn() — fecha o modal sem salvar
+ *  - onSaved            → fn() — chamado após salvar com sucesso (dispara reload)
  */
-function MedicaoModal({ meta, lotes, emailUsuario, onClose, onSaved }) {
-  const [form, setForm] = useState(defaultForm)
+function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, onSaved }) {
+  const modoEdicao = Boolean(medicaoParaEditar)
+
+  const [form, setForm] = useState(
+    modoEdicao
+      ? {
+          loteId: String(medicaoParaEditar.loteId),
+          dataMedicao: medicaoParaEditar.dataMedicao,
+          quantidadeLancada: String(medicaoParaEditar.quantidadeLancada),
+        }
+      : defaultForm
+  )
   const [erros, setErros] = useState({})
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState('')
@@ -47,12 +59,20 @@ function MedicaoModal({ meta, lotes, emailUsuario, onClose, onSaved }) {
 
     setIsSaving(true)
     try {
-      await cadastrarMedicao(emailUsuario, {
-        metaSetorId: meta.id,
-        loteId: Number(form.loteId),
-        dataMedicao: form.dataMedicao,
-        quantidadeLancada: Number(form.quantidadeLancada),
-      })
+      if (modoEdicao) {
+        await atualizarMedicao(emailUsuario, medicaoParaEditar.id, {
+          loteId: Number(form.loteId),
+          dataMedicao: form.dataMedicao,
+          quantidadeLancada: Number(form.quantidadeLancada),
+        })
+      } else {
+        await cadastrarMedicao(emailUsuario, {
+          metaSetorId: meta.id,
+          loteId: Number(form.loteId),
+          dataMedicao: form.dataMedicao,
+          quantidadeLancada: Number(form.quantidadeLancada),
+        })
+      }
       onSaved()
     } catch (error) {
       setFeedback(error.message || 'Falha ao salvar medição.')
@@ -64,7 +84,7 @@ function MedicaoModal({ meta, lotes, emailUsuario, onClose, onSaved }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-box">
-        <h2>Adicionar Medição</h2>
+        <h2>{modoEdicao ? 'Editar Medição' : 'Adicionar Medição'}</h2>
         <p style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '-1rem', marginBottom: '1.25rem' }}>
           Meta: <strong>{meta.setorNome}</strong> — {meta.tipoMeta === 'LEITE' ? 'Leite' : 'Arroba'}
         </p>
@@ -150,7 +170,7 @@ function MedicaoModal({ meta, lotes, emailUsuario, onClose, onSaved }) {
               className="btn-primary"
               disabled={isSaving}
             >
-              {isSaving ? 'Salvando...' : 'Salvar Medição'}
+              {isSaving ? 'Salvando...' : modoEdicao ? 'Salvar Alterações' : 'Salvar Medição'}
             </button>
           </div>
         </form>

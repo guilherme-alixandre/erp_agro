@@ -228,6 +228,19 @@ public class SLote {
                                     + setor.getNome() + " não foram encontrados.");
                 }
 
+                // Validação: animal não pode estar alocado em outro lote ativo
+                for (EAnimal animal : animais) {
+                    List<ELoteSetor> conflitos =
+                            loteSetorInterface.findByAnimais_IdAndLote_IdNot(animal.getId(), lote.getId());
+                    if (!conflitos.isEmpty()) {
+                        String loteConflito = conflitos.get(0).getLote().getCodigo();
+                        throw new IllegalArgumentException(
+                                "O animal " + animal.getCodigoBrinco()
+                                        + " já está alocado ao lote " + loteConflito
+                                        + ". Desvincule-o antes de adicioná-lo a outro lote.");
+                    }
+                }
+
                 // Validação de capacidade do setor
                 int jaAlocados = loteSetorInterface.findBySetor_Id(setor.getId())
                         .stream()
