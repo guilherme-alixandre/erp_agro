@@ -4,6 +4,7 @@ import br.com.gado.application.dto.SetorDto;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
+import br.com.gado.domain.enums.EnTipoSetor;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
@@ -134,6 +135,36 @@ class SSetorTest {
             assertEquals("Pasto A", response.getNome());
             verify(setorInterface, times(1)).save(any(ESetor.class));
         }
+
+        @Test
+        void cadastrar_DeveSalvarSemCriadoPor_QuandoEmailForNuloOuBlank() {
+            ESetor setorSemCriador = new ESetor();
+            setorSemCriador.setId(ID);
+            setorSemCriador.setNome("Pasto A");
+
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorSemCriador);
+
+            SetorDto response = sSetor.cadastra(setorDto, null);
+
+            assertNull(response.getCriadoPorNome());
+            assertNull(response.getCriadoPorEmail());
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void cadastrar_DeveSalvarSemCriadoPor_QuandoUsuarioNaoEncontrado() {
+            ESetor setorSemCriador = new ESetor();
+            setorSemCriador.setId(ID);
+            setorSemCriador.setNome("Pasto A");
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.empty());
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorSemCriador);
+
+            SetorDto response = sSetor.cadastra(setorDto, EMAIL_VALIDO);
+
+            assertNull(response.getCriadoPorNome());
+        }
     }
 
     @Nested
@@ -193,6 +224,52 @@ class SSetorTest {
 
             assertThrows(EntityNotFoundException.class,
                     () -> sSetor.altera(ID, setorDto, EMAIL_VALIDO));
+        }
+
+        @Test
+        void alterar_NaoDeveAlterarNomeCapacidadeETipo_QuandoNaoInformados() {
+            setorDto.setNome(null);
+            setorDto.setCapacidadeMaxima(0);
+            setorDto.setTipo(null);
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            sSetor.altera(ID, setorDto, EMAIL_VALIDO);
+
+            assertEquals("Pasto A", setorEntity.getNome());
+            assertEquals(50, setorEntity.getCapacidadeMaxima());
+            assertNull(setorEntity.getTipo());
+        }
+
+        @Test
+        void alterar_DeveAtualizarTipo_QuandoInformado() {
+            setorDto.setTipo(EnTipoSetor.CONFINAMENTO);
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            sSetor.altera(ID, setorDto, EMAIL_VALIDO);
+
+            assertEquals(EnTipoSetor.CONFINAMENTO, setorEntity.getTipo());
+        }
+
+        @Test
+        void alterar_DeveSalvarSemAlteradoPor_QuandoEmailForNulo() {
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            SetorDto response = sSetor.altera(ID, setorDto, null);
+
+            assertNull(response.getAlteradoPorNome());
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
         }
     }
 }
