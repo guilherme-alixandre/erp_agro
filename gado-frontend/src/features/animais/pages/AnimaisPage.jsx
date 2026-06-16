@@ -469,7 +469,10 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           >
             <option value="">Todos os Status</option>
             <option value="ATIVO">Ativo</option>
-            <option value="INATIVO">Inativo</option>
+            <option value="OBSERVACAO">Observação</option>
+            <option value="VENDIDO">Vendido</option>
+            <option value="OBITO">Obito</option>
+            <option value="ABATIDO">Abatido</option>
           </select>
 
           <input

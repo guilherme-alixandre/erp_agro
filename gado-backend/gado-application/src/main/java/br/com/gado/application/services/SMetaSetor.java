@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SMetaSetor {
@@ -237,11 +239,19 @@ public class SMetaSetor {
         return "Medição atualizada com sucesso.";
     }
 
+    /**
+     * Valida e remove uma medição.
+     * Aplica a mesma regra de permissão usada na edição: ADMINISTRADOR, GERENTE
+     * e CUIDADOR_CHEFE podem excluir qualquer medição; CUIDADOR só a própria.
+     */
     @Transactional
-    public String deletarMedicao(Long medicaoId) {
-        if (!medicaoMetaInterface.existsById(medicaoId)) {
-            return "Medição não encontrada para o ID: " + medicaoId;
-        }
+    public String validarEDeletarMedicao(Long medicaoId, String emailUsuario) {
+        EMedicaoMeta medicao = medicaoMetaInterface.findById(medicaoId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Medição não encontrada para o ID: " + medicaoId));
+
+        validaEdicaoMedicao(emailUsuario, medicao);
+
         medicaoMetaInterface.deleteById(medicaoId);
         return "Medição removida com sucesso.";
     }
@@ -267,6 +277,17 @@ public class SMetaSetor {
         // ARROBA: (Peso Vivo * Taxa de Rendimento) / 15 kg
         double taxa = meta.getTipoGado().getTaxaRendimento();
         return (medicao.getQuantidadeLancada() * taxa) / KG_POR_ARROBA;
+    }
+
+    /** Busca o nome do usuário pelo e-mail registrado na medição, com cache local por requisição. */
+    private String resolverNomePorEmail(String email, Map<String, String> cache) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return cache.computeIfAbsent(email, e ->
+                usuarioInterface.findByEmailAndStatus(e, EnStatus.A)
+                        .map(EUsuario::getNome)
+                        .orElse(null));
     }
 
     private MetaSetorRespostaDto toRespostaDto(EMetaSetor meta) {
@@ -298,6 +319,7 @@ public class SMetaSetor {
         dto.setValorEsperado(arredondar(meta.getQuantidadeEsperada() * meta.getPrecoMedio()));
 
         // ── Montar lista de medições com quantidade convertida ──────────────
+        Map<String, String> nomesPorEmail = new HashMap<>();
         List<MedicaoMetaRespostaDto> medicaoDtos = medicoes.stream()
                 .map(m -> {
                     MedicaoMetaRespostaDto mDto = new MedicaoMetaRespostaDto();
@@ -308,6 +330,7 @@ public class SMetaSetor {
                     mDto.setQuantidadeLancada(m.getQuantidadeLancada());
                     mDto.setQuantidadeConvertida(arredondar(converterQuantidade(m, meta)));
                     mDto.setCriadoPorEmail(m.getCriadoPorEmail());
+                    mDto.setCriadoPorNome(resolverNomePorEmail(m.getCriadoPorEmail(), nomesPorEmail));
                     return mDto;
                 })
                 .toList();

@@ -127,15 +127,15 @@ public class CMetaSetor {
     }
 
     /**
-     * Remove uma medição específica.
-     * Restrito a ADMINISTRADOR e GERENTE.
+     * Remove uma medição existente.
+     * ADMINISTRADOR, GERENTE, CUIDADOR_CHEFE: podem excluir qualquer medição.
+     * CUIDADOR: só pode excluir a própria.
      * DELETE /api/metas-setor/medicoes/{medicaoId}
      */
     @DeleteMapping("/medicoes/{medicaoId}")
     public String deletarMedicao(
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @PathVariable Long medicaoId) {
-        metaSetorService.validaAdminOuGerente(emailUsuario);
-        return metaSetorService.deletarMedicao(medicaoId);
+        return metaSetorService.validarEDeletarMedicao(medicaoId, emailUsuario);
     }
 }

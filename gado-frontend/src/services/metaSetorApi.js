@@ -11,6 +11,7 @@ function normalizeMedicao(raw) {
     quantidadeLancada: raw?.quantidadeLancada ?? 0,
     quantidadeConvertida: raw?.quantidadeConvertida ?? 0,
     criadoPorEmail: raw?.criadoPorEmail ?? null,
+    criadoPorNome: raw?.criadoPorNome ?? null,
   }
 }
 

@@ -318,6 +318,29 @@ class SMetaSetorTest {
             MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
             assertEquals(0.0, dto.getPercentualProgresso()); // Validando a segurança contra divisão por zero
         }
+
+        @Test
+        void buscarPorId_DeveIncluirNomeDoCriador_QuandoMedicaoTemCriadoPorEmail() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            usuarioCaseiro.setNome("Caseiro Teste");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertEquals("Caseiro Teste", dto.getMedicoes().get(0).getCriadoPorNome());
+        }
+
+        @Test
+        void buscarPorId_DeveRetornarNomeNulo_QuandoMedicaoSemCriadoPorEmail() {
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertNull(dto.getMedicoes().get(0).getCriadoPorNome());
+        }
     }
 
     @Nested
@@ -364,16 +387,45 @@ class SMetaSetorTest {
         }
 
         @Test
-        void deletarMedicao_NaoEncontrada_RetornaMensagem() {
-            when(medicaoMetaInterface.existsById(20L)).thenReturn(false);
-            assertEquals("Medição não encontrada para o ID: 20", sMetaSetor.deletarMedicao(20L));
+        void deletarMedicao_LancaExcecao_QuandoNaoEncontrada() {
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.empty());
+            assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEDeletarMedicao(20L, EMAIL_ADMIN));
         }
 
         @Test
-        void deletarMedicao_Encontrada_RemoveComSucesso() {
-            when(medicaoMetaInterface.existsById(20L)).thenReturn(true);
-            assertEquals("Medição removida com sucesso.", sMetaSetor.deletarMedicao(20L));
+        void deletarMedicao_RemoveComSucesso_QuandoAdmin() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A)).thenReturn(Optional.of(usuarioAdmin));
+
+            String msg = sMetaSetor.validarEDeletarMedicao(20L, EMAIL_ADMIN);
+
+            assertEquals("Medição removida com sucesso.", msg);
             verify(medicaoMetaInterface, times(1)).deleteById(20L);
+        }
+
+        @Test
+        void deletarMedicao_RemoveComSucesso_QuandoCuidadorExcluiPropriaMedicao() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            String msg = sMetaSetor.validarEDeletarMedicao(20L, EMAIL_CASEIRO);
+
+            assertEquals("Medição removida com sucesso.", msg);
+            verify(medicaoMetaInterface, times(1)).deleteById(20L);
+        }
+
+        @Test
+        void deletarMedicao_LancaExcecao_QuandoCuidadorTentaExcluirMedicaoDeOutro() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_ADMIN);
+            when(medicaoMetaInterface.findById(20L)).thenReturn(Optional.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A)).thenReturn(Optional.of(usuarioCaseiro));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validarEDeletarMedicao(20L, EMAIL_CASEIRO));
+            verify(medicaoMetaInterface, never()).deleteById(any());
         }
     }
 }

@@ -176,6 +176,7 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
                     <th>Lote</th>
                     <th>Lançado</th>
                     <th>Convertido</th>
+                    <th>Criado por</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -191,6 +192,7 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
                       <td>
                         {formatarNumero(m.quantidadeConvertida)} {unidade}
                       </td>
+                      <td>{m.criadoPorNome || m.criadoPorEmail || '—'}</td>
                       <td>
                         {podeEditarMedicao(m) && (
                           <button
@@ -202,7 +204,7 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
                             ✎
                           </button>
                         )}
-                        {podeGerenciar && (
+                        {podeEditarMedicao(m) && (
                           <button
                             type="button"
                             className="btn-del-medicao"
