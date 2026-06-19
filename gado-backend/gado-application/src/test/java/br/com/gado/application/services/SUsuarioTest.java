@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,10 +134,29 @@ class SUsuarioTest {
     }
 
     @Test
+    void cadastra_DeveLancarException_QuandoNomeForNulo() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.cadastra(dto));
+        assertEquals("Informe o nome.", excecao.getMessage());
+    }
+
+    @Test
     void cadastra_DeveLancarException_QuandoEmailInvalido() {
         UsuarioCadastroDto dto = new UsuarioCadastroDto();
         dto.setNome("Nome");
         dto.setEmail("");
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.cadastra(dto));
+        assertEquals("Informe o e-mail.", excecao.getMessage());
+    }
+
+    @Test
+    void cadastra_DeveLancarException_QuandoEmailForNulo() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome("Nome");
+        dto.setEmail(null);
 
         IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.cadastra(dto));
         assertEquals("Informe o e-mail.", excecao.getMessage());
@@ -148,6 +168,17 @@ class SUsuarioTest {
         dto.setNome("Nome");
         dto.setEmail(emailTeste);
         dto.setSenha(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.cadastra(dto));
+        assertEquals("Informe a senha.", excecao.getMessage());
+    }
+
+    @Test
+    void cadastra_DeveLancarException_QuandoSenhaForBlank() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome("Nome");
+        dto.setEmail(emailTeste);
+        dto.setSenha("   ");
 
         IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.cadastra(dto));
         assertEquals("Informe a senha.", excecao.getMessage());
@@ -283,10 +314,29 @@ class SUsuarioTest {
     }
 
     @Test
+    void login_DeveLancarException_QuandoEmailForNulo() {
+        UsuarioLoginDto dto = new UsuarioLoginDto();
+        dto.setEmail(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.login(dto));
+        assertEquals("Informe o e-mail.", excecao.getMessage());
+    }
+
+    @Test
     void login_DeveLancarException_QuandoSenhaForInvalida() {
         UsuarioLoginDto dto = new UsuarioLoginDto();
         dto.setEmail(emailTeste);
         dto.setSenha(" ");
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.login(dto));
+        assertEquals("Informe a senha.", excecao.getMessage());
+    }
+
+    @Test
+    void login_DeveLancarException_QuandoSenhaForNula() {
+        UsuarioLoginDto dto = new UsuarioLoginDto();
+        dto.setEmail(emailTeste);
+        dto.setSenha(null);
 
         IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> sUsuario.login(dto));
         assertEquals("Informe a senha.", excecao.getMessage());

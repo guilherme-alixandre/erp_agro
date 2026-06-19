@@ -152,6 +152,21 @@ class SSetorTest {
         }
 
         @Test
+        void cadastrar_DeveSalvarSemCriadoPor_QuandoEmailForBlank() {
+            ESetor setorSemCriador = new ESetor();
+            setorSemCriador.setId(ID);
+            setorSemCriador.setNome("Pasto A");
+
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorSemCriador);
+
+            SetorDto response = sSetor.cadastra(setorDto, "   ");
+
+            assertNull(response.getCriadoPorNome());
+            assertNull(response.getCriadoPorEmail());
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
         void cadastrar_DeveSalvarSemCriadoPor_QuandoUsuarioNaoEncontrado() {
             ESetor setorSemCriador = new ESetor();
             setorSemCriador.setId(ID);
@@ -246,6 +261,21 @@ class SSetorTest {
         }
 
         @Test
+        void alterar_NaoDeveAlterarNome_QuandoNomeForBlank() {
+            setorDto.setNome("   ");
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            sSetor.altera(ID, setorDto, EMAIL_VALIDO);
+
+            assertEquals("Pasto A", setorEntity.getNome());
+        }
+
+        @Test
         void alterar_DeveAtualizarTipo_QuandoInformado() {
             setorDto.setTipo(EnTipoSetor.CONFINAMENTO);
 
@@ -269,6 +299,19 @@ class SSetorTest {
             SetorDto response = sSetor.altera(ID, setorDto, null);
 
             assertNull(response.getAlteradoPorNome());
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void alterar_DeveSalvarSemAlteradoPor_QuandoEmailForBlank() {
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            SetorDto response = sSetor.altera(ID, setorDto, "   ");
+
+            assertNull(response.getAlteradoPorNome());
+            assertNull(response.getAlteradoPorEmail());
             verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
         }
     }
