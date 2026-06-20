@@ -125,7 +125,7 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
 
       {/* Sidebar idêntica ao padrão do projeto */}
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"

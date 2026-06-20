@@ -16,9 +16,14 @@
 }
 
 .animals-logo {
-  font-size: 64px;
   text-align: center;
   margin: 6px 0 20px;
+}
+
+.animals-logo img {
+  width: 100%;
+  max-width: 140px;
+  height: auto;
 }
 
 .animals-sidebar nav {

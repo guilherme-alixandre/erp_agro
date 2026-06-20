@@ -75,7 +75,10 @@ async function atualizarUsuario(email, data, adminEmail) {
   const emailCodificado = encodeURIComponent(String(email).trim())
   return request(`/usuarios/${emailCodificado}`, {
     method: 'PUT',
-    headers: adminHeaders(adminEmail),
+    headers: {
+      ...adminHeaders(adminEmail),       // <-- Espalha os cabeçalhos de autenticação
+      'Content-Type': 'application/json' // <-- Adiciona o aviso de que o body é JSON
+    },
     body: JSON.stringify(data),
   })
 }

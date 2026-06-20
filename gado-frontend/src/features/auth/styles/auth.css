@@ -23,8 +23,13 @@
 }
 
 .auth-logo {
-  font-size: 2.4rem;
   line-height: 1;
+}
+
+.auth-logo img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .auth-brand h1 {

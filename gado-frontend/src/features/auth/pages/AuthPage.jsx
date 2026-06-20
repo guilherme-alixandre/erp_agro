@@ -83,8 +83,8 @@ function AuthPage({ onLogin, sessionFeedback }) {
     <main className="auth-layout">
       <article className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo">🌿</span>
-          <h1>ERP Agro</h1>
+          <span className="auth-logo"><img src="/logo.png" alt="GADO" /></span>
+          <h1>GADO-WebApp</h1>
         </div>
 
         {mode === 'login' ? (

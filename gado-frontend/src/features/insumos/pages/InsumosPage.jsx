@@ -164,7 +164,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
