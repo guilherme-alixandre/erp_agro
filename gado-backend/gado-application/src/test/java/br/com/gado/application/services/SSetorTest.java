@@ -1,10 +1,14 @@
 package br.com.gado.application.services;
 
 import br.com.gado.application.dto.SetorDto;
+import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELote;
+import br.com.gado.domain.entities.ELoteSetor;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.domain.enums.EnTipoSetor;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +36,9 @@ class SSetorTest {
 
     @Mock
     private ISetor setorInterface;
+
+    @Mock
+    private ILoteSetor loteSetorInterface;
 
     @Mock
     private IUsuario usuarioInterface;
@@ -76,6 +83,46 @@ class SSetorTest {
             assertNotNull(response);
             assertEquals(ID, response.getId());
             assertEquals("Pasto A", response.getNome());
+        }
+
+        @Test
+        void procuraPorId_DevePopularLotesVinculados_QuandoSetorPossuiLotes() {
+            ELote lote = new ELote();
+            lote.setId(10L);
+            lote.setCodigo("LOT001");
+            lote.setCorBrinco("Vermelho");
+
+            EAnimal animal = new EAnimal();
+            animal.setId(1L);
+
+            ELoteSetor loteSetor = new ELoteSetor();
+            loteSetor.setId(100L);
+            loteSetor.setLote(lote);
+            loteSetor.setSetor(setorEntity);
+            loteSetor.setAnimais(List.of(animal));
+
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findBySetor_Id(ID)).thenReturn(List.of(loteSetor));
+
+            SetorDto response = sSetor.procuraPorId(ID);
+
+            assertEquals(1, response.getLotes().size());
+            SetorDto.LoteResumoDto loteDto = response.getLotes().get(0);
+            assertEquals(100L, loteDto.getLoteSectorId());
+            assertEquals("LOT001", loteDto.getLoteCodigo());
+            assertEquals("Vermelho", loteDto.getLoteCorBrinco());
+            assertEquals(1, loteDto.getQuantidadeAnimais());
+        }
+
+        @Test
+        void procuraPorId_DeveTerListaVazia_QuandoSetorSemLotes() {
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findBySetor_Id(ID)).thenReturn(List.of());
+
+            SetorDto response = sSetor.procuraPorId(ID);
+
+            assertNotNull(response.getLotes());
+            assertTrue(response.getLotes().isEmpty());
         }
 
         @Test

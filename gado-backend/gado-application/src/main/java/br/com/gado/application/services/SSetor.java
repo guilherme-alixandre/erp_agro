@@ -1,11 +1,15 @@
 package br.com.gado.application.services;
 
 import br.com.gado.application.dto.SetorDto;
+import br.com.gado.domain.entities.ELoteSetor;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnStatus;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
+
+import java.util.List;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -22,6 +26,9 @@ public class SSetor {
 
     @Autowired
     private ISetor setorInterface;
+
+    @Autowired
+    private ILoteSetor loteSetorInterface;
 
     @Autowired
     private IUsuario usuarioInterface;
@@ -118,6 +125,17 @@ public class SSetor {
             dto.setAlteradoPorNome(setor.getAlteradoPor().getNome());
             dto.setAlteradoPorEmail(setor.getAlteradoPor().getEmail());
         }
+
+        List<ELoteSetor> alocacoes = loteSetorInterface.findBySetor_Id(setor.getId());
+        dto.setLotes(alocacoes.stream().map(ls -> {
+            SetorDto.LoteResumoDto l = new SetorDto.LoteResumoDto();
+            l.setLoteSectorId(ls.getId());
+            l.setLoteId(ls.getLote().getId());
+            l.setLoteCodigo(ls.getLote().getCodigo());
+            l.setLoteCorBrinco(ls.getLote().getCorBrinco());
+            l.setQuantidadeAnimais(ls.getAnimais().size());
+            return l;
+        }).toList());
 
         return dto;
     }

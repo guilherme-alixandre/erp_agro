@@ -122,6 +122,7 @@ export async function listarAnimaisParaLote() {
     id: raw?.id ?? null,
     codigoBrinco: raw?.codigoBrinco ?? '',
     nome: raw?.nome ?? '',
+    statusAnimal: raw?.statusAnimal ?? 'ATIVO',
   }))
 }
 

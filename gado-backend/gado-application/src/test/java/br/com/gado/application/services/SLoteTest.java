@@ -7,6 +7,7 @@ import br.com.gado.application.dto.loteDto.LoteSetorCadastroDto;
 import br.com.gado.domain.entities.*;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
+import br.com.gado.domain.enums.EnStatusAnimal;
 import br.com.gado.infrastructure.persistence.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -366,6 +367,56 @@ class SLoteTest {
         }
 
         @Test
+        void deveLancarExcecao_QuandoAnimalComStatusVendidoForAdicionado() {
+            animalEntity.setStatusAnimal(EnStatusAnimal.VENDIDO);
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findUltimoCodigoGerado()).thenReturn(Optional.of("LOT000"));
+            when(loteInterface.save(any(ELote.class))).thenReturn(loteEntity);
+            when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+
+            LoteSetorCadastroDto alocacaoDto = new LoteSetorCadastroDto();
+            alocacaoDto.setSetorId(SETOR_ID);
+            alocacaoDto.setAnimaisIds(List.of(ANIMAL_ID));
+            loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
+
+            when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
+            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sLote.cadastra(EMAIL_USUARIO, loteCadastroDto));
+
+            assertTrue(exception.getMessage().contains("VENDIDO"));
+            verify(loteSetorInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoAnimalComStatusObitoOuAbatidoForAdicionado() {
+            for (EnStatusAnimal status : List.of(EnStatusAnimal.OBITO, EnStatusAnimal.ABATIDO)) {
+                animalEntity.setStatusAnimal(status);
+
+                when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+                when(loteInterface.findUltimoCodigoGerado()).thenReturn(Optional.of("LOT000"));
+                when(loteInterface.save(any(ELote.class))).thenReturn(loteEntity);
+                when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+
+                LoteSetorCadastroDto alocacaoDto = new LoteSetorCadastroDto();
+                alocacaoDto.setSetorId(SETOR_ID);
+                alocacaoDto.setAnimaisIds(List.of(ANIMAL_ID));
+                loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
+
+                when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
+                when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+
+                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                        sLote.cadastra(EMAIL_USUARIO, loteCadastroDto));
+
+                assertTrue(exception.getMessage().contains(status.name()),
+                        "Esperava mensagem com " + status.name());
+            }
+        }
+
+        @Test
         void deveLancarExcecao_QuandoCapacidadeMaximaExcedida() {
             setorEntity.setCapacidadeMaxima(1);
             EAnimal animalEntity2 = new EAnimal();
@@ -464,6 +515,55 @@ class SLoteTest {
             sLote.altera(LOTE_ID, EMAIL_USUARIO, lotePutDto);
 
             assertEquals("Nelore", loteEntity.getRacaPredominante());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoAnimalAbatidoForRemovidoDaAlocacao() {
+            animalEntity.setStatusAnimal(EnStatusAnimal.ABATIDO);
+            loteSetorEntity.setAnimais(List.of(animalEntity));
+
+            // DTO sem o animal bloqueado — tentativa de remover
+            LoteSetorCadastroDto alocacaoDto = new LoteSetorCadastroDto();
+            alocacaoDto.setSetorId(SETOR_ID);
+            alocacaoDto.setAnimaisIds(Collections.emptyList());
+            lotePutDto.setAlocacoes(List.of(alocacaoDto));
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(List.of(loteSetorEntity));
+            when(animalInterface.findById(ANIMAL_ID)).thenReturn(Optional.of(animalEntity));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sLote.altera(LOTE_ID, EMAIL_USUARIO, lotePutDto));
+
+            assertTrue(exception.getMessage().contains("congelado"));
+            verify(loteSetorInterface, never()).deleteAll(any());
+        }
+
+        @Test
+        void devePermitirAtualizacao_QuandoAnimalBloqueadoPermaneceNoLote() {
+            animalEntity.setStatusAnimal(EnStatusAnimal.OBITO);
+            loteSetorEntity.setAnimais(List.of(animalEntity));
+
+            // DTO inclui o animal bloqueado — permanece no lote
+            LoteSetorCadastroDto alocacaoDto = new LoteSetorCadastroDto();
+            alocacaoDto.setSetorId(SETOR_ID);
+            alocacaoDto.setAnimaisIds(List.of(ANIMAL_ID));
+            lotePutDto.setAlocacoes(List.of(alocacaoDto));
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteInterface.save(any(ELote.class))).thenReturn(loteEntity);
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(List.of(loteSetorEntity));
+            when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
+            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+            when(loteSetorInterface.findBySetor_Id(SETOR_ID)).thenReturn(Collections.emptyList());
+
+            String resultado = sLote.altera(LOTE_ID, EMAIL_USUARIO, lotePutDto);
+
+            assertEquals("Lote LOT001 atualizado com sucesso.", resultado);
+            verify(loteSetorInterface, times(1)).save(any(ELoteSetor.class));
         }
 
         @Test

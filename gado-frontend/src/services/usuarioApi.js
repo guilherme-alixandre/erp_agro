@@ -71,6 +71,15 @@ async function listarUsuarios(adminEmail) {
   return payload
 }
 
+async function atualizarUsuario(email, data, adminEmail) {
+  const emailCodificado = encodeURIComponent(String(email).trim())
+  return request(`/usuarios/${emailCodificado}`, {
+    method: 'PUT',
+    headers: adminHeaders(adminEmail),
+    body: JSON.stringify(data),
+  })
+}
+
 function deletarUsuario(email, adminEmail) {
   const emailCodificado = encodeURIComponent(String(email).trim())
   return request(`/usuarios/${emailCodificado}`, {
@@ -109,6 +118,7 @@ async function loginUsuario(email, senha) {
 }
 
 export {
+  atualizarUsuario,
   buscarUsuarioPorEmail,
   cadastrarUsuario,
   deletarUsuario,

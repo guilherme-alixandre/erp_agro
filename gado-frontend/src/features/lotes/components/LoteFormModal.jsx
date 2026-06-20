@@ -1,4 +1,26 @@
-import MultiSelectDropdown from './MultiSelectDropdown'
+import { useState } from 'react'
+import SearchSelectModal from '../../../components/shared/SearchSelectModal'
+
+const ANIMAL_COLUMNS = [
+  { key: 'codigoBrinco', label: 'Código' },
+  { key: 'nome', label: 'Nome' },
+]
+
+const ANIMAL_FILTER = {
+  label: 'Status',
+  key: 'statusAnimal',
+  options: [
+    { value: 'ATIVO', label: 'Ativo' },
+    { value: 'OBSERVACAO', label: 'Observação' },
+    { value: 'VENDIDO', label: 'Vendido' },
+    { value: 'OBITO', label: 'Óbito' },
+    { value: 'ABATIDO', label: 'Abatido' },
+  ],
+}
+
+const SETOR_COLUMNS = [{ key: 'nome', label: 'Nome' }]
+
+const BLOCKED_STATUSES = new Set(['VENDIDO', 'OBITO', 'ABATIDO'])
 
 function todayIso() {
   const now = new Date()
@@ -19,15 +41,39 @@ function RequiredLabel({ children }) {
   )
 }
 
+function buildAnimalTriggerText(selectedIds, animaisDisponiveis) {
+  if (selectedIds.length === 0) return null
+  if (selectedIds.length === 1) {
+    const found = animaisDisponiveis.find((a) => a.id === selectedIds[0])
+    if (found) {
+      return found.nome ? `${found.codigoBrinco} — ${found.nome}` : found.codigoBrinco
+    }
+    return '1 selecionado'
+  }
+  return `${selectedIds.length} animais selecionados`
+}
+
+function buildSetorTriggerText(selectedIds, setoresDisponiveis) {
+  if (selectedIds.length === 0) return null
+  if (selectedIds.length === 1) {
+    const found = setoresDisponiveis.find((s) => s.id === selectedIds[0])
+    return found ? found.nome : '1 setor selecionado'
+  }
+  return `${selectedIds.length} setores selecionados`
+}
+
 function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRemove }) {
-  const animaisOptions = animaisDisponiveis.map((a) => ({
-    id: a.id,
-    label: a.nome ? `${a.codigoBrinco} — ${a.nome}` : a.codigoBrinco,
-  }))
+  const [animalModalOpen, setAnimalModalOpen] = useState(false)
+
+  const disabledAnimalIds = animaisDisponiveis
+    .filter((a) => BLOCKED_STATUSES.has(a.statusAnimal))
+    .map((a) => a.id)
 
   const ocupacao = alocacao.animaisIds.length
   const capacidade = setor.capacidadeMaxima
   const excedido = capacidade > 0 && ocupacao > capacidade
+
+  const triggerText = buildAnimalTriggerText(alocacao.animaisIds, animaisDisponiveis)
 
   return (
     <div className="setor-card">
@@ -48,20 +94,43 @@ function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRem
         </button>
       </div>
 
-      <label className="setor-card__label">
+      <div className="setor-card__label">
         <span>Animais neste setor</span>
-        <MultiSelectDropdown
-          options={animaisOptions}
-          selectedIds={alocacao.animaisIds}
-          onChange={onChangeAnimais}
-          placeholder="Selecionar animais..."
-        />
-      </label>
+        <button
+          type="button"
+          className="ssm-trigger"
+          onClick={() => setAnimalModalOpen(true)}
+        >
+          <span className={triggerText ? '' : 'ssm-trigger__placeholder'}>
+            {triggerText ?? 'Selecionar animais...'}
+          </span>
+          <span className="ssm-trigger__arrow" aria-hidden="true">
+            ▼
+          </span>
+        </button>
+      </div>
 
       {excedido ? (
         <p className="setor-card__aviso">
           Atenção: capacidade máxima ({capacidade}) excedida.
         </p>
+      ) : null}
+
+      {animalModalOpen ? (
+        <SearchSelectModal
+          title="Selecionar animais"
+          items={animaisDisponiveis}
+          selectedIds={alocacao.animaisIds}
+          onConfirm={(ids) => {
+            onChangeAnimais(ids)
+            setAnimalModalOpen(false)
+          }}
+          onClose={() => setAnimalModalOpen(false)}
+          multiSelect
+          columns={ANIMAL_COLUMNS}
+          filterField={ANIMAL_FILTER}
+          disabledIds={disabledAnimalIds}
+        />
       ) : null}
     </div>
   )
@@ -80,6 +149,8 @@ function LoteFormModal({
   onChangeAlocacoes,
   onSubmit,
 }) {
+  const [setorModalOpen, setSetorModalOpen] = useState(false)
+
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar lote' : 'Editar lote'
   const submitText = isSaving
@@ -91,17 +162,13 @@ function LoteFormModal({
 
   const selectedSetorIds = formData.alocacoes.map((a) => a.setorId)
 
-  const setorOptions = setoresDisponiveis.map((s) => ({
-    id: s.id,
-    label: s.nome,
-  }))
-
   function handleSetorSelectionChange(newSetorIds) {
     const newAlocacoes = newSetorIds.map((setorId) => {
       const existing = formData.alocacoes.find((a) => a.setorId === setorId)
       return existing ?? { setorId, animaisIds: [] }
     })
     onChangeAlocacoes(newAlocacoes)
+    setSetorModalOpen(false)
   }
 
   function handleAnimaisChange(setorId, newAnimaisIds) {
@@ -114,6 +181,8 @@ function LoteFormModal({
   function handleRemoveSetor(setorId) {
     onChangeAlocacoes(formData.alocacoes.filter((a) => a.setorId !== setorId))
   }
+
+  const setorTriggerText = buildSetorTriggerText(selectedSetorIds, setoresDisponiveis)
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -191,15 +260,21 @@ function LoteFormModal({
               escolha os animais alocados.
             </p>
 
-            <label className="setores-fieldset__select">
+            <div className="setores-fieldset__select">
               <span>Selecionar setores</span>
-              <MultiSelectDropdown
-                options={setorOptions}
-                selectedIds={selectedSetorIds}
-                onChange={handleSetorSelectionChange}
-                placeholder="Escolha um ou mais setores..."
-              />
-            </label>
+              <button
+                type="button"
+                className="ssm-trigger"
+                onClick={() => setSetorModalOpen(true)}
+              >
+                <span className={setorTriggerText ? '' : 'ssm-trigger__placeholder'}>
+                  {setorTriggerText ?? 'Escolha um ou mais setores...'}
+                </span>
+                <span className="ssm-trigger__arrow" aria-hidden="true">
+                  ▼
+                </span>
+              </button>
+            </div>
 
             {formData.alocacoes.length > 0 ? (
               <div className="setores-cards">
@@ -235,6 +310,18 @@ function LoteFormModal({
           </div>
         </form>
       </div>
+
+      {setorModalOpen ? (
+        <SearchSelectModal
+          title="Selecionar setores"
+          items={setoresDisponiveis}
+          selectedIds={selectedSetorIds}
+          onConfirm={handleSetorSelectionChange}
+          onClose={() => setSetorModalOpen(false)}
+          multiSelect
+          columns={SETOR_COLUMNS}
+        />
+      ) : null}
     </div>
   )
 }

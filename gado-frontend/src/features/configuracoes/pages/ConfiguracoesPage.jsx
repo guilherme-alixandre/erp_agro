@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import UsuarioFormModal from '../components/UsuarioFormModal'
+import UsuarioEditModal from '../components/UsuarioEditModal'
 import {
+  atualizarUsuario,
   cadastrarUsuario,
   deletarUsuario,
   listarUsuarios,
@@ -23,14 +25,17 @@ const PERFIL_LABELS = {
 
 const ROWS_PER_PAGE = 10
 
-function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
+function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [usuarios, setUsuarios] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
+  const [editModal, setEditModal] = useState({ open: false, usuario: null })
+  const [editFeedback, setEditFeedback] = useState('')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
   const [filterPerfil, setFilterPerfil] = useState('')
@@ -139,6 +144,35 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
         type: 'error',
         message: error.message || 'Falha ao excluir usuário.',
       })
+    }
+  }
+
+  function openEditModal(usuario) {
+    setEditFeedback('')
+    setEditModal({ open: true, usuario })
+  }
+
+  function closeEditModal() {
+    setEditModal({ open: false, usuario: null })
+    setEditFeedback('')
+  }
+
+  async function handleSubmitEdit(formData) {
+    setIsEditing(true)
+    setEditFeedback('')
+    setFeedback({ type: '', message: '' })
+    try {
+      const updated = await atualizarUsuario(editModal.usuario.email, formData, currentUser.email)
+      if (updated.email === currentUser.email && onUpdateUser) {
+        onUpdateUser(updated)
+      }
+      setFeedback({ type: 'info', message: `Usuário ${updated.nome} atualizado com sucesso.` })
+      closeEditModal()
+      await fetchUsuarios()
+    } catch (error) {
+      setEditFeedback(error.message || 'Falha ao atualizar usuário.')
+    } finally {
+      setIsEditing(false)
     }
   }
 
@@ -310,6 +344,13 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
                         <div className="row-actions">
                           <button
                             type="button"
+                            className="btn-row btn-row--edit"
+                            onClick={() => openEditModal(usuario)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
                             className="btn-row btn-row--danger"
                             onClick={() => handleExcluir(usuario)}
                             disabled={isCurrentUser}
@@ -369,6 +410,16 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
+        />
+      ) : null}
+
+      {editModal.open && editModal.usuario ? (
+        <UsuarioEditModal
+          usuario={editModal.usuario}
+          isSaving={isEditing}
+          feedback={editFeedback}
+          onClose={closeEditModal}
+          onSubmit={handleSubmitEdit}
         />
       ) : null}
     </main>

@@ -313,6 +313,46 @@
   font-weight: 500;
 }
 
+/* ── Campo de senha com toggle de visibilidade ───────────────────────── */
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4.5rem;
+}
+
+.password-field__toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.password-field__toggle:hover {
+  color: #374151;
+}
+
+.field-error-msg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.15rem;
+}
+
 .animal-form input,
 .animal-form select {
   border: 1px solid #d0d0d0;

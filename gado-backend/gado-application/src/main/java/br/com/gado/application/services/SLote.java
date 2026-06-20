@@ -12,6 +12,7 @@ import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
+import br.com.gado.domain.enums.EnStatusAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.ILote;
 import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
@@ -26,6 +27,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -100,7 +103,7 @@ public class SLote {
 
         ELote loteSalvo = loteInterface.save(lote);
 
-        aplicarAlocacoes(loteSalvo, dto.getAlocacoes());
+        aplicarAlocacoes(loteSalvo, dto.getAlocacoes(), Set.of());
 
         log.info("Lote {} criado por {}", loteSalvo.getCodigo(), emailUsuario);
         return "Lote " + loteSalvo.getCodigo() + " cadastrado com sucesso.";
@@ -132,13 +135,39 @@ public class SLote {
 
         // Substituição completa das alocações se fornecida
         if (dto.getAlocacoes() != null && !dto.getAlocacoes().isEmpty()) {
-            // Remove as alocações antigas (orphanRemoval cuida do banco via ELote.alocacoes,
-            // mas como ELoteSetor usa tabela própria, removemos explicitamente)
             List<ELoteSetor> alocacoesAntigas = loteSetorInterface.findByLote_Id(lote.getId());
+
+            // IDs dos animais atualmente no lote (antes da substituição)
+            Set<Long> animaisJaNesteLote = alocacoesAntigas.stream()
+                    .flatMap(ls -> ls.getAnimais().stream())
+                    .map(EAnimal::getId)
+                    .collect(Collectors.toSet());
+
+            // Verifica que nenhum animal congelado está sendo removido
+            Set<Long> animaisNoDto = dto.getAlocacoes().stream()
+                    .filter(aloc -> aloc.getAnimaisIds() != null)
+                    .flatMap(aloc -> aloc.getAnimaisIds().stream())
+                    .collect(Collectors.toSet());
+
+            for (Long animalId : animaisJaNesteLote) {
+                if (!animaisNoDto.contains(animalId)) {
+                    animalInterface.findById(animalId).ifPresent(animal -> {
+                        if (isStatusBloqueado(animal.getStatusAnimal())) {
+                            throw new IllegalArgumentException(
+                                    "O animal " + animal.getCodigoBrinco()
+                                            + " (status " + animal.getStatusAnimal().name() + ")"
+                                            + " está congelado neste lote e não pode ser removido."
+                                            + " Restaure o status para ATIVO ou OBSERVACAO antes"
+                                            + " de realizar esta operação.");
+                        }
+                    });
+                }
+            }
+
             loteSetorInterface.deleteAll(alocacoesAntigas);
             lote.getAlocacoes().clear();
 
-            aplicarAlocacoes(lote, dto.getAlocacoes());
+            aplicarAlocacoes(lote, dto.getAlocacoes(), animaisJaNesteLote);
         }
 
         loteInterface.save(lote);
@@ -208,7 +237,8 @@ public class SLote {
 
     // ── Lógica de alocação ────────────────────────────────────────────────
 
-    private void aplicarAlocacoes(ELote lote, List<LoteSetorCadastroDto> alocacoesDto) {
+    private void aplicarAlocacoes(ELote lote, List<LoteSetorCadastroDto> alocacoesDto,
+                                   Set<Long> animaisJaNesteLote) {
         for (LoteSetorCadastroDto alocDto : alocacoesDto) {
             ESetor setor = setorInterface.findByIdAndStatus(alocDto.getSetorId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException(
@@ -228,8 +258,8 @@ public class SLote {
                                     + setor.getNome() + " não foram encontrados.");
                 }
 
-                // Validação: animal não pode estar alocado em outro lote ativo
                 for (EAnimal animal : animais) {
+                    // Validação: animal não pode estar alocado em outro lote ativo
                     List<ELoteSetor> conflitos =
                             loteSetorInterface.findByAnimais_IdAndLote_IdNot(animal.getId(), lote.getId());
                     if (!conflitos.isEmpty()) {
@@ -238,6 +268,17 @@ public class SLote {
                                 "O animal " + animal.getCodigoBrinco()
                                         + " já está alocado ao lote " + loteConflito
                                         + ". Desvincule-o antes de adicioná-lo a outro lote.");
+                    }
+
+                    // Validação: animal com status bloqueado só pode permanecer — não ser adicionado
+                    if (!animaisJaNesteLote.contains(animal.getId())
+                            && isStatusBloqueado(animal.getStatusAnimal())) {
+                        throw new IllegalArgumentException(
+                                "O animal " + animal.getCodigoBrinco()
+                                        + " possui status " + animal.getStatusAnimal().name()
+                                        + " e não pode ser movimentado entre lotes."
+                                        + " Restaure o status para ATIVO ou OBSERVACAO antes"
+                                        + " de realizar esta operação.");
                     }
                 }
 
@@ -261,6 +302,12 @@ public class SLote {
 
             loteSetorInterface.save(loteSetor);
         }
+    }
+
+    private boolean isStatusBloqueado(EnStatusAnimal status) {
+        return status == EnStatusAnimal.VENDIDO
+                || status == EnStatusAnimal.OBITO
+                || status == EnStatusAnimal.ABATIDO;
     }
 
     // ── Verificações de vínculo ───────────────────────────────────────────

@@ -337,6 +337,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                 <th>Nome</th>
                 <th>Tipo</th>
                 <th>Cap. Máxima</th>
+                <th>Lotes</th>
                 <th>Meta</th>
                 <th>Criado Por</th>
                 <th>Ações</th>
@@ -345,13 +346,13 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="table-loading">
+                  <td colSpan={7} className="table-loading">
                     Carregando...
                   </td>
                 </tr>
               ) : paginatedSetores.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="table-empty">
+                  <td colSpan={7} className="table-empty">
                     {activeSearch
                       ? `Nenhum resultado para "${activeSearch}".`
                       : 'Nenhum setor cadastrado. Clique em "+ Novo Setor" para começar.'}
@@ -363,6 +364,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                     <td>{setor.nome}</td>
                     <td>{setor.tipo || '—'}</td>
                     <td>{setor.capacidadeMaxima ?? '—'}</td>
+                    <td>{setor.lotes.length > 0 ? setor.lotes.length : '—'}</td>
                     <td className="td-truncate">{setor.metaTexto || '—'}</td>
                     <td>{setor.criadoPorNome || '—'}</td>
                     <td>

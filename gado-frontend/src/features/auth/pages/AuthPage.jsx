@@ -21,6 +21,7 @@ function AuthPage({ onLogin, sessionFeedback }) {
   const [loginForm, setLoginForm] = useState(defaultLoginForm)
   const [isLogando, setIsLogando] = useState(false)
   const [loginFeedback, setLoginFeedback] = useState({ type: '', message: '' })
+  const [showLoginSenha, setShowLoginSenha] = useState(false)
 
   const [cadastroForm, setCadastroForm] = useState(defaultCadastroForm)
   const [isCadastrando, setIsCadastrando] = useState(false)
@@ -28,6 +29,7 @@ function AuthPage({ onLogin, sessionFeedback }) {
     type: '',
     message: '',
   })
+  const [showCadastroSenha, setShowCadastroSenha] = useState(false)
 
   function handleLoginChange(event) {
     const { name, value } = event.target
@@ -92,7 +94,9 @@ function AuthPage({ onLogin, sessionFeedback }) {
 
             <form className="animal-form" onSubmit={handleLoginSubmit}>
               <label>
-                <span>E-mail</span>
+                <span>
+                  E-mail <span className="required-marker" aria-hidden="true">*</span>
+                </span>
                 <input
                   type="email"
                   name="email"
@@ -103,14 +107,26 @@ function AuthPage({ onLogin, sessionFeedback }) {
               </label>
 
               <label>
-                <span>Senha</span>
-                <input
-                  type="password"
-                  name="senha"
-                  value={loginForm.senha}
-                  onChange={handleLoginChange}
-                  required
-                />
+                <span>
+                  Senha <span className="required-marker" aria-hidden="true">*</span>
+                </span>
+                <div className="password-field">
+                  <input
+                    type={showLoginSenha ? 'text' : 'password'}
+                    name="senha"
+                    value={loginForm.senha}
+                    onChange={handleLoginChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-field__toggle"
+                    onClick={() => setShowLoginSenha((v) => !v)}
+                    aria-label={showLoginSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showLoginSenha ? 'Ocultar' : 'Exibir'}
+                  </button>
+                </div>
               </label>
 
               {loginFeedback.message ? (
@@ -153,7 +169,9 @@ function AuthPage({ onLogin, sessionFeedback }) {
 
             <form className="animal-form" onSubmit={handleCadastroSubmit}>
               <label>
-                <span>Nome</span>
+                <span>
+                  Nome <span className="required-marker" aria-hidden="true">*</span>
+                </span>
                 <input
                   type="text"
                   name="nome"
@@ -164,7 +182,9 @@ function AuthPage({ onLogin, sessionFeedback }) {
               </label>
 
               <label>
-                <span>E-mail</span>
+                <span>
+                  E-mail <span className="required-marker" aria-hidden="true">*</span>
+                </span>
                 <input
                   type="email"
                   name="email"
@@ -175,18 +195,32 @@ function AuthPage({ onLogin, sessionFeedback }) {
               </label>
 
               <label>
-                <span>Senha</span>
-                <input
-                  type="password"
-                  name="senha"
-                  value={cadastroForm.senha}
-                  onChange={handleCadastroChange}
-                  required
-                />
+                <span>
+                  Senha <span className="required-marker" aria-hidden="true">*</span>
+                </span>
+                <div className="password-field">
+                  <input
+                    type={showCadastroSenha ? 'text' : 'password'}
+                    name="senha"
+                    value={cadastroForm.senha}
+                    onChange={handleCadastroChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-field__toggle"
+                    onClick={() => setShowCadastroSenha((v) => !v)}
+                    aria-label={showCadastroSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showCadastroSenha ? 'Ocultar' : 'Exibir'}
+                  </button>
+                </div>
               </label>
 
               <label>
-                <span>Perfil</span>
+                <span>
+                  Perfil <span className="required-marker" aria-hidden="true">*</span>
+                </span>
                 <select
                   name="perfil"
                   value={cadastroForm.perfil}
