@@ -384,7 +384,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset {
+.vacinas-fieldset,
+.senha-fieldset {
   margin-top: 8px;
   border: 1px solid #d0d0d0;
   border-radius: 10px;
@@ -393,7 +394,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset legend {
+.vacinas-fieldset legend,
+.senha-fieldset legend {
   padding: 0 6px;
   font-weight: 700;
   color: #244011;

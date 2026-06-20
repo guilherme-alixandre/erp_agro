@@ -106,8 +106,17 @@ public class SUsuario {
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
 
+        // Extrai e nulifica senha antes do ModelMapper para evitar gravar texto puro
+        String novaSenha = dto.getSenha();
+        dto.setSenha(null);
+
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, usuario);
+
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            usuario.setSenha(sha256Hex(novaSenha));
+        }
+
         EUsuario usuarioAtualizado = usuarioInterface.save(usuario);
         return modelMapper.map(usuarioAtualizado, UsuarioDto.class);
     }

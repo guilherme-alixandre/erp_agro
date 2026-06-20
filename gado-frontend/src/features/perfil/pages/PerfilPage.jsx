@@ -1,15 +1,31 @@
 import { useState } from 'react'
-import { atualizarUsuario } from '../../../services/usuarioApi'
+import { atualizarUsuario, loginUsuario } from '../../../services/usuarioApi'
 import '../../animais/styles/animais.css'
 import '../styles/perfil.css'
 
-const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'FINANCEIRO']
+const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO']
+
+const PERFIL_LABELS = {
+  ADMINISTRADOR: 'Administrador',
+  GERENTE: 'Gerente',
+  CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
+}
 
 function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({ nome: currentUser.nome, perfil: currentUser.perfil })
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
+
+  const [senhaMode, setSenhaMode] = useState(false)
+  const [senhaForm, setSenhaForm] = useState({ senhaAtual: '', novaSenha: '', confirmar: '' })
+  const [isSavingSenha, setIsSavingSenha] = useState(false)
+  const [senhaError, setSenhaError] = useState('')
+  const [showSenhaAtual, setShowSenhaAtual] = useState(false)
+  const [showNovaSenha, setShowNovaSenha] = useState(false)
+  const [showConfirmar, setShowConfirmar] = useState(false)
 
   const isAdmin = currentUser.perfil === 'ADMINISTRADOR'
 
@@ -46,6 +62,54 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao atualizar perfil.' })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  function handleSenhaChange(e) {
+    const { name, value } = e.target
+    setSenhaForm((f) => ({ ...f, [name]: value }))
+    setSenhaError('')
+  }
+
+  function openSenha() {
+    setSenhaForm({ senhaAtual: '', novaSenha: '', confirmar: '' })
+    setSenhaError('')
+    setFeedback({ type: '', message: '' })
+    setSenhaMode(true)
+  }
+
+  function cancelSenha() {
+    setSenhaMode(false)
+    setSenhaError('')
+  }
+
+  async function handleSaveSenha(e) {
+    e.preventDefault()
+    if (senhaForm.novaSenha.length < 4) {
+      setSenhaError('A nova senha deve ter ao menos 4 caracteres.')
+      return
+    }
+    if (senhaForm.novaSenha !== senhaForm.confirmar) {
+      setSenhaError('A nova senha e a confirmação não coincidem.')
+      return
+    }
+    setIsSavingSenha(true)
+    setSenhaError('')
+    try {
+      await loginUsuario(currentUser.email, senhaForm.senhaAtual)
+      await atualizarUsuario(currentUser.email, { senha: senhaForm.novaSenha })
+      setFeedback({ type: 'info', message: 'Senha alterada com sucesso.' })
+      setSenhaMode(false)
+      setSenhaForm({ senhaAtual: '', novaSenha: '', confirmar: '' })
+    } catch (error) {
+      const msg = String(error?.message ?? '').toLowerCase()
+      if (msg.includes('credenciais') || msg.includes('inválid') || msg.includes('invalid')) {
+        setSenhaError('Senha atual incorreta.')
+      } else {
+        setSenhaError(error.message || 'Falha ao alterar a senha.')
+      }
+    } finally {
+      setIsSavingSenha(false)
     }
   }
 
@@ -108,6 +172,7 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
         ) : null}
 
         <div className="perfil-stack">
+          {/* ── Card: Dados da conta ── */}
           <article className="animal-card perfil-card perfil-card--main">
             <h2>Dados da conta</h2>
             <p className="perfil-subtitle">Informações da sessão atual.</p>
@@ -125,7 +190,7 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                   </div>
                   <div>
                     <dt>Perfil</dt>
-                    <dd>{currentUser.perfil}</dd>
+                    <dd>{PERFIL_LABELS[currentUser.perfil] ?? currentUser.perfil}</dd>
                   </div>
                 </dl>
 
@@ -156,7 +221,12 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
 
                 <label>
                   <span>E-mail</span>
-                  <input type="email" value={currentUser.email} disabled className="perfil-disabled-input" />
+                  <input
+                    type="email"
+                    value={currentUser.email}
+                    disabled
+                    className="perfil-disabled-input"
+                  />
                 </label>
 
                 {isAdmin ? (
@@ -165,7 +235,7 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                     <select name="perfil" value={editForm.perfil} onChange={handleEditChange}>
                       {PERFIL_OPTIONS.map((p) => (
                         <option key={p} value={p}>
-                          {p}
+                          {PERFIL_LABELS[p] ?? p}
                         </option>
                       ))}
                     </select>
@@ -173,7 +243,12 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                 ) : (
                   <label>
                     <span>Perfil</span>
-                    <input type="text" value={currentUser.perfil} disabled className="perfil-disabled-input" />
+                    <input
+                      type="text"
+                      value={PERFIL_LABELS[currentUser.perfil] ?? currentUser.perfil}
+                      disabled
+                      className="perfil-disabled-input"
+                    />
                   </label>
                 )}
 
@@ -188,6 +263,117 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                   </button>
                   <button type="submit" className="btn-primary" disabled={isSaving}>
                     {isSaving ? 'Salvando...' : 'Salvar'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </article>
+
+          {/* ── Card: Alterar senha ── */}
+          <article className="animal-card perfil-card">
+            <h2>Alterar senha</h2>
+            <p className="perfil-subtitle">Redefina a senha de acesso à sua conta.</p>
+
+            {!senhaMode ? (
+              <div className="modal-actions perfil-actions">
+                <button type="button" className="btn-primary" onClick={openSenha}>
+                  Alterar senha
+                </button>
+              </div>
+            ) : (
+              <form className="animal-form perfil-edit-form" onSubmit={handleSaveSenha}>
+                <label>
+                  <span>
+                    Senha atual <span className="required-marker" aria-hidden="true">*</span>
+                  </span>
+                  <div className="password-field">
+                    <input
+                      type={showSenhaAtual ? 'text' : 'password'}
+                      name="senhaAtual"
+                      value={senhaForm.senhaAtual}
+                      onChange={handleSenhaChange}
+                      required
+                      autoFocus
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className="password-field__toggle"
+                      onClick={() => setShowSenhaAtual((v) => !v)}
+                      aria-label={showSenhaAtual ? 'Ocultar senha atual' : 'Mostrar senha atual'}
+                    >
+                      {showSenhaAtual ? 'Ocultar' : 'Exibir'}
+                    </button>
+                  </div>
+                </label>
+
+                <label>
+                  <span>
+                    Nova senha <span className="required-marker" aria-hidden="true">*</span>
+                  </span>
+                  <div className="password-field">
+                    <input
+                      type={showNovaSenha ? 'text' : 'password'}
+                      name="novaSenha"
+                      value={senhaForm.novaSenha}
+                      onChange={handleSenhaChange}
+                      required
+                      minLength={4}
+                      placeholder="Mínimo 4 caracteres"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="password-field__toggle"
+                      onClick={() => setShowNovaSenha((v) => !v)}
+                      aria-label={showNovaSenha ? 'Ocultar nova senha' : 'Mostrar nova senha'}
+                    >
+                      {showNovaSenha ? 'Ocultar' : 'Exibir'}
+                    </button>
+                  </div>
+                </label>
+
+                <label>
+                  <span>
+                    Confirmar nova senha{' '}
+                    <span className="required-marker" aria-hidden="true">*</span>
+                  </span>
+                  <div className="password-field">
+                    <input
+                      type={showConfirmar ? 'text' : 'password'}
+                      name="confirmar"
+                      value={senhaForm.confirmar}
+                      onChange={handleSenhaChange}
+                      required
+                      placeholder="Repita a nova senha"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="password-field__toggle"
+                      onClick={() => setShowConfirmar((v) => !v)}
+                      aria-label={showConfirmar ? 'Ocultar confirmação' : 'Mostrar confirmação'}
+                    >
+                      {showConfirmar ? 'Ocultar' : 'Exibir'}
+                    </button>
+                  </div>
+                </label>
+
+                {senhaError ? (
+                  <p className="feedback feedback--error">{senhaError}</p>
+                ) : null}
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={cancelSenha}
+                    disabled={isSavingSenha}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isSavingSenha}>
+                    {isSavingSenha ? 'Salvando...' : 'Confirmar alteração'}
                   </button>
                 </div>
               </form>
