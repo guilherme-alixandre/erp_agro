@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { atualizarUsuario, loginUsuario } from '../../../services/usuarioApi'
+import { atualizarUsuario, verificarCredenciais } from '../../../services/usuarioApi'
 import '../../animais/styles/animais.css'
 import '../styles/perfil.css'
 
@@ -96,7 +96,7 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
     setIsSavingSenha(true)
     setSenhaError('')
     try {
-      await loginUsuario(currentUser.email, senhaForm.senhaAtual)
+      await verificarCredenciais(currentUser.email, senhaForm.senhaAtual)
       await atualizarUsuario(currentUser.email, { senha: senhaForm.novaSenha })
       setFeedback({ type: 'info', message: 'Senha alterada com sucesso.' })
       setSenhaMode(false)

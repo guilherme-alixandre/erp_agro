@@ -91,6 +91,16 @@ function deletarUsuario(email, adminEmail) {
   })
 }
 
+async function verificarCredenciais(email, senha) {
+  const payload = await request('/usuarios/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: String(email ?? '').trim(), senha }),
+  })
+  const usuario = getUsuarioDoPayload(payload)
+  if (!usuario) throw new Error('Credenciais inválidas.')
+  return usuario
+}
+
 async function loginUsuario(email, senha) {
   const trimmedEmail = String(email ?? '').trim()
 
@@ -127,5 +137,6 @@ export {
   deletarUsuario,
   listarUsuarios,
   loginUsuario,
+  verificarCredenciais,
 }
 
