@@ -1030,6 +1030,18 @@
   border-color: #b9e0a4;
 }
 
+.perfil-pill--cuidador-chefe {
+  background: #fff3cd;
+  color: #7c5000;
+  border-color: #ffd97a;
+}
+
+.perfil-pill--financeiro {
+  background: #e0f5f5;
+  color: #006464;
+  border-color: #9dd8d8;
+}
+
 /* ── Danger action button ────────────────────────────────────────────────── */
 
 .btn-row--danger {

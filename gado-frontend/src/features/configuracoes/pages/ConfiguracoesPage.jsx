@@ -21,6 +21,8 @@ const PERFIL_LABELS = {
   ADMINISTRADOR: 'Administrador',
   GERENTE: 'Gerente',
   CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
 }
 
 const ROWS_PER_PAGE = 10
@@ -179,6 +181,8 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
   function perfilPillClass(perfil) {
     if (perfil === 'ADMINISTRADOR') return 'perfil-pill perfil-pill--admin'
     if (perfil === 'GERENTE') return 'perfil-pill perfil-pill--gerente'
+    if (perfil === 'CUIDADOR_CHEFE') return 'perfil-pill perfil-pill--cuidador-chefe'
+    if (perfil === 'FINANCEIRO') return 'perfil-pill perfil-pill--financeiro'
     return 'perfil-pill perfil-pill--cuidador'
   }
 
@@ -291,6 +295,8 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
             <option value="ADMINISTRADOR">Administrador</option>
             <option value="GERENTE">Gerente</option>
             <option value="CUIDADOR">Cuidador</option>
+            <option value="CUIDADOR_CHEFE">Cuidador Chefe</option>
+            <option value="FINANCEIRO">Financeiro</option>
           </select>
 
           <button type="button" className="btn-new-entity" onClick={openCreateModal}>

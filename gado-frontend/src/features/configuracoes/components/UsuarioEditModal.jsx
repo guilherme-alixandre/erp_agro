@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
-const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'FINANCEIRO']
+const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO']
+
+const PERFIL_LABELS = {
+  ADMINISTRADOR: 'Administrador',
+  GERENTE: 'Gerente',
+  CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
+}
 
 function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
   const [form, setForm] = useState({ nome: usuario.nome, perfil: usuario.perfil })
@@ -52,7 +60,7 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
             <select name="perfil" value={form.perfil} onChange={handleChange}>
               {PERFIL_OPTIONS.map((p) => (
                 <option key={p} value={p}>
-                  {p}
+                  {PERFIL_LABELS[p] ?? p}
                 </option>
               ))}
             </select>

@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
-const PERFIL_OPTIONS = ['GERENTE', 'CUIDADOR', 'FINANCEIRO', 'ADMINISTRADOR']
+const PERFIL_OPTIONS = ['GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO', 'ADMINISTRADOR']
+
+const PERFIL_LABELS = {
+  ADMINISTRADOR: 'Administrador',
+  GERENTE: 'Gerente',
+  CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
+}
 
 function UsuarioFormModal({
   formData,
@@ -123,7 +131,7 @@ function UsuarioFormModal({
             <select name="perfil" value={formData.perfil} onChange={onChange}>
               {PERFIL_OPTIONS.map((perfil) => (
                 <option key={perfil} value={perfil}>
-                  {perfil}
+                  {PERFIL_LABELS[perfil] ?? perfil}
                 </option>
               ))}
             </select>
