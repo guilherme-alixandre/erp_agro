@@ -15,7 +15,7 @@ import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/lotes.css'
 
-const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR']
+const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE']
 const PERFIS_COM_TRANSFERENCIA = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 
 const defaultForm = {

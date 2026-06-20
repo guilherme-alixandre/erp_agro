@@ -49,8 +49,7 @@ public class SLote {
     // ── Controle de acesso ────────────────────────────────────────────────
 
     /**
-     * Valida que o usuário (por e-mail) tem perfil ADMINISTRADOR, GERENTE ou CUIDADOR.
-     * Segue o mesmo padrão de {@code SUsuario.validaAdmin}.
+     * Valida que o usuário (por e-mail) tem perfil ADMINISTRADOR ou GERENTE.
      */
     public void validaPermissao(String emailUsuario) {
         if (emailUsuario == null || emailUsuario.isBlank()) {
@@ -61,10 +60,9 @@ public class SLote {
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
 
         if (usuario.getPerfil() != EnPerfilUsuario.ADMINISTRADOR
-                && usuario.getPerfil() != EnPerfilUsuario.GERENTE
-                && usuario.getPerfil() != EnPerfilUsuario.CUIDADOR) {
+                && usuario.getPerfil() != EnPerfilUsuario.GERENTE) {
             throw new IllegalArgumentException(
-                    "Apenas Administradores, Gerentes e Cuidadores podem gerenciar lotes.");
+                    "Apenas Administradores e Gerentes podem gerenciar lotes.");
         }
     }
 
