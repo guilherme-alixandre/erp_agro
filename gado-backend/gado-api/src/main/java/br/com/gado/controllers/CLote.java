@@ -3,6 +3,7 @@ package br.com.gado.controllers;
 import br.com.gado.application.dto.loteDto.LoteCadastroDto;
 import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.application.dto.loteDto.LoteRespostaDto;
+import br.com.gado.application.dto.loteDto.TransferenciaAnimalDto;
 import br.com.gado.application.services.SLote;
 import br.com.gado.application.services.SPdfRelatorio;
 import jakarta.validation.Valid;
@@ -88,5 +89,17 @@ public class CLote {
             @PathVariable Long id,
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
         return loteService.deleta(id, emailUsuario);
+    }
+
+    /**
+     * Transfere um animal do seu lote/setor atual para o lote e setor informados.
+     * Disponível apenas para Administradores, Gerentes e Cuidadores Chefe.
+     * POST /api/lotes/transferir-animal
+     */
+    @PostMapping("/transferir-animal")
+    public String transferirAnimal(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @Valid @RequestBody TransferenciaAnimalDto dto) {
+        return loteService.transferirAnimal(emailUsuario, dto);
     }
 }

@@ -164,6 +164,20 @@ export function deletarLote(id, email) {
   })
 }
 
+export function transferirAnimal(email, animalId, loteDestinoId, setorDestinoId) {
+  const emailLimpo = sanitize(email)
+  if (!emailLimpo) throw new Error('Usuário não identificado.')
+
+  return request('/lotes/transferir-animal', {
+    method: 'POST',
+    headers: {
+      'X-Usuario-Email': emailLimpo,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ animalId, loteDestinoId, setorDestinoId }),
+  })
+}
+
 // ── Exportação ─────────────────────────────────────────────────────────────
 
 export function exportarLotesCSV(lotes) {

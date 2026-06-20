@@ -5,6 +5,7 @@ import br.com.gado.application.dto.loteDto.LotePutDto;
 import br.com.gado.application.dto.loteDto.LoteRespostaDto;
 import br.com.gado.application.dto.loteDto.LoteSetorCadastroDto;
 import br.com.gado.application.dto.loteDto.LoteSetorRespostaDto;
+import br.com.gado.application.dto.loteDto.TransferenciaAnimalDto;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.ELoteSetor;
@@ -205,6 +206,106 @@ public class SLote {
         return "Lote " + lote.getCodigo() + " excluído com sucesso.";
     }
 
+    // ── Transferência de animal ───────────────────────────────────────────
+
+    @Transactional
+    public String transferirAnimal(String emailUsuario, TransferenciaAnimalDto dto) {
+        validaPermissaoTransferencia(emailUsuario);
+
+        EAnimal animal = animalInterface.findById(dto.getAnimalId())
+                .orElseThrow(() -> new IllegalArgumentException("Animal não encontrado."));
+
+        if (isStatusBloqueado(animal.getStatusAnimal())) {
+            throw new IllegalArgumentException(
+                    "O animal " + animal.getCodigoBrinco()
+                            + " possui status " + animal.getStatusAnimal().name()
+                            + " e não pode ser movimentado.");
+        }
+
+        List<ELoteSetor> alocacoesAtuais =
+                loteSetorInterface.findByAnimalIdAndLoteAtivo(dto.getAnimalId(), EnStatus.A);
+        if (alocacoesAtuais.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "O animal " + animal.getCodigoBrinco()
+                            + " não está alocado em nenhum lote ativo.");
+        }
+        ELoteSetor loteSetorOrigem = alocacoesAtuais.get(0);
+
+        ELote loteDestino = loteInterface.findByIdAndStatus(dto.getLoteDestinoId(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Lote de destino não encontrado ou inativo."));
+
+        ESetor setorDestino = setorInterface.findByIdAndStatus(dto.getSetorDestinoId(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Setor de destino não encontrado ou inativo."));
+
+        if (loteSetorOrigem.getLote().getId().equals(dto.getLoteDestinoId())
+                && loteSetorOrigem.getSetor().getId().equals(dto.getSetorDestinoId())) {
+            throw new IllegalArgumentException(
+                    "O animal já está alocado no lote e setor informados.");
+        }
+
+        // Capacidade: conta animais no setor destino excluindo o próprio animal transferido
+        int jaAlocados = loteSetorInterface.findBySetor_Id(setorDestino.getId())
+                .stream()
+                .mapToInt(ls -> (int) ls.getAnimais().stream()
+                        .filter(a -> !a.getId().equals(dto.getAnimalId()))
+                        .count())
+                .sum();
+        if (setorDestino.getCapacidadeMaxima() > 0 && jaAlocados + 1 > setorDestino.getCapacidadeMaxima()) {
+            throw new IllegalArgumentException(
+                    "O setor '" + setorDestino.getNome() + "' excede a capacidade máxima ("
+                            + setorDestino.getCapacidadeMaxima() + "). "
+                            + "Já há " + jaAlocados + " animais.");
+        }
+
+        String nomeOrigem = loteSetorOrigem.getLote().getCodigo()
+                + "/" + loteSetorOrigem.getSetor().getNome();
+
+        // Remove do setor de origem
+        loteSetorOrigem.getAnimais().removeIf(a -> a.getId().equals(dto.getAnimalId()));
+        loteSetorInterface.save(loteSetorOrigem);
+
+        // Localiza ou cria o ELoteSetor de destino
+        ELoteSetor loteSetorDestino = loteSetorInterface.findByLote_Id(loteDestino.getId())
+                .stream()
+                .filter(ls -> ls.getSetor().getId().equals(setorDestino.getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    ELoteSetor novo = new ELoteSetor();
+                    novo.setLote(loteDestino);
+                    novo.setSetor(setorDestino);
+                    return loteSetorInterface.save(novo);
+                });
+
+        loteSetorDestino.getAnimais().add(animal);
+        loteSetorInterface.save(loteSetorDestino);
+
+        log.info("Animal {} transferido de {} para {}/{} por {}",
+                animal.getCodigoBrinco(), nomeOrigem,
+                loteDestino.getCodigo(), setorDestino.getNome(), emailUsuario);
+
+        return "Animal " + animal.getCodigoBrinco()
+                + " transferido para o lote " + loteDestino.getCodigo()
+                + ", setor " + setorDestino.getNome() + ".";
+    }
+
+    public void validaPermissaoTransferencia(String emailUsuario) {
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Informe o e-mail do usuário responsável pela operação.");
+        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        if (usuario.getPerfil() != EnPerfilUsuario.ADMINISTRADOR
+                && usuario.getPerfil() != EnPerfilUsuario.GERENTE
+                && usuario.getPerfil() != EnPerfilUsuario.CUIDADOR_CHEFE) {
+            throw new IllegalArgumentException(
+                    "Apenas Administradores, Gerentes e Cuidadores Chefe podem transferir animais entre lotes.");
+        }
+    }
+
     // ── Geração de código ─────────────────────────────────────────────────
 
     /**
@@ -259,9 +360,9 @@ public class SLote {
                 }
 
                 for (EAnimal animal : animais) {
-                    // Validação: animal não pode estar alocado em outro lote ativo
+                    // Validação: animal não pode estar alocado em outro lote ATIVO
                     List<ELoteSetor> conflitos =
-                            loteSetorInterface.findByAnimais_IdAndLote_IdNot(animal.getId(), lote.getId());
+                            loteSetorInterface.findConflitosAtivos(animal.getId(), lote.getId(), EnStatus.A);
                     if (!conflitos.isEmpty()) {
                         String loteConflito = conflitos.get(0).getLote().getCodigo();
                         throw new IllegalArgumentException(

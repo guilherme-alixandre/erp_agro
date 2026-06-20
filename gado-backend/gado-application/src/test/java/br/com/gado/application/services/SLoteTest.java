@@ -356,7 +356,7 @@ class SLoteTest {
             loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
 
             when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
-            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(List.of(conflito));
+            when(loteSetorInterface.findConflitosAtivos(ANIMAL_ID, LOTE_ID, EnStatus.A)).thenReturn(List.of(conflito));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
                 sLote.cadastra(EMAIL_USUARIO, loteCadastroDto);
@@ -381,7 +381,7 @@ class SLoteTest {
             loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
 
             when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
-            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+            when(loteSetorInterface.findConflitosAtivos(ANIMAL_ID, LOTE_ID, EnStatus.A)).thenReturn(Collections.emptyList());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                     sLote.cadastra(EMAIL_USUARIO, loteCadastroDto));
@@ -406,7 +406,7 @@ class SLoteTest {
                 loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
 
                 when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
-                when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+                when(loteSetorInterface.findConflitosAtivos(ANIMAL_ID, LOTE_ID, EnStatus.A)).thenReturn(Collections.emptyList());
 
                 IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                         sLote.cadastra(EMAIL_USUARIO, loteCadastroDto));
@@ -434,7 +434,7 @@ class SLoteTest {
             loteCadastroDto.setAlocacoes(List.of(alocacaoDto));
 
             when(animalInterface.findAllById(List.of(ANIMAL_ID, 51L))).thenReturn(List.of(animalEntity, animalEntity2));
-            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(anyLong(), anyLong())).thenReturn(Collections.emptyList());
+            when(loteSetorInterface.findConflitosAtivos(anyLong(), anyLong(), any(EnStatus.class))).thenReturn(Collections.emptyList());
             when(loteSetorInterface.findBySetor_Id(SETOR_ID)).thenReturn(Collections.emptyList());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -557,7 +557,7 @@ class SLoteTest {
             when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(List.of(loteSetorEntity));
             when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
             when(animalInterface.findAllById(List.of(ANIMAL_ID))).thenReturn(List.of(animalEntity));
-            when(loteSetorInterface.findByAnimais_IdAndLote_IdNot(ANIMAL_ID, LOTE_ID)).thenReturn(Collections.emptyList());
+            when(loteSetorInterface.findConflitosAtivos(ANIMAL_ID, LOTE_ID, EnStatus.A)).thenReturn(Collections.emptyList());
             when(loteSetorInterface.findBySetor_Id(SETOR_ID)).thenReturn(Collections.emptyList());
 
             String resultado = sLote.altera(LOTE_ID, EMAIL_USUARIO, lotePutDto);

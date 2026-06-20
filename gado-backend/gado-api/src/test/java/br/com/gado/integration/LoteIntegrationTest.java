@@ -209,6 +209,74 @@ class LoteIntegrationTest {
     }
 
     @Test
+    void postLote_quandoAnimalJaAlocadoEmOutroLoteAtivo_retornaBadRequest() throws Exception {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        // Capacidade generosa para que a rejeição seja por conflito de animal, não por capacidade
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-CONF-" + sufixo());
+
+        // Primeiro lote: cria com sucesso
+        mockMvc.perform(post("/api/lotes")
+                        .header("X-Usuario-Email", admin.getEmail())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(lotePayload("Lote Conflito Base IT", "Azul", setor.getId(), List.of(animal.getId())))))
+                .andExpect(status().isOk());
+
+        // Segundo lote: mesmo animal, mesmo setor — deve ser rejeitado pelo conflito de alocação
+        mockMvc.perform(post("/api/lotes")
+                        .header("X-Usuario-Email", admin.getEmail())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(lotePayload("Lote Conflito Dup IT", "Vermelho", setor.getId(), List.of(animal.getId())))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("já está alocado ao lote")));
+    }
+
+    @Test
+    void postLote_quandoAnimalJaAlocadoEmOutroLoteAtivo_setorDiferente_retornaBadRequest() throws Exception {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorA = criarSetor(admin, 50);
+        ESetor setorB = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-CONF2-" + sufixo());
+
+        mockMvc.perform(post("/api/lotes")
+                        .header("X-Usuario-Email", admin.getEmail())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(lotePayload("Lote Conflito Base2 IT", "Azul", setorA.getId(), List.of(animal.getId())))))
+                .andExpect(status().isOk());
+
+        // Animal em setor diferente mas já em outro lote ativo — também deve ser rejeitado
+        mockMvc.perform(post("/api/lotes")
+                        .header("X-Usuario-Email", admin.getEmail())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(lotePayload("Lote Conflito Dup2 IT", "Verde", setorB.getId(), List.of(animal.getId())))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("já está alocado ao lote")));
+    }
+
+    @Test
+    void postLote_quandoAnimalEmLoteInativo_permiteAlocacaoEmNovoLote() throws Exception {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-INATIVO-" + sufixo());
+
+        // Cria um lote com o animal e depois inativa (soft-delete via meta para forçar inativação)
+        ELote loteInativo = criarLoteViaEndpoint(admin, setor, List.of(animal.getId()), "Lote Inativo IT " + sufixo());
+        criarMetaSetor(setor);
+        mockMvc.perform(delete("/api/lotes/{id}", loteInativo.getId())
+                        .header("X-Usuario-Email", admin.getEmail()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("inativado")));
+
+        // Mesmo animal deve poder ser alocado em novo lote ativo
+        mockMvc.perform(post("/api/lotes")
+                        .header("X-Usuario-Email", admin.getEmail())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(lotePayload("Lote Pos Inativo IT", "Laranja", setor.getId(), List.of(animal.getId())))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("cadastrado com sucesso")));
+    }
+
+    @Test
     void getPutDeleteLote_quandoIdNaoExiste_retornaBadRequest() throws Exception {
         EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
         ESetor setor = criarSetor(usuario, 2);
