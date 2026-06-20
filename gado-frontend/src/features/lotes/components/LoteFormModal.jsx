@@ -62,18 +62,77 @@ function buildSetorTriggerText(selectedIds, setoresDisponiveis) {
   return `${selectedIds.length} setores selecionados`
 }
 
-function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRemove }) {
+function SetorCard({
+  mode,
+  alocacao,
+  setor,
+  animaisDisponiveis,
+  lotesDisponiveis,
+  setoresDisponiveis,
+  loteAtualId,
+  canTransfer,
+  onChangeAnimais,
+  onTransferirAnimais,
+  onRemove,
+}) {
   const [animalModalOpen, setAnimalModalOpen] = useState(false)
+  const [selectedForTransfer, setSelectedForTransfer] = useState([])
+  const [loteDestinoId, setLoteDestinoId] = useState('')
+  const [setorDestinoId, setSetorDestinoId] = useState('')
+  const [isTransferindo, setIsTransferindo] = useState(false)
+  const [transferenciaError, setTransferenciaError] = useState('')
+
+  // Setor existente carregado do lote: usa fluxo de transferência
+  // Setor novo adicionado durante edição: usa fluxo de criação (animaisDisponiveis)
+  const isEditExisting = mode === 'edit' && alocacao.animaisAtuais !== undefined
+  const animaisAtuais = alocacao.animaisAtuais ?? []
+
+  const ocupacao = isEditExisting ? animaisAtuais.length : alocacao.animaisIds.length
+  const capacidade = setor.capacidadeMaxima
+  const excedido = !isEditExisting && capacidade > 0 && ocupacao > capacidade
 
   const disabledAnimalIds = animaisDisponiveis
     .filter((a) => BLOCKED_STATUSES.has(a.statusAnimal))
     .map((a) => a.id)
 
-  const ocupacao = alocacao.animaisIds.length
-  const capacidade = setor.capacidadeMaxima
-  const excedido = capacidade > 0 && ocupacao > capacidade
+  const triggerText = isEditExisting
+    ? animaisAtuais.length > 0
+      ? `${animaisAtuais.length} ${animaisAtuais.length === 1 ? 'animal' : 'animais'} neste setor`
+      : null
+    : buildAnimalTriggerText(alocacao.animaisIds, animaisDisponiveis)
 
-  const triggerText = buildAnimalTriggerText(alocacao.animaisIds, animaisDisponiveis)
+  const mesmoLoteSetor =
+    loteDestinoId !== '' &&
+    setorDestinoId !== '' &&
+    Number(loteDestinoId) === loteAtualId &&
+    Number(setorDestinoId) === setor.id
+
+  async function handleConfirmarTransferencia() {
+    if (!loteDestinoId || !setorDestinoId || mesmoLoteSetor) return
+    setIsTransferindo(true)
+    setTransferenciaError('')
+    try {
+      await onTransferirAnimais(
+        selectedForTransfer,
+        Number(loteDestinoId),
+        Number(setorDestinoId),
+      )
+      setSelectedForTransfer([])
+      setLoteDestinoId('')
+      setSetorDestinoId('')
+    } catch (error) {
+      setTransferenciaError(error.message || 'Falha ao transferir animal(is).')
+    } finally {
+      setIsTransferindo(false)
+    }
+  }
+
+  function handleCancelarTransferencia() {
+    setSelectedForTransfer([])
+    setLoteDestinoId('')
+    setSetorDestinoId('')
+    setTransferenciaError('')
+  }
 
   return (
     <div className="setor-card">
@@ -95,19 +154,34 @@ function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRem
       </div>
 
       <div className="setor-card__label">
-        <span>Animais neste setor</span>
-        <button
-          type="button"
-          className="ssm-trigger"
-          onClick={() => setAnimalModalOpen(true)}
-        >
-          <span className={triggerText ? '' : 'ssm-trigger__placeholder'}>
-            {triggerText ?? 'Selecionar animais...'}
+        <span>
+          {isEditExisting
+            ? canTransfer
+              ? 'Selecionar animais para transferir'
+              : 'Animais neste setor'
+            : 'Animais neste setor'}
+        </span>
+
+        {isEditExisting && !canTransfer ? (
+          <span className="ssm-trigger ssm-trigger--readonly">
+            {triggerText ?? 'Nenhum animal'}
           </span>
-          <span className="ssm-trigger__arrow" aria-hidden="true">
-            ▼
-          </span>
-        </button>
+        ) : (
+          <button
+            type="button"
+            className="ssm-trigger"
+            onClick={() => setAnimalModalOpen(true)}
+          >
+            <span className={triggerText ? '' : 'ssm-trigger__placeholder'}>
+              {isEditExisting
+                ? triggerText ?? 'Nenhum animal neste setor'
+                : triggerText ?? 'Selecionar animais...'}
+            </span>
+            <span className="ssm-trigger__arrow" aria-hidden="true">
+              ▼
+            </span>
+          </button>
+        )}
       </div>
 
       {excedido ? (
@@ -116,20 +190,118 @@ function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRem
         </p>
       ) : null}
 
+      {isEditExisting && canTransfer && selectedForTransfer.length > 0 ? (
+        <div className="setor-card__transferencia">
+          <p className="setor-card__transferencia-info">
+            {selectedForTransfer.length}{' '}
+            {selectedForTransfer.length === 1
+              ? 'animal selecionado'
+              : 'animais selecionados'}{' '}
+            para transferir
+          </p>
+
+          <label>
+            <span>
+              Lote de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
+            </span>
+            <select
+              value={loteDestinoId}
+              onChange={(e) => {
+                setLoteDestinoId(e.target.value)
+                setSetorDestinoId('')
+              }}
+            >
+              <option value="">Selecione um lote...</option>
+              {(lotesDisponiveis ?? []).map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.codigo}
+                  {l.descricao ? ` — ${l.descricao}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>
+              Setor de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
+            </span>
+            <select
+              value={setorDestinoId}
+              onChange={(e) => setSetorDestinoId(e.target.value)}
+            >
+              <option value="">Selecione um setor...</option>
+              {setoresDisponiveis.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {mesmoLoteSetor ? (
+            <p className="feedback feedback--error">
+              O animal já está neste lote e setor. Escolha um destino diferente.
+            </p>
+          ) : null}
+
+          {transferenciaError && !mesmoLoteSetor ? (
+            <p className="feedback feedback--error">{transferenciaError}</p>
+          ) : null}
+
+          <div className="setor-card__transferencia-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCancelarTransferencia}
+              disabled={isTransferindo}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleConfirmarTransferencia}
+              disabled={
+                isTransferindo ||
+                !loteDestinoId ||
+                !setorDestinoId ||
+                mesmoLoteSetor
+              }
+            >
+              {isTransferindo ? 'Transferindo...' : 'Confirmar transferência'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {animalModalOpen ? (
         <SearchSelectModal
-          title="Selecionar animais"
-          items={animaisDisponiveis}
-          selectedIds={alocacao.animaisIds}
+          title={
+            isEditExisting
+              ? 'Selecionar animais para transferir'
+              : 'Selecionar animais'
+          }
+          items={isEditExisting ? animaisAtuais : animaisDisponiveis}
+          selectedIds={isEditExisting ? selectedForTransfer : alocacao.animaisIds}
           onConfirm={(ids) => {
-            onChangeAnimais(ids)
+            if (isEditExisting) {
+              setSelectedForTransfer(ids)
+            } else {
+              onChangeAnimais(ids)
+            }
             setAnimalModalOpen(false)
           }}
           onClose={() => setAnimalModalOpen(false)}
           multiSelect
           columns={ANIMAL_COLUMNS}
-          filterField={ANIMAL_FILTER}
-          disabledIds={disabledAnimalIds}
+          filterField={isEditExisting ? undefined : ANIMAL_FILTER}
+          disabledIds={isEditExisting ? [] : disabledAnimalIds}
         />
       ) : null}
     </div>
@@ -143,10 +315,14 @@ function LoteFormModal({
   feedback,
   setoresDisponiveis,
   animaisDisponiveis,
+  lotesDisponiveis,
+  loteAtualId,
+  canTransfer,
   currentUser,
   onClose,
   onChange,
   onChangeAlocacoes,
+  onTransferirAnimais,
   onSubmit,
 }) {
   const [setorModalOpen, setSetorModalOpen] = useState(false)
@@ -284,10 +460,16 @@ function LoteFormModal({
                   return (
                     <SetorCard
                       key={aloc.setorId}
+                      mode={mode}
                       alocacao={aloc}
                       setor={setor}
                       animaisDisponiveis={animaisDisponiveis}
+                      lotesDisponiveis={lotesDisponiveis}
+                      setoresDisponiveis={setoresDisponiveis}
+                      loteAtualId={loteAtualId}
+                      canTransfer={canTransfer}
                       onChangeAnimais={(ids) => handleAnimaisChange(aloc.setorId, ids)}
+                      onTransferirAnimais={onTransferirAnimais}
                       onRemove={() => handleRemoveSetor(aloc.setorId)}
                     />
                   )

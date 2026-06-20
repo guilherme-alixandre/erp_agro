@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import LoteFormModal from '../components/LoteFormModal'
 import LoteDetailsModal from '../components/LoteDetailsModal'
-import TransferenciaAnimalModal from '../components/TransferenciaAnimalModal'
 import {
   listarLotesCompletos,
   listarAnimaisParaLote,
@@ -53,14 +52,6 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const exportMenuRef = useRef(null)
   const [page, setPage] = useState(0)
-  const [transferenciaModal, setTransferenciaModal] = useState({
-    open: false,
-    animal: null,
-    loteAtual: null,
-    setorAtual: null,
-  })
-  const [isTransferindo, setIsTransferindo] = useState(false)
-  const [transferenciaFeedback, setTransferenciaFeedback] = useState('')
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
@@ -188,6 +179,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
       alocacoes: lote.alocacoes.map((aloc) => ({
         setorId: aloc.setorId,
         animaisIds: aloc.animais.map((a) => a.id),
+        animaisAtuais: aloc.animais,
       })),
     })
     setModal({ type: 'form', lote })
@@ -198,35 +190,35 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     setModal({ type: 'details', lote })
   }
 
-  function handleAbrirTransferencia(animal, loteAtual, setorAtual) {
-    setTransferenciaFeedback('')
-    setTransferenciaModal({ open: true, animal, loteAtual, setorAtual })
-  }
-
-  function handleFecharTransferencia() {
-    setTransferenciaModal({ open: false, animal: null, loteAtual: null, setorAtual: null })
-    setTransferenciaFeedback('')
-  }
-
-  async function handleConfirmarTransferencia(loteDestinoId, setorDestinoId) {
-    setIsTransferindo(true)
-    setTransferenciaFeedback('')
+  async function handleTransferirAnimais(animalIds, loteDestinoId, setorDestinoId) {
+    let transferError = null
     try {
-      await transferirAnimal(
-        currentUser.email,
-        transferenciaModal.animal.id,
-        loteDestinoId,
-        setorDestinoId,
+      await Promise.all(
+        animalIds.map((animalId) =>
+          transferirAnimal(currentUser.email, animalId, loteDestinoId, setorDestinoId),
+        ),
       )
-      setFeedback({ type: 'info', message: 'Animal transferido com sucesso.' })
-      handleFecharTransferencia()
-      dispararRefresh()
-      await fetchLotes()
-    } catch (error) {
-      setTransferenciaFeedback(error.message || 'Falha ao transferir o animal.')
-    } finally {
-      setIsTransferindo(false)
+    } catch (e) {
+      transferError = e
     }
+
+    // Atualiza sempre para refletir qualquer transferência parcialmente concluída
+    const updatedLotes = await listarLotesCompletos()
+    setLotes(updatedLotes)
+    const loteAtualizado = updatedLotes.find((l) => l.id === modal.lote?.id)
+    if (loteAtualizado) {
+      setFormData((current) => ({
+        ...current,
+        alocacoes: loteAtualizado.alocacoes.map((aloc) => ({
+          setorId: aloc.setorId,
+          animaisIds: aloc.animais.map((a) => a.id),
+          animaisAtuais: aloc.animais,
+        })),
+      }))
+      setModal((current) => ({ ...current, lote: loteAtualizado }))
+    }
+
+    if (transferError) throw transferError
   }
 
   async function handleSubmitForm(event) {
@@ -529,10 +521,14 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           feedback={formFeedback}
           setoresDisponiveis={setores}
           animaisDisponiveis={animaisDisponiveis}
+          lotesDisponiveis={lotes}
+          loteAtualId={modal.lote?.id ?? null}
+          canTransfer={canTransfer}
           currentUser={currentUser}
           onClose={closeModal}
           onChange={handleFormChange}
           onChangeAlocacoes={handleAlocacoesChange}
+          onTransferirAnimais={handleTransferirAnimais}
           onSubmit={handleSubmitForm}
         />
       ) : null}
@@ -544,22 +540,6 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.lote)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
-          canTransfer={canTransfer}
-          onTransferirAnimal={handleAbrirTransferencia}
-        />
-      ) : null}
-
-      {transferenciaModal.open ? (
-        <TransferenciaAnimalModal
-          animal={transferenciaModal.animal}
-          loteAtual={transferenciaModal.loteAtual}
-          setorAtual={transferenciaModal.setorAtual}
-          lotesDisponiveis={lotes}
-          setoresDisponiveis={setores}
-          isSaving={isTransferindo}
-          feedback={transferenciaFeedback}
-          onConfirm={handleConfirmarTransferencia}
-          onClose={handleFecharTransferencia}
         />
       ) : null}
     </main>

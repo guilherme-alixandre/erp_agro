@@ -10,15 +10,7 @@ function formatDate(value) {
   return String(value)
 }
 
-function LoteDetailsModal({
-  lote,
-  onClose,
-  onEdit,
-  onDelete,
-  isDeleting,
-  canTransfer,
-  onTransferirAnimal,
-}) {
+function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card modal-card--wide">
@@ -95,28 +87,9 @@ function LoteDetailsModal({
                 ) : (
                   <ul className="lote-alocacao__animais">
                     {aloc.animais.map((a) => (
-                      <li key={a.id} className="lote-alocacao__animal-row">
-                        <span>
-                          <strong>{a.codigoBrinco}</strong>
-                          {a.nome ? <span> — {a.nome}</span> : null}
-                        </span>
-                        {canTransfer ? (
-                          <button
-                            type="button"
-                            className="btn-row btn-row--transfer"
-                            onClick={() =>
-                              onTransferirAnimal(a, {
-                                id: lote.id,
-                                codigo: lote.codigo,
-                              }, {
-                                id: aloc.setorId,
-                                nome: aloc.setorNome,
-                              })
-                            }
-                          >
-                            Transferir
-                          </button>
-                        ) : null}
+                      <li key={a.id}>
+                        <strong>{a.codigoBrinco}</strong>
+                        {a.nome ? <span> — {a.nome}</span> : null}
                       </li>
                     ))}
                   </ul>
