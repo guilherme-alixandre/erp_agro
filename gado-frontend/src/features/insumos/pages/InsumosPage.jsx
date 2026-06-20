@@ -197,9 +197,11 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item menu-item--active">
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"

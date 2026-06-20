@@ -15,7 +15,8 @@ import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/lotes.css'
 
-const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE']
+const PERFIS_COM_CRIACAO_LOTE  = ['ADMINISTRADOR', 'GERENTE']
+const PERFIS_COM_EDICAO_LOTE   = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 const PERFIS_COM_TRANSFERENCIA = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 
 const defaultForm = {
@@ -55,8 +56,10 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
-  const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
-  const canTransfer = PERFIS_COM_TRANSFERENCIA.includes(currentUser?.perfil)
+  const canCreateLote = PERFIS_COM_CRIACAO_LOTE.includes(currentUser?.perfil)
+  const canEditLote   = PERFIS_COM_EDICAO_LOTE.includes(currentUser?.perfil)
+  const canDeleteLote = PERFIS_COM_CRIACAO_LOTE.includes(currentUser?.perfil)
+  const canTransfer   = PERFIS_COM_TRANSFERENCIA.includes(currentUser?.perfil)
 
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -314,9 +317,11 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -406,7 +411,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
             ) : null}
           </div>
 
-          {canEdit ? (
+          {canCreateLote ? (
             <button type="button" className="btn-new-entity" onClick={openCreateModal}>
               + Novo Lote
             </button>
@@ -464,7 +469,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
                           >
                             Detalhes
                           </button>
-                          {canEdit ? (
+                          {canEditLote ? (
                             <button
                               type="button"
                               className="btn-row btn-row--edit"
@@ -540,6 +545,8 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.lote)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditLote}
+          canDelete={canDeleteLote}
         />
       ) : null}
     </main>

@@ -4,6 +4,7 @@ import br.com.gado.application.dto.SetorDto;
 import br.com.gado.domain.entities.ELoteSetor;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
@@ -51,6 +52,7 @@ public class SSetor {
 
     @Transactional
     public SetorDto cadastra(SetorDto dto, String email) {
+        validaPermissaoCriarEditar(email);
         EUsuario usuario = resolveUsuario(email);
 
         ESetor setor = new ESetor();
@@ -66,7 +68,8 @@ public class SSetor {
     }
 
     @Transactional
-    public void deleta(Long id) {
+    public void deleta(Long id, String email) {
+        validaPermissaoExcluir(email);
         ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Setor não encontrado ou inativo"));
 
@@ -76,6 +79,7 @@ public class SSetor {
 
     @Transactional
     public SetorDto altera(Long id, SetorDto dto, String email) {
+        validaPermissaoCriarEditar(email);
         EUsuario usuario = resolveUsuario(email);
 
         ESetor setor = setorInterface.findByIdAndStatus(id, EnStatus.A)
@@ -94,6 +98,30 @@ public class SSetor {
         setor.setAlteradoPor(usuario);
 
         return toSetorDto(setorInterface.save(setor));
+    }
+
+    private void validaPermissaoCriarEditar(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário responsável pela operação.");
+        }
+        EUsuario u = usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+        EnPerfilUsuario p = u.getPerfil();
+        if (p != EnPerfilUsuario.ADMINISTRADOR && p != EnPerfilUsuario.GERENTE && p != EnPerfilUsuario.CUIDADOR_CHEFE) {
+            throw new IllegalArgumentException("Apenas Administradores, Gerentes e Cuidadores Chefe podem criar ou editar setores.");
+        }
+    }
+
+    private void validaPermissaoExcluir(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário responsável pela operação.");
+        }
+        EUsuario u = usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+        EnPerfilUsuario p = u.getPerfil();
+        if (p != EnPerfilUsuario.ADMINISTRADOR && p != EnPerfilUsuario.GERENTE) {
+            throw new IllegalArgumentException("Apenas Administradores e Gerentes podem excluir setores.");
+        }
     }
 
     private EUsuario resolveUsuario(String email) {

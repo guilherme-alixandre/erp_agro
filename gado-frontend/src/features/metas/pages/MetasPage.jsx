@@ -162,9 +162,11 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"

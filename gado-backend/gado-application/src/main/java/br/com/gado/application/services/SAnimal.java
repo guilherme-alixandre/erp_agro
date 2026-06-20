@@ -3,6 +3,7 @@ package br.com.gado.application.services;
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
@@ -31,7 +32,7 @@ public class SAnimal {
     public AnimalDto buscarPorBrinco(String brinco) {
         EAnimal animal = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
-        return modelMapper.map(animal, AnimalDto.class);
+        return toDto(animal);
     }
 
     public ArrayList<AnimalDto> buscarTodosAnimais() {
@@ -39,8 +40,16 @@ public class SAnimal {
                 .orElseThrow(() -> new EntityNotFoundException("nenhum animal encontrado"));
 
         return listaAnimais.stream()
-                .map(animal -> modelMapper.map(animal, AnimalDto.class))
+                .map(this::toDto)
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private AnimalDto toDto(EAnimal animal) {
+        AnimalDto dto = modelMapper.map(animal, AnimalDto.class);
+        if (animal.getUsuario() != null) {
+            dto.setCriadoPorEmail(animal.getUsuario().getEmail());
+        }
+        return dto;
     }
 
     @Transactional
@@ -56,25 +65,47 @@ public class SAnimal {
     }
 
     @Transactional
-    public String deletaAnimal(String brinco) {
+    public String deletaAnimal(String emailUsuario, String brinco) {
         EAnimal animal = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
 
-        animal.setStatus(EnStatus.I);
+        if (emailUsuario != null && !emailUsuario.isBlank()) {
+            EUsuario solicitante = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                    .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+            EnPerfilUsuario perfil = solicitante.getPerfil();
+            if (perfil == EnPerfilUsuario.CUIDADOR || perfil == EnPerfilUsuario.CUIDADOR_CHEFE) {
+                String dono = animal.getUsuario() != null ? animal.getUsuario().getEmail() : null;
+                if (!emailUsuario.trim().equals(dono)) {
+                    throw new IllegalArgumentException("Você só pode excluir animais que você cadastrou.");
+                }
+            }
+        }
 
+        animal.setStatus(EnStatus.I);
         animalInterface.save(animal);
         return "animal deletado com sucesso";
     }
 
     @Transactional
-    public AnimalDto alteraAnimal(String brinco, AnimalDto dto) {
+    public AnimalDto alteraAnimal(String emailUsuario, String brinco, AnimalDto dto) {
         EAnimal animal = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
+
+        if (emailUsuario != null && !emailUsuario.isBlank()) {
+            EUsuario solicitante = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                    .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+            if (solicitante.getPerfil() == EnPerfilUsuario.CUIDADOR) {
+                String dono = animal.getUsuario() != null ? animal.getUsuario().getEmail() : null;
+                if (!emailUsuario.trim().equals(dono)) {
+                    throw new IllegalArgumentException("Você só pode editar animais que você cadastrou.");
+                }
+            }
+        }
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, animal);
 
         EAnimal animalAtualizado = animalInterface.save(animal);
-        return modelMapper.map(animalAtualizado, AnimalDto.class);
+        return toDto(animalAtualizado);
     }
 }

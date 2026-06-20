@@ -13,7 +13,8 @@ import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/setores.css'
 
-const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR']
+const PERFIS_COM_CRIACAO_EDICAO_SETOR = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
+const PERFIS_COM_EXCLUSAO_SETOR      = ['ADMINISTRADOR', 'GERENTE']
 
 const defaultForm = {
   nome: '',
@@ -42,7 +43,9 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
-  const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
+  const canCreateSetor = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
+  const canEditSetor   = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
+  const canDeleteSetor = PERFIS_COM_EXCLUSAO_SETOR.includes(currentUser?.perfil)
 
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -231,9 +234,11 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -323,7 +328,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
             ) : null}
           </div>
 
-          {canEdit ? (
+          {canCreateSetor ? (
             <button type="button" className="btn-new-entity" onClick={openCreateModal}>
               + Novo Setor
             </button>
@@ -376,7 +381,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                         >
                           Detalhes
                         </button>
-                        {canEdit ? (
+                        {canEditSetor ? (
                           <button
                             type="button"
                             className="btn-row btn-row--edit"
@@ -444,6 +449,8 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.setor)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditSetor}
+          canDelete={canDeleteSetor}
         />
       ) : null}
     </main>

@@ -32,12 +32,17 @@ public class CAnimal {
     }
 
     @DeleteMapping("/{brinco}")
-    public ResponseEntity<String> deleteAnimal(@PathVariable String brinco) {
-        return ResponseEntity.ok(animalService.deletaAnimal(brinco));
+    public ResponseEntity<String> deleteAnimal(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable String brinco) {
+        return ResponseEntity.ok(animalService.deletaAnimal(emailUsuario, brinco));
     }
 
     @PutMapping("/{brinco}")
-    public ResponseEntity<AnimalDto> putAnimal(@PathVariable String brinco, @RequestBody AnimalDto animal) {
-        return ResponseEntity.ok(animalService.alteraAnimal(brinco, animal));
+    public ResponseEntity<AnimalDto> putAnimal(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable String brinco,
+            @RequestBody AnimalDto animal) {
+        return ResponseEntity.ok(animalService.alteraAnimal(emailUsuario, brinco, animal));
     }
 }

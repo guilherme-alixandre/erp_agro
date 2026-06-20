@@ -29,12 +29,13 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
   const [medicaoEditando, setMedicaoEditando] = useState(null)
   const [deletandoMedicao, setDeletandoMedicao] = useState(null)
 
-  const podeEditarQualquerMedicao =
-    perfil === 'ADMINISTRADOR' || perfil === 'GERENTE' || perfil === 'CUIDADOR_CHEFE'
-
   function podeEditarMedicao(medicao) {
-    if (podeEditarQualquerMedicao) return true
-    if (perfil === 'CUIDADOR' && medicao.criadoPorEmail === emailUsuario) return true
+    if (perfil === 'ADMINISTRADOR' || perfil === 'GERENTE') return true
+    if (perfil === 'CUIDADOR_CHEFE') {
+      const perfilCriador = medicao.criadoPorPerfil
+      return perfilCriador === 'CUIDADOR' || perfilCriador === 'CUIDADOR_CHEFE'
+    }
+    if (perfil === 'CUIDADOR') return medicao.criadoPorEmail === emailUsuario
     return false
   }
 

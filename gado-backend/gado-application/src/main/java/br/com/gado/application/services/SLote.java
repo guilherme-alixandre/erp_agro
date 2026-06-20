@@ -49,7 +49,7 @@ public class SLote {
     // ── Controle de acesso ────────────────────────────────────────────────
 
     /**
-     * Valida que o usuário (por e-mail) tem perfil ADMINISTRADOR ou GERENTE.
+     * Valida que o usuário tem perfil ADMINISTRADOR ou GERENTE (criar/excluir lote).
      */
     public void validaPermissao(String emailUsuario) {
         if (emailUsuario == null || emailUsuario.isBlank()) {
@@ -62,7 +62,26 @@ public class SLote {
         if (usuario.getPerfil() != EnPerfilUsuario.ADMINISTRADOR
                 && usuario.getPerfil() != EnPerfilUsuario.GERENTE) {
             throw new IllegalArgumentException(
-                    "Apenas Administradores e Gerentes podem gerenciar lotes.");
+                    "Apenas Administradores e Gerentes podem criar ou excluir lotes.");
+        }
+    }
+
+    /**
+     * Valida que o usuário tem perfil ADMINISTRADOR, GERENTE ou CUIDADOR_CHEFE (editar lote).
+     */
+    public void validaPermissaoEdicao(String emailUsuario) {
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Informe o e-mail do usuário responsável pela operação.");
+        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        if (usuario.getPerfil() != EnPerfilUsuario.ADMINISTRADOR
+                && usuario.getPerfil() != EnPerfilUsuario.GERENTE
+                && usuario.getPerfil() != EnPerfilUsuario.CUIDADOR_CHEFE) {
+            throw new IllegalArgumentException(
+                    "Apenas Administradores, Gerentes e Cuidadores Chefe podem editar lotes.");
         }
     }
 
@@ -112,7 +131,7 @@ public class SLote {
 
     @Transactional
     public String altera(Long id, String emailUsuario, LotePutDto dto) {
-        validaPermissao(emailUsuario);
+        validaPermissaoEdicao(emailUsuario);
 
         ELote lote = loteInterface.findByIdAndStatus(id, EnStatus.A)
                 .orElseThrow(() -> new IllegalArgumentException(

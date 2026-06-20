@@ -17,6 +17,7 @@ public class MedicaoMetaRespostaDto {
 
     private String criadoPorEmail;
     private String criadoPorNome;
+    private String criadoPorPerfil;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,4 +42,7 @@ public class MedicaoMetaRespostaDto {
 
     public String getCriadoPorNome() { return criadoPorNome; }
     public void setCriadoPorNome(String criadoPorNome) { this.criadoPorNome = criadoPorNome; }
+
+    public String getCriadoPorPerfil() { return criadoPorPerfil; }
+    public void setCriadoPorPerfil(String criadoPorPerfil) { this.criadoPorPerfil = criadoPorPerfil; }
 }

@@ -57,6 +57,20 @@ function toCardAnimal(animal) {
 
 const ROWS_PER_PAGE = 10
 
+function canEditAnimal(animal, currentUser) {
+  const perfil = currentUser?.perfil
+  if (perfil === 'CUIDADOR') return animal?.criadoPorEmail === currentUser?.email
+  return true
+}
+
+function canDeleteAnimal(animal, currentUser) {
+  const perfil = currentUser?.perfil
+  if (perfil === 'CUIDADOR' || perfil === 'CUIDADOR_CHEFE') {
+    return animal?.criadoPorEmail === currentUser?.email
+  }
+  return true
+}
+
 function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -280,7 +294,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
         }
       } else {
-        const result = await atualizarAnimal(formData.codigoBrinco, formData)
+        const result = await atualizarAnimal(currentUser.email, formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao atualizar animal.')
         }
@@ -306,7 +320,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     setIsDeleting(true)
     setFeedback({ type: '', message: '' })
     try {
-      const result = await deletarAnimal(animal.codigoBrinco)
+      const result = await deletarAnimal(currentUser.email, animal.codigoBrinco)
       if (isBackendErrorMessage(result)) {
         throw new Error(getBackendMessage(result) || 'Falha ao excluir animal.')
       }
@@ -383,9 +397,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -639,6 +655,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.animal)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditAnimal(modal.animal, currentUser)}
+          canDelete={canDeleteAnimal(modal.animal, currentUser)}
         />
       ) : null}
     </main>

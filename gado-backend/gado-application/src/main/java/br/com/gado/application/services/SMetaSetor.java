@@ -85,9 +85,10 @@ public class SMetaSetor {
     }
 
     /**
-     * Valida se o usuário tem permissão para editar uma medição específica.
-     * ADMINISTRADOR, GERENTE e CUIDADOR_CHEFE podem editar qualquer medição.
-     * CUIDADOR só pode editar a medição que ele mesmo criou.
+     * Valida se o usuário tem permissão para editar/excluir uma medição específica.
+     * - ADMINISTRADOR e GERENTE: podem alterar qualquer medição.
+     * - CUIDADOR_CHEFE: pode alterar apenas medições criadas por CUIDADOR ou CUIDADOR_CHEFE.
+     * - CUIDADOR: pode alterar apenas medições que ele mesmo criou.
      */
     public void validaEdicaoMedicao(String emailUsuario, EMedicaoMeta medicao) {
         if (emailUsuario == null || emailUsuario.isBlank()) {
@@ -98,9 +99,16 @@ public class SMetaSetor {
 
         EnPerfilUsuario perfil = usuario.getPerfil();
 
-        if (perfil == EnPerfilUsuario.ADMINISTRADOR
-                || perfil == EnPerfilUsuario.GERENTE
-                || perfil == EnPerfilUsuario.CUIDADOR_CHEFE) {
+        if (perfil == EnPerfilUsuario.ADMINISTRADOR || perfil == EnPerfilUsuario.GERENTE) {
+            return;
+        }
+
+        if (perfil == EnPerfilUsuario.CUIDADOR_CHEFE) {
+            EnPerfilUsuario perfilCriador = resolverPerfilPorEmail(medicao.getCriadoPorEmail());
+            if (perfilCriador == EnPerfilUsuario.ADMINISTRADOR || perfilCriador == EnPerfilUsuario.GERENTE) {
+                throw new IllegalArgumentException(
+                        "Cuidadores Chefe não podem alterar medições criadas por Administradores ou Gerentes.");
+            }
             return;
         }
 
@@ -290,6 +298,14 @@ public class SMetaSetor {
                         .orElse(null));
     }
 
+    /** Busca o perfil do usuário pelo e-mail; retorna null se não encontrado. */
+    private EnPerfilUsuario resolverPerfilPorEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        return usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .map(EUsuario::getPerfil)
+                .orElse(null);
+    }
+
     private MetaSetorRespostaDto toRespostaDto(EMetaSetor meta) {
         MetaSetorRespostaDto dto = new MetaSetorRespostaDto();
         dto.setId(meta.getId());
@@ -320,6 +336,7 @@ public class SMetaSetor {
 
         // ── Montar lista de medições com quantidade convertida ──────────────
         Map<String, String> nomesPorEmail = new HashMap<>();
+        Map<String, EnPerfilUsuario> perfisPorEmail = new HashMap<>();
         List<MedicaoMetaRespostaDto> medicaoDtos = medicoes.stream()
                 .map(m -> {
                     MedicaoMetaRespostaDto mDto = new MedicaoMetaRespostaDto();
@@ -331,6 +348,10 @@ public class SMetaSetor {
                     mDto.setQuantidadeConvertida(arredondar(converterQuantidade(m, meta)));
                     mDto.setCriadoPorEmail(m.getCriadoPorEmail());
                     mDto.setCriadoPorNome(resolverNomePorEmail(m.getCriadoPorEmail(), nomesPorEmail));
+                    EnPerfilUsuario perfilCriador = perfisPorEmail.computeIfAbsent(
+                            m.getCriadoPorEmail() != null ? m.getCriadoPorEmail() : "",
+                            e -> e.isBlank() ? null : resolverPerfilPorEmail(e));
+                    mDto.setCriadoPorPerfil(perfilCriador != null ? perfilCriador.name() : null);
                     return mDto;
                 })
                 .toList();
