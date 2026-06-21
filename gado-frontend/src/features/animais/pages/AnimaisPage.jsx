@@ -10,7 +10,7 @@ import {
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import { listarVacinas } from '../../../services/insumoApi'
-import { atualizarLote, listarLotesCompletos } from '../../../services/loteApi'
+import { listarLotesCompletos } from '../../../services/loteApi'
 import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../styles/animais.css'
 
@@ -245,9 +245,15 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   async function handleSubmitForm(event) {
     event.preventDefault()
 
-    if (formMode === 'create' && loteVinculo && !setorVinculo) {
-      setFormFeedback('Selecione um setor para vincular ao lote.')
-      return
+    if (formMode === 'create') {
+      if (!loteVinculo) {
+        setFormFeedback('Selecione um lote para o animal.')
+        return
+      }
+      if (!setorVinculo) {
+        setFormFeedback('Selecione um setor do lote para o animal.')
+        return
+      }
     }
 
     setIsSaving(true)
@@ -256,43 +262,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(currentUser.email, formData)
+        const result = await cadastrarAnimal(currentUser.email, formData, setorVinculo)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
-
-        if (loteVinculo && setorVinculo) {
-          try {
-            const novoAnimalId = result?.id ?? result?.mensagem?.id ?? null
-            if (novoAnimalId !== null) {
-              const lote = lotesDisponiveis.find((l) => l.id === loteVinculo)
-              if (lote) {
-                const alocacoesUpdate = lote.alocacoes.map((aloc) => ({
-                  setorId: aloc.setorId,
-                  animaisIds: [
-                    ...aloc.animais.map((a) => a.id).filter((id) => id !== null),
-                    ...(Number(aloc.loteSectorId) === setorVinculo ? [novoAnimalId] : []),
-                  ],
-                }))
-                await atualizarLote(lote.id, currentUser.email, {
-                  corBrinco: lote.corBrinco,
-                  descricao: lote.descricao,
-                  racaPredominante: lote.racaPredominante,
-                  alocacoes: alocacoesUpdate,
-                })
-                setFeedback({ type: 'info', message: 'Animal cadastrado e vinculado ao lote com sucesso.' })
-              } else {
-                setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
-              }
-            } else {
-              setFeedback({ type: 'info', message: 'Animal cadastrado. Vincule-o ao lote manualmente na página de Lotes.' })
-            }
-          } catch (loteError) {
-            setFeedback({ type: 'info', message: `Animal cadastrado, mas falha ao vincular ao lote: ${loteError.message}` })
-          }
-        } else {
-          setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
-        }
+        setFeedback({ type: 'info', message: 'Animal cadastrado e vinculado ao lote com sucesso.' })
       } else {
         const result = await atualizarAnimal(currentUser.email, formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {

@@ -22,6 +22,10 @@ body,
   margin: 0;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: #f3f4f6;
 }
@@ -260,4 +264,25 @@ input {
   color: #777;
   font-size: 0.75rem;
   flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .ssm-toolbar {
+    flex-direction: column;
+  }
+
+  .ssm-filter {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .ssm-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ssm-actions {
+    justify-content: flex-end;
+  }
 }

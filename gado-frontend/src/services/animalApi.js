@@ -162,7 +162,7 @@ function isBackendErrorMessage(payload) {
   return normalized.includes('erro') || normalized.includes('não encontrado')
 }
 
-function cadastrarAnimal(email, animal) {
+function cadastrarAnimal(email, animal, loteSectorId) {
   const emailLimpo = sanitizeText(email)
   if (!emailLimpo) {
     throw new Error('Informe o e-mail do usuario.')
@@ -171,7 +171,7 @@ function cadastrarAnimal(email, animal) {
   const emailCodificado = encodeURIComponent(emailLimpo)
   return request(`/animais/usuarios/${emailCodificado}`, {
     method: 'POST',
-    body: JSON.stringify(toPayload(animal, { incluirVacinas: true })),
+    body: JSON.stringify({ ...toPayload(animal, { incluirVacinas: true }), loteSectorId }),
   })
 }
 

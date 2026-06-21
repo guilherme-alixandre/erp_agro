@@ -2,10 +2,13 @@ package br.com.gado.application.services;
 
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELoteSetor;
+import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,9 @@ public class SAnimal {
 
     @Autowired
     private IUsuario usuarioInterface;
+
+    @Autowired
+    private ILoteSetor loteSetorInterface;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -54,6 +60,23 @@ public class SAnimal {
 
     @Transactional
     public AnimalDto cadastraAnimal(String email, AnimalDto animalDto) {
+        if (animalDto.getLoteSectorId() == null) {
+            throw new IllegalArgumentException("O vínculo com um lote/setor é obrigatório ao cadastrar um animal.");
+        }
+
+        ELoteSetor loteSetor = loteSetorInterface.findById(animalDto.getLoteSectorId())
+                .orElseThrow(() -> new EntityNotFoundException("Alocação de lote/setor não encontrada."));
+
+        if (loteSetor.getLote().getStatus() != EnStatus.A) {
+            throw new IllegalArgumentException("Não é possível vincular o animal a um lote inativo.");
+        }
+
+        ESetor setor = loteSetor.getSetor();
+        if (loteSetor.getAnimais().size() >= setor.getCapacidadeMaxima()) {
+            throw new IllegalArgumentException(
+                    "Capacidade máxima do setor '" + setor.getNome() + "' atingida (" + setor.getCapacidadeMaxima() + " animais).");
+        }
+
         EAnimal novoAnimal = modelMapper.map(animalDto, EAnimal.class);
 
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
@@ -61,7 +84,11 @@ public class SAnimal {
 
         novoAnimal.setUsuario(usuario);
         EAnimal animalSalvo = animalInterface.save(novoAnimal);
-        return modelMapper.map(animalSalvo, AnimalDto.class);
+
+        loteSetor.getAnimais().add(animalSalvo);
+        loteSetorInterface.save(loteSetor);
+
+        return toDto(animalSalvo);
     }
 
     @Transactional

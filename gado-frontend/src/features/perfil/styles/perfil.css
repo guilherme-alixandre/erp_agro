@@ -81,3 +81,21 @@
   color: #6b7280 !important;
   cursor: not-allowed !important;
 }
+
+@media (max-width: 600px) {
+  .perfil-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions .btn-primary,
+  .modal-actions .btn-secondary,
+  .modal-actions .btn-danger {
+    width: 100%;
+    text-align: center;
+  }
+}

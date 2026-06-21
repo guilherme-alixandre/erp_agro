@@ -26,4 +26,5 @@ public class AnimalDto extends AbstractDTO {
     private EnStatusAnimal statusAnimal;
     private List<VacinacaoDTO> vacinas;
     private String criadoPorEmail;
+    private Long loteSectorId;
 }

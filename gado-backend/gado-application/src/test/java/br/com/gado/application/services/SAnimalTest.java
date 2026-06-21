@@ -2,10 +2,14 @@ package br.com.gado.application.services;
 
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELote;
+import br.com.gado.domain.entities.ELoteSetor;
+import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +42,9 @@ class SAnimalTest {
     @Mock
     private IUsuario usuarioInterface;
 
+    @Mock
+    private ILoteSetor loteSetorInterface;
+
     // Usamos @Spy para o ModelMapper rodar sua lógica real de conversão e configuração
     @Spy
     private ModelMapper modelMapper = new ModelMapper();
@@ -45,9 +52,11 @@ class SAnimalTest {
     private EAnimal animalEntity;
     private AnimalDto animalDto;
     private EUsuario usuarioEntity;
+    private ELoteSetor loteSetorEntity;
 
     private final String BRINCO_TESTE = "BRINCO-123";
     private final String EMAIL_TESTE = "produtor@gado.com";
+    private final Long LOTE_SECTOR_ID = 10L;
 
     @BeforeEach
     void setUp() {
@@ -61,9 +70,23 @@ class SAnimalTest {
         animalEntity.setStatus(EnStatus.A);
         animalEntity.setUsuario(usuarioEntity);
 
+        ELote loteEntity = new ELote();
+        loteEntity.setId(5L);
+        loteEntity.setStatus(EnStatus.A);
+
+        ESetor setorEntity = new ESetor();
+        setorEntity.setId(3L);
+        setorEntity.setNome("Pasto A");
+        setorEntity.setCapacidadeMaxima(50);
+
+        loteSetorEntity = new ELoteSetor();
+        loteSetorEntity.setId(LOTE_SECTOR_ID);
+        loteSetorEntity.setLote(loteEntity);
+        loteSetorEntity.setSetor(setorEntity);
+        loteSetorEntity.setAnimais(new ArrayList<>());
+
         animalDto = new AnimalDto();
-        // Presumindo que AnimalDto tenha um setCodigoBrinco
-        // animalDto.setCodigoBrinco(BRINCO_TESTE);
+        animalDto.setLoteSectorId(LOTE_SECTOR_ID);
     }
 
     @Nested
@@ -121,27 +144,77 @@ class SAnimalTest {
     @Nested
     class CadastraAnimalTests {
         @Test
-        void deveCadastrarAnimal_QuandoUsuarioExistir() {
+        void deveCadastrarAnimalEVincularAoLote_QuandoDadosValidos() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID))
+                    .thenReturn(Optional.of(loteSetorEntity));
             when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
                     .thenReturn(Optional.of(usuarioEntity));
-
             when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenReturn(loteSetorEntity);
 
             AnimalDto resultado = sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto);
 
             assertNotNull(resultado);
+            verify(loteSetorInterface, times(1)).findById(LOTE_SECTOR_ID);
             verify(usuarioInterface, times(1)).findByEmailAndStatus(EMAIL_TESTE, EnStatus.A);
             verify(animalInterface, times(1)).save(any(EAnimal.class));
+            verify(loteSetorInterface, times(1)).save(loteSetorEntity);
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteSectorIdNulo() {
+            animalDto.setLoteSectorId(null);
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("O vínculo com um lote/setor é obrigatório ao cadastrar um animal.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteSetorNaoEncontrado() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.empty());
+
+            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("Alocação de lote/setor não encontrada.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteInativo() {
+            loteSetorEntity.getLote().setStatus(EnStatus.I);
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("Não é possível vincular o animal a um lote inativo.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoCapacidadeSetorAtingida() {
+            loteSetorEntity.getSetor().setCapacidadeMaxima(0);
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertTrue(exception.getMessage().contains("Capacidade máxima do setor"));
+            verify(animalInterface, never()).save(any());
         }
 
         @Test
         void deveLancarExcecao_AoCadastrarComUsuarioInexistente() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
             when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
                     .thenReturn(Optional.empty());
 
-            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-                sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto);
-            });
+            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
 
             assertEquals("Usuário não encontrado", exception.getMessage());
             verify(animalInterface, never()).save(any(EAnimal.class));

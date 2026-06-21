@@ -379,4 +379,13 @@
   .lote-alocacao__header {
     flex-wrap: wrap;
   }
+
+  .setor-card__transferencia-actions {
+    flex-wrap: wrap;
+  }
+
+  .lote-card__actions button {
+    flex: 1;
+    min-width: 0;
+  }
 }

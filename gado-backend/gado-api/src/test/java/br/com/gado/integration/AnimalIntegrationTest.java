@@ -4,12 +4,19 @@ import br.com.gado.GadoApplication;
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.application.services.SAnimal;
 import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELote;
+import br.com.gado.domain.entities.ELoteSetor;
+import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.domain.enums.EnStatusAnimal;
+import br.com.gado.domain.enums.EnTipoSetor;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
+import br.com.gado.infrastructure.persistence.repositories.ILote;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
+import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -18,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -38,14 +46,24 @@ class AnimalIntegrationTest {
     @Autowired
     private IUsuario usuarioRepository;
 
+    @Autowired
+    private ILote loteRepository;
+
+    @Autowired
+    private ILoteSetor loteSetorRepository;
+
+    @Autowired
+    private ISetor setorRepository;
+
     // ── Happy Path ────────────────────────────────────────────────────────────
 
     @Test
     void deveCadastrarAnimalComSucessoQuandoUsuarioExiste() {
         // Arrange
         EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ELoteSetor loteSetor = criarLoteSetor();
         String brinco = "ANI-" + sufixo();
-        AnimalDto dto = novoAnimalDto(brinco);
+        AnimalDto dto = novoAnimalDto(brinco, loteSetor.getId());
 
         // Act
         AnimalDto resultado = animalService.cadastraAnimal(usuario.getEmail(), dto);
@@ -56,6 +74,22 @@ class AnimalIntegrationTest {
         assertThat(resultado.getSexo()).isEqualTo(EnSexoAnimal.F);
         assertThat(resultado.getStatusAnimal()).isEqualTo(EnStatusAnimal.ATIVO);
         assertThat(animalRepository.findByCodigoBrincoAndStatus(brinco, EnStatus.A)).isPresent();
+    }
+
+    @Test
+    void deveCadastrarAnimalEVincularAoLoteComSucesso() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        ELoteSetor loteSetor = criarLoteSetor();
+        String brinco = "ANI-" + sufixo();
+        AnimalDto dto = novoAnimalDto(brinco, loteSetor.getId());
+
+        // Act
+        animalService.cadastraAnimal(usuario.getEmail(), dto);
+
+        // Assert — animal deve estar na lista de animais do loteSetor
+        ELoteSetor atualizado = loteSetorRepository.findById(loteSetor.getId()).orElseThrow();
+        assertThat(atualizado.getAnimais()).anyMatch(a -> a.getCodigoBrinco().equals(brinco));
     }
 
     @Test
@@ -114,9 +148,22 @@ class AnimalIntegrationTest {
     // ── Sad Path ──────────────────────────────────────────────────────────────
 
     @Test
+    void deveLancarExcecaoAoCadastrarAnimalSemLoteSectorId() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.cadastraAnimal(usuario.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("vínculo com um lote/setor é obrigatório");
+    }
+
+    @Test
     void deveLancarExcecaoAoCadastrarAnimalQuandoUsuarioNaoExiste() {
         // Arrange
-        AnimalDto dto = novoAnimalDto("ANI-" + sufixo());
+        ELoteSetor loteSetor = criarLoteSetor();
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), loteSetor.getId());
         String emailInexistente = "ausente-" + sufixo() + "@it.local";
 
         // Act & Assert
@@ -219,7 +266,7 @@ class AnimalIntegrationTest {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private AnimalDto novoAnimalDto(String brinco) {
+    private AnimalDto novoAnimalDto(String brinco, Long loteSectorId) {
         AnimalDto dto = new AnimalDto();
         dto.setStatus(EnStatus.A);
         dto.setCodigoBrinco(brinco);
@@ -233,7 +280,26 @@ class AnimalIntegrationTest {
         dto.setComprimentoCorporal(2.1);
         dto.setSexo(EnSexoAnimal.F);
         dto.setStatusAnimal(EnStatusAnimal.ATIVO);
+        dto.setLoteSectorId(loteSectorId);
         return dto;
+    }
+
+    private ELoteSetor criarLoteSetor() {
+        ESetor setor = new ESetor();
+        setor.setNome("Setor IT " + sufixo());
+        setor.setCapacidadeMaxima(100);
+        setor.setTipo(EnTipoSetor.PASTO);
+        ESetor setorSalvo = setorRepository.save(setor);
+
+        ELote lote = new ELote();
+        lote.setCodigo("L" + sufixo().substring(0, 5));
+        lote.setDataCriacao(LocalDate.now());
+        ELote loteSalvo = loteRepository.save(lote);
+
+        ELoteSetor loteSetor = new ELoteSetor();
+        loteSetor.setLote(loteSalvo);
+        loteSetor.setSetor(setorSalvo);
+        return loteSetorRepository.save(loteSetor);
     }
 
     private EUsuario criarUsuario(EnPerfilUsuario perfil) {
