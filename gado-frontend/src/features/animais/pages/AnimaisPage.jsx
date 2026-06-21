@@ -491,27 +491,31 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             <option value="ABATIDO">Abatido</option>
           </select>
 
-          <input
-            type="date"
-            className="toolbar-date"
-            value={dateFrom}
-            title="Nascimento de"
-            onChange={(e) => {
-              setDateFrom(e.target.value)
-              setPage(0)
-            }}
-          />
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">Nascimento de</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
 
-          <input
-            type="date"
-            className="toolbar-date"
-            value={dateTo}
-            title="Nascimento até"
-            onChange={(e) => {
-              setDateTo(e.target.value)
-              setPage(0)
-            }}
-          />
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">Nascimento até</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
 
           <button type="button" className="btn-export-csv" onClick={exportCSV}>
             Exportar CSV

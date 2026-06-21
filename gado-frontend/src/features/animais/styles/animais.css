@@ -776,6 +776,20 @@
   width: 144px;
 }
 
+.toolbar-date-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolbar-date-label__text {
+  font-size: 0.7rem;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-left: 2px;
+}
+
 .btn-export-csv {
   border: 1px solid #d0d0d0;
   border-radius: 8px;
@@ -993,6 +1007,10 @@
 
   .btn-new-entity {
     margin-left: 0;
+  }
+
+  .toolbar-date-label {
+    width: 100%;
   }
 
   .toolbar-date {
