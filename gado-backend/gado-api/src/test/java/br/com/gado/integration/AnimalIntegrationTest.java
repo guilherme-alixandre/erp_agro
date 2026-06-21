@@ -2,136 +2,271 @@ package br.com.gado.integration;
 
 import br.com.gado.GadoApplication;
 import br.com.gado.application.dto.AnimalDto;
+import br.com.gado.application.services.SAnimal;
 import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELote;
+import br.com.gado.domain.entities.ELoteSetor;
+import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
 import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnSexoAnimal;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.domain.enums.EnStatusAnimal;
+import br.com.gado.domain.enums.EnTipoSetor;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
+import br.com.gado.infrastructure.persistence.repositories.ILote;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
+import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
-import tools.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = GadoApplication.class)
-@AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 class AnimalIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private SAnimal animalService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private IAnimal animalRepository;
 
     @Autowired
     private IUsuario usuarioRepository;
 
     @Autowired
-    private IAnimal animalRepository;
+    private ILote loteRepository;
+
+    @Autowired
+    private ILoteSetor loteSetorRepository;
+
+    @Autowired
+    private ISetor setorRepository;
+
+    // ── Happy Path ────────────────────────────────────────────────────────────
 
     @Test
-    void postAnimal_quandoUsuarioExiste_persisteAnimalERetornaCreated() throws Exception {
+    void deveCadastrarAnimalComSucessoQuandoUsuarioExiste() {
+        // Arrange
         EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ELoteSetor loteSetor = criarLoteSetor();
         String brinco = "ANI-" + sufixo();
-        AnimalDto dto = novoAnimalDto(brinco);
+        AnimalDto dto = novoAnimalDto(brinco, loteSetor.getId());
 
-        mockMvc.perform(post("/api/animais/usuarios/{email}", usuario.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(dto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigoBrinco").value(brinco))
-                .andExpect(jsonPath("$.nome").value(dto.getNome()))
-                .andExpect(jsonPath("$.sexo").value(EnSexoAnimal.F.name()))
-                .andExpect(jsonPath("$.statusAnimal").value(EnStatusAnimal.ATIVO.name()));
+        // Act
+        AnimalDto resultado = animalService.cadastraAnimal(usuario.getEmail(), dto);
 
-        assertTrue(animalRepository.findByCodigoBrincoAndStatus(brinco, EnStatus.A).isPresent());
+        // Assert
+        assertThat(resultado.getCodigoBrinco()).isEqualTo(brinco);
+        assertThat(resultado.getNome()).isEqualTo(dto.getNome());
+        assertThat(resultado.getSexo()).isEqualTo(EnSexoAnimal.F);
+        assertThat(resultado.getStatusAnimal()).isEqualTo(EnStatusAnimal.ATIVO);
+        assertThat(animalRepository.findByCodigoBrincoAndStatus(brinco, EnStatus.A)).isPresent();
     }
 
     @Test
-    void getPutDeleteAnimal_quandoAnimalAtivo_consultaAtualizaEInativa() throws Exception {
+    void deveCadastrarAnimalEVincularAoLoteComSucesso() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        ELoteSetor loteSetor = criarLoteSetor();
+        String brinco = "ANI-" + sufixo();
+        AnimalDto dto = novoAnimalDto(brinco, loteSetor.getId());
+
+        // Act
+        animalService.cadastraAnimal(usuario.getEmail(), dto);
+
+        // Assert — animal deve estar na lista de animais do loteSetor
+        ELoteSetor atualizado = loteSetorRepository.findById(loteSetor.getId()).orElseThrow();
+        assertThat(atualizado.getAnimais()).anyMatch(a -> a.getCodigoBrinco().equals(brinco));
+    }
+
+    @Test
+    void deveBuscarAnimalPorBrincoComSucessoQuandoExiste() {
+        // Arrange
         EUsuario usuario = criarUsuario(EnPerfilUsuario.CUIDADOR);
         EAnimal animal = criarAnimal(usuario, "ANI-" + sufixo());
 
-        mockMvc.perform(get("/api/animais/{brinco}", animal.getCodigoBrinco()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codigoBrinco").value(animal.getCodigoBrinco()))
-                .andExpect(jsonPath("$.nome").value(animal.getNome()));
+        // Act
+        AnimalDto resultado = animalService.buscarPorBrinco(animal.getCodigoBrinco());
+
+        // Assert
+        assertThat(resultado.getCodigoBrinco()).isEqualTo(animal.getCodigoBrinco());
+        assertThat(resultado.getNome()).isEqualTo(animal.getNome());
+        assertThat(resultado.getCriadoPorEmail()).isEqualTo(usuario.getEmail());
+    }
+
+    @Test
+    void deveAlterarAnimalComSucessoQuandoDadosValidos() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animal = criarAnimal(usuario, "ANI-" + sufixo());
 
         AnimalDto atualizacao = new AnimalDto();
-        atualizacao.setNome("Animal IT Atualizado");
+        atualizacao.setNome("Animal Atualizado IT");
         atualizacao.setPesoAtual(512.5);
         atualizacao.setCor("Preto");
 
-        mockMvc.perform(put("/api/animais/{brinco}", animal.getCodigoBrinco())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(atualizacao)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Animal IT Atualizado"))
-                .andExpect(jsonPath("$.pesoAtual").value(512.5))
-                .andExpect(jsonPath("$.cor").value("Preto"));
+        // Act
+        AnimalDto resultado = animalService.alteraAnimal(null, animal.getCodigoBrinco(), atualizacao);
 
-        mockMvc.perform(delete("/api/animais/{brinco}", animal.getCodigoBrinco()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value("animal deletado com sucesso"));
-
-        assertFalse(animalRepository.findByCodigoBrincoAndStatus(animal.getCodigoBrinco(), EnStatus.A).isPresent());
-        assertEquals(EnStatus.I,
-                animalRepository.findByCodigoBrincoAndStatus(animal.getCodigoBrinco(), EnStatus.I)
-                        .orElseThrow()
-                        .getStatus());
+        // Assert
+        assertThat(resultado.getNome()).isEqualTo("Animal Atualizado IT");
+        assertThat(resultado.getPesoAtual()).isEqualTo(512.5);
+        assertThat(resultado.getCor()).isEqualTo("Preto");
     }
 
     @Test
-    void postAnimal_quandoUsuarioNaoExiste_retornaNotFound() throws Exception {
-        AnimalDto dto = novoAnimalDto("ANI-" + sufixo());
+    void deveDeletarAnimalLogicamenteComSucessoQuandoExiste() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EAnimal animal = criarAnimal(usuario, "ANI-" + sufixo());
+        String brinco = animal.getCodigoBrinco();
 
-        mockMvc.perform(post("/api/animais/usuarios/{email}", "ausente-" + sufixo() + "@it.local")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(dto)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").exists());
+        // Act
+        String resultado = animalService.deletaAnimal(null, brinco);
+
+        // Assert
+        assertThat(resultado).isEqualTo("animal deletado com sucesso");
+        assertThat(animalRepository.findByCodigoBrincoAndStatus(brinco, EnStatus.A)).isEmpty();
+        assertThat(animalRepository.findByCodigoBrincoAndStatus(brinco, EnStatus.I))
+                .isPresent()
+                .hasValueSatisfying(a -> assertThat(a.getStatus()).isEqualTo(EnStatus.I));
+    }
+
+    // ── Sad Path ──────────────────────────────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoCadastrarAnimalSemLoteSectorId() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.cadastraAnimal(usuario.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("vínculo com um lote/setor é obrigatório");
     }
 
     @Test
-    void getPutDeleteAnimal_quandoBrincoNaoExiste_retornaNotFound() throws Exception {
-        String brincoAusente = "ANI-" + sufixo();
+    void deveLancarExcecaoAoCadastrarAnimalQuandoUsuarioNaoExiste() {
+        // Arrange
+        ELoteSetor loteSetor = criarLoteSetor();
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), loteSetor.getId());
+        String emailInexistente = "ausente-" + sufixo() + "@it.local";
 
-        mockMvc.perform(get("/api/animais/{brinco}", brincoAusente))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(put("/api/animais/{brinco}", brincoAusente)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(novoAnimalDto("ANI-" + sufixo()))))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(delete("/api/animais/{brinco}", brincoAusente))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").exists());
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.cadastraAnimal(emailInexistente, dto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Usuário não encontrado");
     }
 
-    private AnimalDto novoAnimalDto(String brinco) {
+    @Test
+    void deveLancarExcecaoAoBuscarAnimalComBrincoInexistente() {
+        // Arrange
+        String brincoInexistente = "ANI-" + sufixo();
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.buscarPorBrinco(brincoInexistente))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("animal não encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAlterarAnimalComBrincoInexistente() {
+        // Arrange
+        String brincoInexistente = "ANI-" + sufixo();
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Nome Qualquer IT");
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.alteraAnimal(null, brincoInexistente, atualizacao))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("animal não encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoDeletarAnimalComBrincoInexistente() {
+        // Arrange
+        String brincoInexistente = "ANI-" + sufixo();
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.deletaAnimal(null, brincoInexistente))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("animal não encontrado");
+    }
+
+    @Test
+    void deveListarTodosOsAnimaisAtivos() {
+        // Arrange
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        criarAnimal(usuario, "ANI-LIST-" + sufixo());
+        criarAnimal(usuario, "ANI-LIST-" + sufixo());
+
+        // Act
+        var resultado = animalService.buscarTodosAnimais();
+
+        // Assert
+        assertThat(resultado).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(resultado).allMatch(a -> a.getCodigoBrinco() != null);
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoCuidadorTentaDeletarAnimalDeOutroUsuario() {
+        // Arrange
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animalDoDono = criarAnimal(dono, "ANI-" + sufixo());
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.deletaAnimal(cuidador.getEmail(), animalDoDono.getCodigoBrinco()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("você cadastrou");
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoCuidadorChefeTentaDeletarAnimalDeOutroUsuario() {
+        // Arrange
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidadorChefe = criarUsuario(EnPerfilUsuario.CUIDADOR_CHEFE);
+        EAnimal animalDoDono = criarAnimal(dono, "ANI-" + sufixo());
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.deletaAnimal(cuidadorChefe.getEmail(), animalDoDono.getCodigoBrinco()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("você cadastrou");
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoCuidadorTentaAlterarAnimalDeOutroUsuario() {
+        // Arrange
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animalDoDono = criarAnimal(dono, "ANI-" + sufixo());
+
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Tentativa de Alteracao IT");
+
+        // Act & Assert
+        assertThatThrownBy(() -> animalService.alteraAnimal(cuidador.getEmail(), animalDoDono.getCodigoBrinco(), atualizacao))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("você cadastrou");
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private AnimalDto novoAnimalDto(String brinco, Long loteSectorId) {
         AnimalDto dto = new AnimalDto();
         dto.setStatus(EnStatus.A);
         dto.setCodigoBrinco(brinco);
@@ -145,7 +280,26 @@ class AnimalIntegrationTest {
         dto.setComprimentoCorporal(2.1);
         dto.setSexo(EnSexoAnimal.F);
         dto.setStatusAnimal(EnStatusAnimal.ATIVO);
+        dto.setLoteSectorId(loteSectorId);
         return dto;
+    }
+
+    private ELoteSetor criarLoteSetor() {
+        ESetor setor = new ESetor();
+        setor.setNome("Setor IT " + sufixo());
+        setor.setCapacidadeMaxima(100);
+        setor.setTipo(EnTipoSetor.PASTO);
+        ESetor setorSalvo = setorRepository.save(setor);
+
+        ELote lote = new ELote();
+        lote.setCodigo("L" + sufixo().substring(0, 5));
+        lote.setDataCriacao(LocalDate.now());
+        ELote loteSalvo = loteRepository.save(lote);
+
+        ELoteSetor loteSetor = new ELoteSetor();
+        loteSetor.setLote(loteSalvo);
+        loteSetor.setSetor(setorSalvo);
+        return loteSetorRepository.save(loteSetor);
     }
 
     private EUsuario criarUsuario(EnPerfilUsuario perfil) {
@@ -173,10 +327,6 @@ class AnimalIntegrationTest {
         animal.setStatusAnimal(EnStatusAnimal.ATIVO);
         animal.setUsuario(usuario);
         return animalRepository.save(animal);
-    }
-
-    private String json(Object body) throws Exception {
-        return objectMapper.writeValueAsString(body);
     }
 
     private static String sufixo() {

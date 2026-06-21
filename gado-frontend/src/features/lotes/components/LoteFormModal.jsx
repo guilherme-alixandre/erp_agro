@@ -1,4 +1,26 @@
-import MultiSelectDropdown from './MultiSelectDropdown'
+import { useState } from 'react'
+import SearchSelectModal from '../../../components/shared/SearchSelectModal'
+
+const ANIMAL_COLUMNS = [
+  { key: 'codigoBrinco', label: 'Código' },
+  { key: 'nome', label: 'Nome' },
+]
+
+const ANIMAL_FILTER = {
+  label: 'Status',
+  key: 'statusAnimal',
+  options: [
+    { value: 'ATIVO', label: 'Ativo' },
+    { value: 'OBSERVACAO', label: 'Observação' },
+    { value: 'VENDIDO', label: 'Vendido' },
+    { value: 'OBITO', label: 'Óbito' },
+    { value: 'ABATIDO', label: 'Abatido' },
+  ],
+}
+
+const SETOR_COLUMNS = [{ key: 'nome', label: 'Nome' }]
+
+const BLOCKED_STATUSES = new Set(['VENDIDO', 'OBITO', 'ABATIDO'])
 
 function todayIso() {
   const now = new Date()
@@ -19,15 +41,98 @@ function RequiredLabel({ children }) {
   )
 }
 
-function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRemove }) {
-  const animaisOptions = animaisDisponiveis.map((a) => ({
-    id: a.id,
-    label: a.nome ? `${a.codigoBrinco} — ${a.nome}` : a.codigoBrinco,
-  }))
+function buildAnimalTriggerText(selectedIds, animaisDisponiveis) {
+  if (selectedIds.length === 0) return null
+  if (selectedIds.length === 1) {
+    const found = animaisDisponiveis.find((a) => a.id === selectedIds[0])
+    if (found) {
+      return found.nome ? `${found.codigoBrinco} — ${found.nome}` : found.codigoBrinco
+    }
+    return '1 selecionado'
+  }
+  return `${selectedIds.length} animais selecionados`
+}
 
-  const ocupacao = alocacao.animaisIds.length
+function buildSetorTriggerText(selectedIds, setoresDisponiveis) {
+  if (selectedIds.length === 0) return null
+  if (selectedIds.length === 1) {
+    const found = setoresDisponiveis.find((s) => s.id === selectedIds[0])
+    return found ? found.nome : '1 setor selecionado'
+  }
+  return `${selectedIds.length} setores selecionados`
+}
+
+function SetorCard({
+  mode,
+  alocacao,
+  setor,
+  animaisDisponiveis,
+  lotesDisponiveis,
+  setoresDisponiveis,
+  loteAtualId,
+  canTransfer,
+  onChangeAnimais,
+  onTransferirAnimais,
+  onRemove,
+}) {
+  const [animalModalOpen, setAnimalModalOpen] = useState(false)
+  const [selectedForTransfer, setSelectedForTransfer] = useState([])
+  const [loteDestinoId, setLoteDestinoId] = useState('')
+  const [setorDestinoId, setSetorDestinoId] = useState('')
+  const [isTransferindo, setIsTransferindo] = useState(false)
+  const [transferenciaError, setTransferenciaError] = useState('')
+
+  // Setor existente carregado do lote: usa fluxo de transferência
+  // Setor novo adicionado durante edição: usa fluxo de criação (animaisDisponiveis)
+  const isEditExisting = mode === 'edit' && alocacao.animaisAtuais !== undefined
+  const animaisAtuais = alocacao.animaisAtuais ?? []
+
+  const ocupacao = isEditExisting ? animaisAtuais.length : alocacao.animaisIds.length
   const capacidade = setor.capacidadeMaxima
-  const excedido = capacidade > 0 && ocupacao > capacidade
+  const excedido = !isEditExisting && capacidade > 0 && ocupacao > capacidade
+
+  const disabledAnimalIds = animaisDisponiveis
+    .filter((a) => BLOCKED_STATUSES.has(a.statusAnimal))
+    .map((a) => a.id)
+
+  const triggerText = isEditExisting
+    ? animaisAtuais.length > 0
+      ? `${animaisAtuais.length} ${animaisAtuais.length === 1 ? 'animal' : 'animais'} neste setor`
+      : null
+    : buildAnimalTriggerText(alocacao.animaisIds, animaisDisponiveis)
+
+  const mesmoLoteSetor =
+    loteDestinoId !== '' &&
+    setorDestinoId !== '' &&
+    Number(loteDestinoId) === loteAtualId &&
+    Number(setorDestinoId) === setor.id
+
+  async function handleConfirmarTransferencia() {
+    if (!loteDestinoId || !setorDestinoId || mesmoLoteSetor) return
+    setIsTransferindo(true)
+    setTransferenciaError('')
+    try {
+      await onTransferirAnimais(
+        selectedForTransfer,
+        Number(loteDestinoId),
+        Number(setorDestinoId),
+      )
+      setSelectedForTransfer([])
+      setLoteDestinoId('')
+      setSetorDestinoId('')
+    } catch (error) {
+      setTransferenciaError(error.message || 'Falha ao transferir animal(is).')
+    } finally {
+      setIsTransferindo(false)
+    }
+  }
+
+  function handleCancelarTransferencia() {
+    setSelectedForTransfer([])
+    setLoteDestinoId('')
+    setSetorDestinoId('')
+    setTransferenciaError('')
+  }
 
   return (
     <div className="setor-card">
@@ -48,20 +153,156 @@ function SetorCard({ alocacao, setor, animaisDisponiveis, onChangeAnimais, onRem
         </button>
       </div>
 
-      <label className="setor-card__label">
-        <span>Animais neste setor</span>
-        <MultiSelectDropdown
-          options={animaisOptions}
-          selectedIds={alocacao.animaisIds}
-          onChange={onChangeAnimais}
-          placeholder="Selecionar animais..."
-        />
-      </label>
+      <div className="setor-card__label">
+        <span>
+          {isEditExisting
+            ? canTransfer
+              ? 'Selecionar animais para transferir'
+              : 'Animais neste setor'
+            : 'Animais neste setor'}
+        </span>
+
+        {isEditExisting && !canTransfer ? (
+          <span className="ssm-trigger ssm-trigger--readonly">
+            {triggerText ?? 'Nenhum animal'}
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="ssm-trigger"
+            onClick={() => setAnimalModalOpen(true)}
+          >
+            <span className={triggerText ? '' : 'ssm-trigger__placeholder'}>
+              {isEditExisting
+                ? triggerText ?? 'Nenhum animal neste setor'
+                : triggerText ?? 'Selecionar animais...'}
+            </span>
+            <span className="ssm-trigger__arrow" aria-hidden="true">
+              ▼
+            </span>
+          </button>
+        )}
+      </div>
 
       {excedido ? (
         <p className="setor-card__aviso">
           Atenção: capacidade máxima ({capacidade}) excedida.
         </p>
+      ) : null}
+
+      {isEditExisting && canTransfer && selectedForTransfer.length > 0 ? (
+        <div className="setor-card__transferencia">
+          <p className="setor-card__transferencia-info">
+            {selectedForTransfer.length}{' '}
+            {selectedForTransfer.length === 1
+              ? 'animal selecionado'
+              : 'animais selecionados'}{' '}
+            para transferir
+          </p>
+
+          <label>
+            <span>
+              Lote de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
+            </span>
+            <select
+              value={loteDestinoId}
+              onChange={(e) => {
+                setLoteDestinoId(e.target.value)
+                setSetorDestinoId('')
+              }}
+            >
+              <option value="">Selecione um lote...</option>
+              {(lotesDisponiveis ?? []).map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.codigo}
+                  {l.descricao ? ` — ${l.descricao}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>
+              Setor de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
+            </span>
+            <select
+              value={setorDestinoId}
+              onChange={(e) => setSetorDestinoId(e.target.value)}
+            >
+              <option value="">Selecione um setor...</option>
+              {setoresDisponiveis.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {mesmoLoteSetor ? (
+            <p className="feedback feedback--error">
+              O animal já está neste lote e setor. Escolha um destino diferente.
+            </p>
+          ) : null}
+
+          {transferenciaError && !mesmoLoteSetor ? (
+            <p className="feedback feedback--error">{transferenciaError}</p>
+          ) : null}
+
+          <div className="setor-card__transferencia-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCancelarTransferencia}
+              disabled={isTransferindo}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleConfirmarTransferencia}
+              disabled={
+                isTransferindo ||
+                !loteDestinoId ||
+                !setorDestinoId ||
+                mesmoLoteSetor
+              }
+            >
+              {isTransferindo ? 'Transferindo...' : 'Confirmar transferência'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {animalModalOpen ? (
+        <SearchSelectModal
+          title={
+            isEditExisting
+              ? 'Selecionar animais para transferir'
+              : 'Selecionar animais'
+          }
+          items={isEditExisting ? animaisAtuais : animaisDisponiveis}
+          selectedIds={isEditExisting ? selectedForTransfer : alocacao.animaisIds}
+          onConfirm={(ids) => {
+            if (isEditExisting) {
+              setSelectedForTransfer(ids)
+            } else {
+              onChangeAnimais(ids)
+            }
+            setAnimalModalOpen(false)
+          }}
+          onClose={() => setAnimalModalOpen(false)}
+          multiSelect
+          columns={ANIMAL_COLUMNS}
+          filterField={isEditExisting ? undefined : ANIMAL_FILTER}
+          disabledIds={isEditExisting ? [] : disabledAnimalIds}
+        />
       ) : null}
     </div>
   )
@@ -74,12 +315,18 @@ function LoteFormModal({
   feedback,
   setoresDisponiveis,
   animaisDisponiveis,
+  lotesDisponiveis,
+  loteAtualId,
+  canTransfer,
   currentUser,
   onClose,
   onChange,
   onChangeAlocacoes,
+  onTransferirAnimais,
   onSubmit,
 }) {
+  const [setorModalOpen, setSetorModalOpen] = useState(false)
+
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar lote' : 'Editar lote'
   const submitText = isSaving
@@ -91,17 +338,13 @@ function LoteFormModal({
 
   const selectedSetorIds = formData.alocacoes.map((a) => a.setorId)
 
-  const setorOptions = setoresDisponiveis.map((s) => ({
-    id: s.id,
-    label: s.nome,
-  }))
-
   function handleSetorSelectionChange(newSetorIds) {
     const newAlocacoes = newSetorIds.map((setorId) => {
       const existing = formData.alocacoes.find((a) => a.setorId === setorId)
       return existing ?? { setorId, animaisIds: [] }
     })
     onChangeAlocacoes(newAlocacoes)
+    setSetorModalOpen(false)
   }
 
   function handleAnimaisChange(setorId, newAnimaisIds) {
@@ -114,6 +357,8 @@ function LoteFormModal({
   function handleRemoveSetor(setorId) {
     onChangeAlocacoes(formData.alocacoes.filter((a) => a.setorId !== setorId))
   }
+
+  const setorTriggerText = buildSetorTriggerText(selectedSetorIds, setoresDisponiveis)
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -191,15 +436,21 @@ function LoteFormModal({
               escolha os animais alocados.
             </p>
 
-            <label className="setores-fieldset__select">
+            <div className="setores-fieldset__select">
               <span>Selecionar setores</span>
-              <MultiSelectDropdown
-                options={setorOptions}
-                selectedIds={selectedSetorIds}
-                onChange={handleSetorSelectionChange}
-                placeholder="Escolha um ou mais setores..."
-              />
-            </label>
+              <button
+                type="button"
+                className="ssm-trigger"
+                onClick={() => setSetorModalOpen(true)}
+              >
+                <span className={setorTriggerText ? '' : 'ssm-trigger__placeholder'}>
+                  {setorTriggerText ?? 'Escolha um ou mais setores...'}
+                </span>
+                <span className="ssm-trigger__arrow" aria-hidden="true">
+                  ▼
+                </span>
+              </button>
+            </div>
 
             {formData.alocacoes.length > 0 ? (
               <div className="setores-cards">
@@ -209,10 +460,16 @@ function LoteFormModal({
                   return (
                     <SetorCard
                       key={aloc.setorId}
+                      mode={mode}
                       alocacao={aloc}
                       setor={setor}
                       animaisDisponiveis={animaisDisponiveis}
+                      lotesDisponiveis={lotesDisponiveis}
+                      setoresDisponiveis={setoresDisponiveis}
+                      loteAtualId={loteAtualId}
+                      canTransfer={canTransfer}
                       onChangeAnimais={(ids) => handleAnimaisChange(aloc.setorId, ids)}
+                      onTransferirAnimais={onTransferirAnimais}
                       onRemove={() => handleRemoveSetor(aloc.setorId)}
                     />
                   )
@@ -235,6 +492,18 @@ function LoteFormModal({
           </div>
         </form>
       </div>
+
+      {setorModalOpen ? (
+        <SearchSelectModal
+          title="Selecionar setores"
+          items={setoresDisponiveis}
+          selectedIds={selectedSetorIds}
+          onConfirm={handleSetorSelectionChange}
+          onClose={() => setSetorModalOpen(false)}
+          multiSelect
+          columns={SETOR_COLUMNS}
+        />
+      ) : null}
     </div>
   )
 }

@@ -122,6 +122,7 @@ export async function listarAnimaisParaLote() {
     id: raw?.id ?? null,
     codigoBrinco: raw?.codigoBrinco ?? '',
     nome: raw?.nome ?? '',
+    statusAnimal: raw?.statusAnimal ?? 'ATIVO',
   }))
 }
 
@@ -160,6 +161,20 @@ export function deletarLote(id, email) {
   return request(`/lotes/${id}`, {
     method: 'DELETE',
     headers: { 'X-Usuario-Email': emailLimpo },
+  })
+}
+
+export function transferirAnimal(email, animalId, loteDestinoId, setorDestinoId) {
+  const emailLimpo = sanitize(email)
+  if (!emailLimpo) throw new Error('Usuário não identificado.')
+
+  return request('/lotes/transferir-animal', {
+    method: 'POST',
+    headers: {
+      'X-Usuario-Email': emailLimpo,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ animalId, loteDestinoId, setorDestinoId }),
   })
 }
 

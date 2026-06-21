@@ -261,30 +261,54 @@
   flex-wrap: wrap;
 }
 
-/* ── Filtro de setor ──────────────────────────────────────────────── */
+/* ── Filtro de setor (dentro do data-toolbar) ─────────────────────── */
 
-.metas-filter {
+.metas-setor-filter {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
+  gap: 0.65rem;
+  flex: 1;
 }
 
-.metas-filter label {
+.metas-setor-filter label {
   font-size: 0.85rem;
   color: #374151;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.metas-filter select {
+.metas-setor-filter select {
+  flex: 1;
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.875rem;
   color: #111827;
   background: #fff;
-  min-width: 200px;
+  min-width: 180px;
+  max-width: 340px;
+}
+
+/* ── Estado vazio ─────────────────────────────────────────────────── */
+
+.metas-estado-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.metas-estado-vazio p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.metas-estado-vazio span {
+  font-size: 0.82rem;
 }
 
 /* ── Modal overlay (usado tanto no form de meta quanto na medição) ── */
@@ -364,6 +388,38 @@
   font-size: 0.75rem;
   color: #ef4444;
   margin-top: 0.15rem;
+}
+
+@media (max-width: 768px) {
+  .modal-box {
+    padding: 1.25rem 1rem;
+  }
+
+  .metas-setor-filter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .metas-setor-filter select {
+    min-width: unset;
+    max-width: unset;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-box {
+    padding: 1rem;
+  }
+
+  .meta-card {
+    padding: 1rem;
+  }
+
+  .meta-card__header {
+    gap: 0.5rem;
+  }
 }
 
 /* ── Botões padrão do módulo ──────────────────────────────────────── */

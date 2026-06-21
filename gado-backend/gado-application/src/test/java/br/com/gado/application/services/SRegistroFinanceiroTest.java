@@ -4,6 +4,7 @@ import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.entities.ERegistroFinanceiro;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import br.com.gado.infrastructure.persistence.repositories.IRegistroFinanceiro;
@@ -47,18 +48,14 @@ class SRegistroFinanceiroTest {
     private Configuration configuration;
 
     private RegistroFinanceiroDTO registroFinanceiroDTO;
-
     private ERegistroFinanceiro registroFinanceiroEntity;
-
     private EUsuario usuarioEntity;
-
     private ECategoria categoriaEntity;
 
     private final Long ID = 1L;
 
     @BeforeEach
     void setUp() {
-
         usuarioEntity = new EUsuario();
         usuarioEntity.setId(ID);
         usuarioEntity.setEmail("teste@email.com");
@@ -77,84 +74,58 @@ class SRegistroFinanceiroTest {
         registroFinanceiroDTO.setCategoriaId(categoriaEntity);
     }
 
+    /** Stub reutilizado em todos os testes: usuário válido, sem perfil bloqueado. */
+    private void stubUsuarioValido() {
+        when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                .thenReturn(Optional.of(usuarioEntity));
+    }
+
     @Nested
     class CriarRegistroFinanceiroTests {
 
         @Test
         void criarRegistroFinanceiro_DeveSalvarComSucesso() {
-
-            when(usuarioInterface.findByEmailAndStatus(
-                    usuarioEntity.getEmail(),
-                    usuarioEntity.getStatus()
-            )).thenReturn(Optional.of(usuarioEntity));
-
-            when(categoriaInterface.findById(ID))
-                    .thenReturn(Optional.of(categoriaEntity));
-
-            when(modelMapper.map(registroFinanceiroDTO, ERegistroFinanceiro.class))
-                    .thenReturn(registroFinanceiroEntity);
-
-            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
-                    .thenReturn(registroFinanceiroEntity);
-
-            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class))
-                    .thenReturn(registroFinanceiroDTO);
+            stubUsuarioValido();
+            when(categoriaInterface.findById(ID)).thenReturn(Optional.of(categoriaEntity));
+            when(modelMapper.map(registroFinanceiroDTO, ERegistroFinanceiro.class)).thenReturn(registroFinanceiroEntity);
+            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class))).thenReturn(registroFinanceiroEntity);
+            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class)).thenReturn(registroFinanceiroDTO);
 
             RegistroFinanceiroDTO response =
-                    sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO);
+                    sRegistroFinanceiro.criarRegistroFinanceiro(usuarioEntity.getEmail(), registroFinanceiroDTO);
 
             assertNotNull(response);
-
-            verify(registroFinanceiroInterface, times(1))
-                    .save(any(ERegistroFinanceiro.class));
+            verify(registroFinanceiroInterface, times(1)).save(any(ERegistroFinanceiro.class));
         }
 
         @Test
         void criarRegistroFinanceiro_DeveLancarExcecao_QuandoUsuarioNaoExiste() {
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.empty());
 
-            when(usuarioInterface.findByEmailAndStatus(
-                    usuarioEntity.getEmail(),
-                    usuarioEntity.getStatus()
-            )).thenReturn(Optional.empty());
-
-            assertThrows(EntityNotFoundException.class,
-                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO));
+            assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(usuarioEntity.getEmail(), registroFinanceiroDTO));
         }
 
         @Test
         void criarRegistroFinanceiro_DeveLancarExcecao_QuandoCategoriaNaoExiste() {
-
-            when(usuarioInterface.findByEmailAndStatus(
-                    usuarioEntity.getEmail(),
-                    usuarioEntity.getStatus()
-            )).thenReturn(Optional.of(usuarioEntity));
-
-            when(categoriaInterface.findById(ID))
-                    .thenReturn(Optional.empty());
+            stubUsuarioValido();
+            when(categoriaInterface.findById(ID)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
-                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO));
+                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(usuarioEntity.getEmail(), registroFinanceiroDTO));
         }
 
         @Test
         void criarRegistroFinanceiro_DeveLancarExcecao_QuandoSaveFalhar() {
-
-            when(usuarioInterface.findByEmailAndStatus(
-                    usuarioEntity.getEmail(),
-                    usuarioEntity.getStatus()
-            )).thenReturn(Optional.of(usuarioEntity));
-
-            when(categoriaInterface.findById(ID))
-                    .thenReturn(Optional.of(categoriaEntity));
-
-            when(modelMapper.map(registroFinanceiroDTO, ERegistroFinanceiro.class))
-                    .thenReturn(registroFinanceiroEntity);
-
+            stubUsuarioValido();
+            when(categoriaInterface.findById(ID)).thenReturn(Optional.of(categoriaEntity));
+            when(modelMapper.map(registroFinanceiroDTO, ERegistroFinanceiro.class)).thenReturn(registroFinanceiroEntity);
             when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
                     .thenThrow(new RuntimeException("Erro ao salvar"));
 
             assertThrows(RuntimeException.class,
-                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(registroFinanceiroDTO));
+                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(usuarioEntity.getEmail(), registroFinanceiroDTO));
         }
     }
 
@@ -163,27 +134,23 @@ class SRegistroFinanceiroTest {
 
         @Test
         void buscarRegistroFinanceiroPorId_DeveRetornarRegistro() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.of(registroFinanceiroEntity));
-
-            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class))
-                    .thenReturn(registroFinanceiroDTO);
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.of(registroFinanceiroEntity));
+            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class)).thenReturn(registroFinanceiroDTO);
 
             RegistroFinanceiroDTO response =
-                    sRegistroFinanceiro.buscarRegistroFinanceiroPorId(ID);
+                    sRegistroFinanceiro.buscarRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID);
 
             assertNotNull(response);
         }
 
         @Test
         void buscarRegistroFinanceiroPorId_DeveLancarExcecao() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.empty());
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
-                    () -> sRegistroFinanceiro.buscarRegistroFinanceiroPorId(ID));
+                    () -> sRegistroFinanceiro.buscarRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID));
         }
     }
 
@@ -192,64 +159,42 @@ class SRegistroFinanceiroTest {
 
         @Test
         void atualizarRegistroFinanceiroPorId_DeveAtualizarComSucesso() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.of(registroFinanceiroEntity));
-
-            when(modelMapper.getConfiguration())
-                    .thenReturn(configuration);
-
-            when(configuration.setSkipNullEnabled(true))
-                    .thenReturn(configuration);
-
-            doNothing().when(modelMapper)
-                    .map(any(RegistroFinanceiroDTO.class), any(ERegistroFinanceiro.class));
-
-            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
-                    .thenReturn(registroFinanceiroEntity);
-
-            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class))
-                    .thenReturn(registroFinanceiroDTO);
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.of(registroFinanceiroEntity));
+            when(modelMapper.getConfiguration()).thenReturn(configuration);
+            when(configuration.setSkipNullEnabled(true)).thenReturn(configuration);
+            doNothing().when(modelMapper).map(any(RegistroFinanceiroDTO.class), any(ERegistroFinanceiro.class));
+            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class))).thenReturn(registroFinanceiroEntity);
+            when(modelMapper.map(registroFinanceiroEntity, RegistroFinanceiroDTO.class)).thenReturn(registroFinanceiroDTO);
 
             RegistroFinanceiroDTO response =
-                    sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(ID, registroFinanceiroDTO);
+                    sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID, registroFinanceiroDTO);
 
             assertNotNull(response);
-
-            verify(registroFinanceiroInterface, times(1))
-                    .save(any(ERegistroFinanceiro.class));
+            verify(registroFinanceiroInterface, times(1)).save(any(ERegistroFinanceiro.class));
         }
 
         @Test
         void atualizarRegistroFinanceiroPorId_DeveLancarExcecao() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.empty());
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
-                    () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(ID, registroFinanceiroDTO));
+                    () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID, registroFinanceiroDTO));
         }
 
         @Test
         void atualizarRegistroFinanceiroPorId_DeveLancarExcecao_QuandoSaveFalhar() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.of(registroFinanceiroEntity));
-
-            when(modelMapper.getConfiguration())
-                    .thenReturn(configuration);
-
-            when(configuration.setSkipNullEnabled(true))
-                    .thenReturn(configuration);
-
-            doNothing().when(modelMapper)
-                    .map(any(RegistroFinanceiroDTO.class), any(ERegistroFinanceiro.class));
-
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.of(registroFinanceiroEntity));
+            when(modelMapper.getConfiguration()).thenReturn(configuration);
+            when(configuration.setSkipNullEnabled(true)).thenReturn(configuration);
+            doNothing().when(modelMapper).map(any(RegistroFinanceiroDTO.class), any(ERegistroFinanceiro.class));
             when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
                     .thenThrow(new RuntimeException("Erro ao atualizar"));
 
             assertThrows(RuntimeException.class,
-                    () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(ID, registroFinanceiroDTO));
+                    () -> sRegistroFinanceiro.atualizarRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID, registroFinanceiroDTO));
         }
     }
 
@@ -258,48 +203,134 @@ class SRegistroFinanceiroTest {
 
         @Test
         void excluirRegistroFinanceiroPorId_DeveExcluirComSucesso() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.of(registroFinanceiroEntity));
-
-            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
-                    .thenReturn(registroFinanceiroEntity);
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.of(registroFinanceiroEntity));
+            when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class))).thenReturn(registroFinanceiroEntity);
 
             String response =
-                    sRegistroFinanceiro.excluirRegistroFinanceiroPorId(ID);
+                    sRegistroFinanceiro.excluirRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID);
 
-            assertEquals(
-                    "registro financeiro excluído com sucesso",
-                    response
-            );
+            assertEquals("registro financeiro excluído com sucesso", response);
         }
 
         @Test
         void excluirRegistroFinanceiroPorId_DeveRetornarErro() {
-
-            when(registroFinanceiroInterface.findById(ID))
-                    .thenReturn(Optional.of(registroFinanceiroEntity));
-
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.of(registroFinanceiroEntity));
             when(registroFinanceiroInterface.save(any(ERegistroFinanceiro.class)))
                     .thenThrow(new RuntimeException());
 
             String response =
-                    sRegistroFinanceiro.excluirRegistroFinanceiroPorId(ID);
+                    sRegistroFinanceiro.excluirRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID);
 
-            assertEquals(
-                    "erro ao excluir registro financeiro",
-                    response
-            );
+            assertEquals("erro ao excluir registro financeiro", response);
         }
 
         @Test
         void excluirRegistroFinanceiroPorId_DeveLancarExcecao() {
+            stubUsuarioValido();
+            when(registroFinanceiroInterface.findById(ID)).thenReturn(Optional.empty());
 
-            when(registroFinanceiroInterface.findById(ID))
+            assertThrows(EntityNotFoundException.class,
+                    () -> sRegistroFinanceiro.excluirRegistroFinanceiroPorId(usuarioEntity.getEmail(), ID));
+        }
+    }
+
+    @Nested
+    class ValidaPermissaoTests {
+
+        @Test
+        void validaPermissao_DeveLancarExcecao_QuandoEmailForNulo() {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.validaPermissao(null));
+            assertEquals("Informe o e-mail do usuário responsável pela operação.", ex.getMessage());
+        }
+
+        @Test
+        void validaPermissao_DeveLancarExcecao_QuandoEmailForBlank() {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.validaPermissao("   "));
+            assertEquals("Informe o e-mail do usuário responsável pela operação.", ex.getMessage());
+        }
+
+        @Test
+        void validaPermissao_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.empty());
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+            assertEquals("Usuário não encontrado.", ex.getMessage());
+        }
+
+        @Test
+        void validaPermissao_DeveLancarExcecao_QuandoPerfilForCuidador() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+            assertEquals("Cuidadores não têm acesso ao módulo financeiro.", ex.getMessage());
+        }
+
+        @Test
+        void validaPermissao_DeveLancarExcecao_QuandoPerfilForCuidadorChefe() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+            assertEquals("Cuidadores não têm acesso ao módulo financeiro.", ex.getMessage());
+        }
+
+        @Test
+        void validaPermissao_DevePassar_QuandoPerfilForAdministrador() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            assertDoesNotThrow(() -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+        }
+
+        @Test
+        void validaPermissao_DevePassar_QuandoPerfilForGerente() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.GERENTE);
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            assertDoesNotThrow(() -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+        }
+
+        @Test
+        void validaPermissao_DevePassar_QuandoPerfilForFinanceiro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.FINANCEIRO);
+            when(usuarioInterface.findByEmailAndStatus(usuarioEntity.getEmail(), EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            assertDoesNotThrow(() -> sRegistroFinanceiro.validaPermissao(usuarioEntity.getEmail()));
+        }
+    }
+
+    @Nested
+    class CriarRegistroFinanceiroAdicionaisTests {
+
+        @Test
+        void criarRegistroFinanceiro_DeveLancarExcecao_QuandoUsuarioInternoNaoExiste() {
+            // validaPermissao passes, but the inner findByEmailAndStatus for registroFinanceiroDto.getUsuarioId fails
+            stubUsuarioValido();
+            // the DTO's usuarioId references a different email that doesn't exist
+            EUsuario dtoUsuario = new EUsuario();
+            dtoUsuario.setEmail("inexistente@email.com");
+            dtoUsuario.setStatus(EnStatus.A);
+            registroFinanceiroDTO.setUsuarioId(dtoUsuario);
+
+            when(usuarioInterface.findByEmailAndStatus("inexistente@email.com", EnStatus.A))
                     .thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
-                    () -> sRegistroFinanceiro.excluirRegistroFinanceiroPorId(ID));
+                    () -> sRegistroFinanceiro.criarRegistroFinanceiro(usuarioEntity.getEmail(), registroFinanceiroDTO));
         }
     }
 }

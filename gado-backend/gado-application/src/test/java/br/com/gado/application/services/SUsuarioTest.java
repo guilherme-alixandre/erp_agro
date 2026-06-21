@@ -382,6 +382,147 @@ class SUsuarioTest {
     // ==========================================
 
     @Test
+    void altera_DeveHashearNovaSenha_QuandoSenhaForInformada() {
+        UsuarioPutDto dto = new UsuarioPutDto();
+        dto.setSenha("novaSenha123");
+
+        when(usuarioInterface.findByEmailAndStatus(emailTeste, EnStatus.A)).thenReturn(Optional.of(usuarioAtivo));
+        when(modelMapper.getConfiguration()).thenReturn(configuration);
+
+        doNothing().when(modelMapper).map(dto, usuarioAtivo);
+        when(usuarioInterface.save(usuarioAtivo)).thenReturn(usuarioAtivo);
+        when(modelMapper.map(usuarioAtivo, UsuarioDto.class)).thenReturn(usuarioDto);
+
+        UsuarioDto resultado = sUsuario.altera(emailTeste, dto);
+
+        assertNotNull(resultado);
+        // After altera the entity password should be a 64-char hex hash (not "novaSenha123")
+        assertNotEquals("novaSenha123", usuarioAtivo.getSenha());
+        assertEquals(64, usuarioAtivo.getSenha().length());
+    }
+
+    // ==========================================
+    // TESTES: altera - senha nula ou blank
+    // ==========================================
+
+    @Test
+    void altera_NaoDeveHashearSenha_QuandoSenhaForNula() {
+        UsuarioPutDto dto = new UsuarioPutDto();
+        dto.setSenha(null);
+
+        when(usuarioInterface.findByEmailAndStatus(emailTeste, EnStatus.A)).thenReturn(Optional.of(usuarioAtivo));
+        when(modelMapper.getConfiguration()).thenReturn(configuration);
+        doNothing().when(modelMapper).map(dto, usuarioAtivo);
+        when(usuarioInterface.save(usuarioAtivo)).thenReturn(usuarioAtivo);
+        when(modelMapper.map(usuarioAtivo, UsuarioDto.class)).thenReturn(usuarioDto);
+
+        UsuarioDto resultado = sUsuario.altera(emailTeste, dto);
+
+        assertNotNull(resultado);
+        // senha permanece inalterada (o hash inicial) pois novaSenha era null
+        assertEquals(senhaHashTeste, usuarioAtivo.getSenha());
+    }
+
+    @Test
+    void altera_NaoDeveHashearSenha_QuandoSenhaForBlank() {
+        UsuarioPutDto dto = new UsuarioPutDto();
+        dto.setSenha("   ");
+
+        when(usuarioInterface.findByEmailAndStatus(emailTeste, EnStatus.A)).thenReturn(Optional.of(usuarioAtivo));
+        when(modelMapper.getConfiguration()).thenReturn(configuration);
+        doNothing().when(modelMapper).map(dto, usuarioAtivo);
+        when(usuarioInterface.save(usuarioAtivo)).thenReturn(usuarioAtivo);
+        when(modelMapper.map(usuarioAtivo, UsuarioDto.class)).thenReturn(usuarioDto);
+
+        UsuarioDto resultado = sUsuario.altera(emailTeste, dto);
+
+        assertNotNull(resultado);
+        // senha permanece inalterada pois novaSenha era blank
+        assertEquals(senhaHashTeste, usuarioAtivo.getSenha());
+    }
+
+    // ==========================================
+    // TESTES: login - senha em branco no banco
+    // ==========================================
+
+    @Test
+    void login_DeveLancarException_QuandoSenhaDoBancoForBlank() {
+        UsuarioLoginDto dto = new UsuarioLoginDto();
+        dto.setEmail(emailTeste);
+        dto.setSenha("senha123");
+
+        usuarioAtivo.setSenha("   "); // blank
+        when(usuarioInterface.findByEmailAndStatus(emailTeste, EnStatus.A)).thenReturn(Optional.of(usuarioAtivo));
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.login(dto));
+        assertEquals("Credenciais inválidas.", excecao.getMessage());
+    }
+
+    // ==========================================
+    // TESTES: login - email nulo / senha nula
+    // ==========================================
+
+    @Test
+    void login_DeveLancarException_QuandoEmailForNulo() {
+        UsuarioLoginDto dto = new UsuarioLoginDto();
+        dto.setEmail(null);
+        dto.setSenha("qualquerCoisa");
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.login(dto));
+        assertEquals("Informe o e-mail.", excecao.getMessage());
+    }
+
+    @Test
+    void login_DeveLancarException_QuandoSenhaForNula() {
+        UsuarioLoginDto dto = new UsuarioLoginDto();
+        dto.setEmail(emailTeste);
+        dto.setSenha(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.login(dto));
+        assertEquals("Informe a senha.", excecao.getMessage());
+    }
+
+    // ==========================================
+    // TESTES: cadastra - nome nulo
+    // ==========================================
+
+    @Test
+    void cadastra_DeveLancarException_QuandoNomeForNulo() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.cadastra(dto));
+        assertEquals("Informe o nome.", excecao.getMessage());
+    }
+
+    @Test
+    void cadastra_DeveLancarException_QuandoEmailForNulo() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome("Nome");
+        dto.setEmail(null);
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.cadastra(dto));
+        assertEquals("Informe o e-mail.", excecao.getMessage());
+    }
+
+    @Test
+    void cadastra_DeveLancarException_QuandoSenhaForBlank() {
+        UsuarioCadastroDto dto = new UsuarioCadastroDto();
+        dto.setNome("Nome");
+        dto.setEmail(emailTeste);
+        dto.setSenha("   ");
+
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class,
+                () -> sUsuario.cadastra(dto));
+        assertEquals("Informe a senha.", excecao.getMessage());
+    }
+
+    @Test
     void sha256Hex_DeveLancarRuntimeException_QuandoAlgoritmoNaoExistir() {
         UsuarioCadastroDto dto = new UsuarioCadastroDto();
         dto.setNome("Nome");

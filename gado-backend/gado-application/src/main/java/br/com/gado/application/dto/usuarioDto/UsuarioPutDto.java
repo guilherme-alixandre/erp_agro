@@ -7,4 +7,5 @@ import lombok.Data;
 public class UsuarioPutDto {
     private String nome;
     private EnPerfilUsuario perfil;
+    private String senha;
 }

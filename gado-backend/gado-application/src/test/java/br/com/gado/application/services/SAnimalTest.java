@@ -2,9 +2,14 @@ package br.com.gado.application.services;
 
 import br.com.gado.application.dto.AnimalDto;
 import br.com.gado.domain.entities.EAnimal;
+import br.com.gado.domain.entities.ELote;
+import br.com.gado.domain.entities.ELoteSetor;
+import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.IAnimal;
+import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +42,9 @@ class SAnimalTest {
     @Mock
     private IUsuario usuarioInterface;
 
+    @Mock
+    private ILoteSetor loteSetorInterface;
+
     // Usamos @Spy para o ModelMapper rodar sua lógica real de conversão e configuração
     @Spy
     private ModelMapper modelMapper = new ModelMapper();
@@ -44,9 +52,11 @@ class SAnimalTest {
     private EAnimal animalEntity;
     private AnimalDto animalDto;
     private EUsuario usuarioEntity;
+    private ELoteSetor loteSetorEntity;
 
     private final String BRINCO_TESTE = "BRINCO-123";
     private final String EMAIL_TESTE = "produtor@gado.com";
+    private final Long LOTE_SECTOR_ID = 10L;
 
     @BeforeEach
     void setUp() {
@@ -60,9 +70,23 @@ class SAnimalTest {
         animalEntity.setStatus(EnStatus.A);
         animalEntity.setUsuario(usuarioEntity);
 
+        ELote loteEntity = new ELote();
+        loteEntity.setId(5L);
+        loteEntity.setStatus(EnStatus.A);
+
+        ESetor setorEntity = new ESetor();
+        setorEntity.setId(3L);
+        setorEntity.setNome("Pasto A");
+        setorEntity.setCapacidadeMaxima(50);
+
+        loteSetorEntity = new ELoteSetor();
+        loteSetorEntity.setId(LOTE_SECTOR_ID);
+        loteSetorEntity.setLote(loteEntity);
+        loteSetorEntity.setSetor(setorEntity);
+        loteSetorEntity.setAnimais(new ArrayList<>());
+
         animalDto = new AnimalDto();
-        // Presumindo que AnimalDto tenha um setCodigoBrinco
-        // animalDto.setCodigoBrinco(BRINCO_TESTE);
+        animalDto.setLoteSectorId(LOTE_SECTOR_ID);
     }
 
     @Nested
@@ -120,27 +144,77 @@ class SAnimalTest {
     @Nested
     class CadastraAnimalTests {
         @Test
-        void deveCadastrarAnimal_QuandoUsuarioExistir() {
+        void deveCadastrarAnimalEVincularAoLote_QuandoDadosValidos() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID))
+                    .thenReturn(Optional.of(loteSetorEntity));
             when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
                     .thenReturn(Optional.of(usuarioEntity));
-
             when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenReturn(loteSetorEntity);
 
             AnimalDto resultado = sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto);
 
             assertNotNull(resultado);
+            verify(loteSetorInterface, times(1)).findById(LOTE_SECTOR_ID);
             verify(usuarioInterface, times(1)).findByEmailAndStatus(EMAIL_TESTE, EnStatus.A);
             verify(animalInterface, times(1)).save(any(EAnimal.class));
+            verify(loteSetorInterface, times(1)).save(loteSetorEntity);
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteSectorIdNulo() {
+            animalDto.setLoteSectorId(null);
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("O vínculo com um lote/setor é obrigatório ao cadastrar um animal.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteSetorNaoEncontrado() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.empty());
+
+            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("Alocação de lote/setor não encontrada.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteInativo() {
+            loteSetorEntity.getLote().setStatus(EnStatus.I);
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertEquals("Não é possível vincular o animal a um lote inativo.", exception.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoCapacidadeSetorAtingida() {
+            loteSetorEntity.getSetor().setCapacidadeMaxima(0);
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
+
+            assertTrue(exception.getMessage().contains("Capacidade máxima do setor"));
+            verify(animalInterface, never()).save(any());
         }
 
         @Test
         void deveLancarExcecao_AoCadastrarComUsuarioInexistente() {
+            when(loteSetorInterface.findById(LOTE_SECTOR_ID)).thenReturn(Optional.of(loteSetorEntity));
             when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
                     .thenReturn(Optional.empty());
 
-            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-                sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto);
-            });
+            EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+                    sAnimal.cadastraAnimal(EMAIL_TESTE, animalDto));
 
             assertEquals("Usuário não encontrado", exception.getMessage());
             verify(animalInterface, never()).save(any(EAnimal.class));
@@ -153,11 +227,13 @@ class SAnimalTest {
         void deveDeletarLogicamenteAnimal_QuandoBrincoExistir() {
             when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
                     .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
 
-            String mensagem = sAnimal.deletaAnimal(BRINCO_TESTE);
+            String mensagem = sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE);
 
             assertEquals("animal deletado com sucesso", mensagem);
-            assertEquals(EnStatus.I, animalEntity.getStatus()); // Verifica se o status mudou para inativo
+            assertEquals(EnStatus.I, animalEntity.getStatus());
             verify(animalInterface, times(1)).save(animalEntity);
         }
 
@@ -167,7 +243,7 @@ class SAnimalTest {
                     .thenReturn(Optional.empty());
 
             EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-                sAnimal.deletaAnimal(BRINCO_TESTE);
+                sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE);
             });
 
             assertEquals("animal não encontrado", exception.getMessage());
@@ -181,13 +257,13 @@ class SAnimalTest {
         void deveAlterarAnimalERetornarDto_QuandoBrincoExistir() {
             when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
                     .thenReturn(Optional.of(animalEntity));
-
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
             when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
 
-            AnimalDto resultado = sAnimal.alteraAnimal(BRINCO_TESTE, animalDto);
+            AnimalDto resultado = sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto);
 
             assertNotNull(resultado);
-            // Verifica se a configuração do mapper foi acionada com sucesso e se salvou
             verify(animalInterface, times(1)).save(animalEntity);
             assertTrue(modelMapper.getConfiguration().isSkipNullEnabled());
         }
@@ -198,11 +274,245 @@ class SAnimalTest {
                     .thenReturn(Optional.empty());
 
             EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-                sAnimal.alteraAnimal(BRINCO_TESTE, animalDto);
+                sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto);
             });
 
             assertEquals("animal não encontrado", exception.getMessage());
             verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveAlterarAnimal_QuandoEmailForNulo() {
+            // emailUsuario null => skips permission check
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+
+            AnimalDto resultado = sAnimal.alteraAnimal(null, BRINCO_TESTE, animalDto);
+
+            assertNotNull(resultado);
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void deveAlterarAnimal_QuandoEmailForBlank() {
+            // emailUsuario blank => skips permission check
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+
+            AnimalDto resultado = sAnimal.alteraAnimal("   ", BRINCO_TESTE, animalDto);
+
+            assertNotNull(resultado);
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoCuidadorTentaAlterarAnimalDeOutro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            // animal belongs to a different user
+            EUsuario outroUsuario = new EUsuario();
+            outroUsuario.setEmail("outro@gado.com");
+            animalEntity.setUsuario(outroUsuario);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto));
+            assertEquals("Você só pode editar animais que você cadastrou.", ex.getMessage());
+            verify(animalInterface, never()).save(any());
+        }
+
+        @Test
+        void deveAlterarAnimal_QuandoCuidadorAlteraSeuProprioAnimal() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            // animal belongs to the requesting user
+            animalEntity.setUsuario(usuarioEntity);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+
+            AnimalDto resultado = sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto);
+            assertNotNull(resultado);
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoUsuarioNaoEncontradoNaAlteracao() {
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto));
+        }
+    }
+
+    @Nested
+    class DeletaAnimalAdicionaisTests {
+
+        @Test
+        void deveDeletarAnimal_QuandoEmailForNulo() {
+            // null email => skips permission block
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+
+            String resultado = sAnimal.deletaAnimal(null, BRINCO_TESTE);
+
+            assertEquals("animal deletado com sucesso", resultado);
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void deveDeletarAnimal_QuandoEmailForBlank() {
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+
+            String resultado = sAnimal.deletaAnimal("  ", BRINCO_TESTE);
+
+            assertEquals("animal deletado com sucesso", resultado);
+            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoCuidadorChefeTentaDeletarAnimalDeOutro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            EUsuario outroUsuario = new EUsuario();
+            outroUsuario.setEmail("outro@gado.com");
+            animalEntity.setUsuario(outroUsuario);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE));
+            assertEquals("Você só pode excluir animais que você cadastrou.", ex.getMessage());
+        }
+
+        @Test
+        void deveDeletarAnimal_QuandoCuidadorDeletaSeuProprioAnimal() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            animalEntity.setUsuario(usuarioEntity);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            String resultado = sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE);
+            assertEquals("animal deletado com sucesso", resultado);
+        }
+
+        @Test
+        void deveDeletarAnimal_QuandoCuidadorChefeDeletaSeuProprioAnimal() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            animalEntity.setUsuario(usuarioEntity); // same user
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            String resultado = sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE);
+            assertEquals("animal deletado com sucesso", resultado);
+        }
+
+        @Test
+        void deveDeletarAnimal_QuandoAnimalSemUsuario() {
+            // animal.getUsuario() is null => dono = null, email != null => throws
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            animalEntity.setUsuario(null);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE));
+            assertEquals("Você só pode excluir animais que você cadastrou.", ex.getMessage());
+        }
+    }
+
+    @Nested
+    class AlteraAnimalPerfilAdicionaisTests {
+
+        @Test
+        void deveAlterarAnimal_QuandoCuidadorChefeAlteraAnimalDeOutroUsuario() {
+            // CUIDADOR_CHEFE is not restricted to own animals — only CUIDADOR is
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            EUsuario outroUsuario = new EUsuario();
+            outroUsuario.setEmail("outro@gado.com");
+            animalEntity.setUsuario(outroUsuario);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(animalInterface.save(any(EAnimal.class))).thenReturn(animalEntity);
+
+            AnimalDto resultado = sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto);
+
+            assertNotNull(resultado);
+            verify(animalInterface, times(1)).save(any(EAnimal.class));
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoCuidadorAlteraAnimalSemUsuario() {
+            // CUIDADOR attempting to edit animal that has no usuario => dono = null => email != null => throw
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            animalEntity.setUsuario(null);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sAnimal.alteraAnimal(EMAIL_TESTE, BRINCO_TESTE, animalDto));
+            assertEquals("Você só pode editar animais que você cadastrou.", ex.getMessage());
+        }
+
+        @Test
+        void deveDeletarAnimal_QuandoAdministradorDeletaAnimalDeOutroUsuario() {
+            // ADMINISTRADOR is not CUIDADOR or CUIDADOR_CHEFE => no restriction
+            usuarioEntity.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+            EUsuario outroUsuario = new EUsuario();
+            outroUsuario.setEmail("outro@gado.com");
+            animalEntity.setUsuario(outroUsuario);
+
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            String resultado = sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE);
+
+            assertEquals("animal deletado com sucesso", resultado);
+        }
+    }
+
+    @Nested
+    class ToDtoTests {
+
+        @Test
+        void deveRetornarDtoSemEmail_QuandoAnimalNaoTemUsuario() {
+            animalEntity.setUsuario(null);
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+
+            AnimalDto resultado = sAnimal.buscarPorBrinco(BRINCO_TESTE);
+
+            assertNotNull(resultado);
+            assertNull(resultado.getCriadoPorEmail());
         }
     }
 }

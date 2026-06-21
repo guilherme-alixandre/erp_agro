@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import UsuarioFormModal from '../components/UsuarioFormModal'
+import UsuarioEditModal from '../components/UsuarioEditModal'
 import {
+  atualizarUsuario,
   cadastrarUsuario,
   deletarUsuario,
   listarUsuarios,
@@ -19,18 +21,23 @@ const PERFIL_LABELS = {
   ADMINISTRADOR: 'Administrador',
   GERENTE: 'Gerente',
   CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
 }
 
 const ROWS_PER_PAGE = 10
 
-function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
+function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [usuarios, setUsuarios] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
+  const [editModal, setEditModal] = useState({ open: false, usuario: null })
+  const [editFeedback, setEditFeedback] = useState('')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
   const [filterPerfil, setFilterPerfil] = useState('')
@@ -142,16 +149,47 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
     }
   }
 
+  function openEditModal(usuario) {
+    setEditFeedback('')
+    setEditModal({ open: true, usuario })
+  }
+
+  function closeEditModal() {
+    setEditModal({ open: false, usuario: null })
+    setEditFeedback('')
+  }
+
+  async function handleSubmitEdit(formData) {
+    setIsEditing(true)
+    setEditFeedback('')
+    setFeedback({ type: '', message: '' })
+    try {
+      const updated = await atualizarUsuario(editModal.usuario.email, formData, currentUser.email)
+      if (updated.email === currentUser.email && onUpdateUser) {
+        onUpdateUser(updated)
+      }
+      setFeedback({ type: 'info', message: `Usuário ${updated.nome} atualizado com sucesso.` })
+      closeEditModal()
+      await fetchUsuarios()
+    } catch (error) {
+      setEditFeedback(error.message || 'Falha ao atualizar usuário.')
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
   function perfilPillClass(perfil) {
     if (perfil === 'ADMINISTRADOR') return 'perfil-pill perfil-pill--admin'
     if (perfil === 'GERENTE') return 'perfil-pill perfil-pill--gerente'
+    if (perfil === 'CUIDADOR_CHEFE') return 'perfil-pill perfil-pill--cuidador-chefe'
+    if (perfil === 'FINANCEIRO') return 'perfil-pill perfil-pill--financeiro'
     return 'perfil-pill perfil-pill--cuidador'
   }
 
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
@@ -257,6 +295,8 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
             <option value="ADMINISTRADOR">Administrador</option>
             <option value="GERENTE">Gerente</option>
             <option value="CUIDADOR">Cuidador</option>
+            <option value="CUIDADOR_CHEFE">Cuidador Chefe</option>
+            <option value="FINANCEIRO">Financeiro</option>
           </select>
 
           <button type="button" className="btn-new-entity" onClick={openCreateModal}>
@@ -308,6 +348,13 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
                       </td>
                       <td>
                         <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-row btn-row--edit"
+                            onClick={() => openEditModal(usuario)}
+                          >
+                            Editar
+                          </button>
                           <button
                             type="button"
                             className="btn-row btn-row--danger"
@@ -369,6 +416,16 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
+        />
+      ) : null}
+
+      {editModal.open && editModal.usuario ? (
+        <UsuarioEditModal
+          usuario={editModal.usuario}
+          isSaving={isEditing}
+          feedback={editFeedback}
+          onClose={closeEditModal}
+          onSubmit={handleSubmitEdit}
         />
       ) : null}
     </main>

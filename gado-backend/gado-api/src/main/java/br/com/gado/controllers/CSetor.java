@@ -50,9 +50,11 @@ public class CSetor {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSetor(@PathVariable Long id) {
+    public ResponseEntity<String> deleteSetor(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String email,
+            @PathVariable Long id) {
         try {
-            setorService.deleta(id);
+            setorService.deleta(id, email);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());

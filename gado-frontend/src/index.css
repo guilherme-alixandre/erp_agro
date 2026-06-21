@@ -22,6 +22,10 @@ body,
   margin: 0;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: #f3f4f6;
 }
@@ -29,4 +33,256 @@ body {
 button,
 input {
   font: inherit;
+}
+
+/* ── SearchSelectModal ─────────────────────────────────────────────────────── */
+
+.ssm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 150;
+}
+
+.ssm-box {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+}
+
+.ssm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.ssm-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1d1d1d;
+}
+
+.ssm-close {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  color: #777;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.ssm-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.ssm-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.ssm-search {
+  flex: 1;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.ssm-search:focus {
+  border-color: #4f7f2f;
+  box-shadow: 0 0 0 2px rgba(79, 127, 47, 0.15);
+}
+
+.ssm-filter {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: #1d1d1d;
+  outline: none;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.ssm-list-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.ssm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ssm-table thead {
+  background: #f9f9f9;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ssm-th-check {
+  width: 44px;
+  padding: 10px 0 10px 16px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.ssm-th {
+  padding: 10px 14px 10px 0;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b6b6b;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.ssm-row {
+  cursor: pointer;
+  border-bottom: 1px solid #f4f4f4;
+}
+
+.ssm-row:hover td {
+  background: #f5faf0;
+}
+
+.ssm-row--selected td {
+  background: #eef7e5;
+}
+
+.ssm-row--selected:hover td {
+  background: #e3f2d5;
+}
+
+.ssm-row--disabled {
+  cursor: default;
+}
+
+.ssm-row--disabled td {
+  opacity: 0.45;
+}
+
+.ssm-row--disabled:hover td {
+  background: transparent;
+}
+
+.ssm-td-check {
+  padding: 10px 0 10px 16px;
+  width: 44px;
+}
+
+.ssm-td {
+  padding: 10px 14px 10px 0;
+  color: #1d1d1d;
+}
+
+.ssm-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.ssm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.ssm-count {
+  font-size: 0.85rem;
+  color: #6b6b6b;
+  font-weight: 600;
+}
+
+.ssm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Botão que abre o SearchSelectModal ────────────────────────────────────── */
+
+.ssm-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  text-align: left;
+  font-size: 0.92rem;
+  cursor: pointer;
+  color: #1d1d1d;
+  transition: border-color 0.15s;
+}
+
+.ssm-trigger:hover {
+  border-color: #4f7f2f;
+  background: #f9fdf6;
+}
+
+.ssm-trigger--error {
+  border-color: #ef4444;
+}
+
+.ssm-trigger__placeholder {
+  color: #999;
+}
+
+.ssm-trigger__arrow {
+  color: #777;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .ssm-toolbar {
+    flex-direction: column;
+  }
+
+  .ssm-filter {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .ssm-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ssm-actions {
+    justify-content: flex-end;
+  }
 }

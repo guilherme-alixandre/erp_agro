@@ -1,9 +1,14 @@
 package br.com.gado.integration;
 
 import br.com.gado.GadoApplication;
+import br.com.gado.application.dto.loteDto.LoteCadastroDto;
+import br.com.gado.application.dto.loteDto.LotePutDto;
+import br.com.gado.application.dto.loteDto.LoteRespostaDto;
+import br.com.gado.application.dto.loteDto.LoteSetorCadastroDto;
+import br.com.gado.application.dto.loteDto.TransferenciaAnimalDto;
+import br.com.gado.application.services.SLote;
 import br.com.gado.domain.entities.EAnimal;
 import br.com.gado.domain.entities.ELote;
-import br.com.gado.domain.entities.ELoteSetor;
 import br.com.gado.domain.entities.EMetaSetor;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
@@ -19,44 +24,27 @@ import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
 import br.com.gado.infrastructure.persistence.repositories.IMetaSetor;
 import br.com.gado.infrastructure.persistence.repositories.ISetor;
 import br.com.gado.infrastructure.persistence.repositories.IUsuario;
-import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = GadoApplication.class)
-@AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 class LoteIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private SLote loteService;
 
     @Autowired
     private ILote loteRepository;
@@ -76,189 +64,480 @@ class LoteIntegrationTest {
     @Autowired
     private IMetaSetor metaSetorRepository;
 
+    // ── Happy Path ────────────────────────────────────────────────────────────
+
     @Test
-    void postLote_quandoPayloadValido_criaCodigoSequencialEAlocacao() throws Exception {
-        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
-        ESetor setor = criarSetor(usuario, 5);
-        EAnimal animal1 = criarAnimal(usuario, "LOT-ANI-" + sufixo());
-        EAnimal animal2 = criarAnimal(usuario, "LOT-ANI-" + sufixo());
-        String descricao = "Lote IT " + sufixo();
+    void deveCadastrarLoteComSucessoQuandoAdminEDadosValidos() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 5);
+        EAnimal animal1 = criarAnimal(admin, "LOT-ANI-" + sufixo());
+        EAnimal animal2 = criarAnimal(admin, "LOT-ANI-" + sufixo());
+        String descricao = "Lote Cadastro IT " + sufixo();
 
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", usuario.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload(descricao, "Azul", setor.getId(), List.of(animal1.getId(), animal2.getId())))))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("cadastrado com sucesso")));
+        LoteCadastroDto dto = novoLoteDto(descricao, "Azul", setor.getId(),
+                List.of(animal1.getId(), animal2.getId()));
 
+        // Act
+        String resultado = loteService.cadastra(admin.getEmail(), dto);
+
+        // Assert
+        assertThat(resultado).contains("cadastrado com sucesso");
         ELote lote = buscarLotePorDescricao(descricao);
-        assertTrue(lote.getCodigo().matches("LOT\\d{3}"));
-
-        List<ELoteSetor> alocacoes = loteSetorRepository.findByLote_Id(lote.getId());
-        assertEquals(1, alocacoes.size());
-        assertEquals(setor.getId(), alocacoes.get(0).getSetor().getId());
-        assertEquals(2, alocacoes.get(0).getAnimais().size());
-
-        mockMvc.perform(get("/api/lotes/{id}", lote.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codigo").value(lote.getCodigo()))
-                .andExpect(jsonPath("$.descricao").value(descricao))
-                .andExpect(jsonPath("$.criadoPorEmail").value(usuario.getEmail()))
-                .andExpect(jsonPath("$.totalAnimais").value(2))
-                .andExpect(jsonPath("$.alocacoes[0].setorId").value(setor.getId()));
+        assertThat(lote.getCodigo()).matches("LOT\\d{3}");
+        assertThat(lote.getCriadoPor().getEmail()).isEqualTo(admin.getEmail());
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId())).hasSize(1);
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId()).get(0).getAnimais()).hasSize(2);
     }
 
     @Test
-    void putLote_quandoUsuarioAutorizado_atualizaCamposERealocaAnimais() throws Exception {
-        EUsuario usuario = criarUsuario(EnPerfilUsuario.GERENTE);
-        ESetor setorOriginal = criarSetor(usuario, 4);
-        ESetor setorNovo = criarSetor(usuario, 4);
-        EAnimal animal = criarAnimal(usuario, "LOT-ANI-" + sufixo());
-        ELote lote = criarLoteViaEndpoint(usuario, setorOriginal, List.of(), "Lote Alteracao IT " + sufixo());
+    void deveBuscarLotePorIdComSucessoQuandoExiste() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 3);
+        String descricao = "Lote Busca IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Verde", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        // Act
+        LoteRespostaDto resultado = loteService.buscaPorid(lote.getId());
+
+        // Assert
+        assertThat(resultado.getId()).isEqualTo(lote.getId());
+        assertThat(resultado.getCodigo()).isEqualTo(lote.getCodigo());
+        assertThat(resultado.getDescricao()).isEqualTo(descricao);
+        assertThat(resultado.getCriadoPorEmail()).isEqualTo(admin.getEmail());
+    }
+
+    @Test
+    void deveAlterarLoteComSucessoQuandoCuidadorChefeEDadosValidos() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidadorChefe = criarUsuario(EnPerfilUsuario.CUIDADOR_CHEFE);
+        ESetor setor = criarSetor(admin, 5);
+        String descricao = "Lote CC Alterar IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        LotePutDto putDto = new LotePutDto();
+        putDto.setDescricao("Lote CC Alterado IT");
+        putDto.setCorBrinco("Roxo");
+
+        // Act
+        String resultado = loteService.altera(lote.getId(), cuidadorChefe.getEmail(), putDto);
+
+        // Assert
+        assertThat(resultado).contains("atualizado com sucesso");
+        LoteRespostaDto atualizado = loteService.buscaPorid(lote.getId());
+        assertThat(atualizado.getDescricao()).isEqualTo("Lote CC Alterado IT");
+        assertThat(atualizado.getAlteradoPorEmail()).isEqualTo(cuidadorChefe.getEmail());
+    }
+
+    @Test
+    void deveAlterarLoteComSucessoQuandoGerenteEDadosValidos() {
+        // Arrange
+        EUsuario gerente = criarUsuario(EnPerfilUsuario.GERENTE);
+        ESetor setorOriginal = criarSetor(gerente, 4);
+        ESetor setorNovo = criarSetor(gerente, 4);
+        EAnimal animal = criarAnimal(gerente, "LOT-ANI-" + sufixo());
+        String descricao = "Lote Alterar IT " + sufixo();
+        loteService.cadastra(gerente.getEmail(), novoLoteDto(descricao, "Azul", setorOriginal.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
 
         String descricaoAtualizada = "Lote Alterado IT " + sufixo();
-        mockMvc.perform(put("/api/lotes/{id}", lote.getId())
-                        .header("X-Usuario-Email", usuario.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload(descricaoAtualizada, "Verde", setorNovo.getId(), List.of(animal.getId())))))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("atualizado com sucesso")));
+        LotePutDto putDto = new LotePutDto();
+        putDto.setDescricao(descricaoAtualizada);
+        putDto.setCorBrinco("Verde");
+        LoteSetorCadastroDto novaAlocacao = new LoteSetorCadastroDto();
+        novaAlocacao.setSetorId(setorNovo.getId());
+        novaAlocacao.setAnimaisIds(List.of(animal.getId()));
+        putDto.setAlocacoes(List.of(novaAlocacao));
 
-        mockMvc.perform(get("/api/lotes/{id}", lote.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.descricao").value(descricaoAtualizada))
-                .andExpect(jsonPath("$.corBrinco").value("Verde"))
-                .andExpect(jsonPath("$.alteradoPorEmail").value(usuario.getEmail()))
-                .andExpect(jsonPath("$.totalAnimais").value(1))
-                .andExpect(jsonPath("$.alocacoes[0].setorId").value(setorNovo.getId()))
-                .andExpect(jsonPath("$.alocacoes[0].animais[0].id").value(animal.getId()));
+        // Act
+        String resultado = loteService.altera(lote.getId(), gerente.getEmail(), putDto);
+
+        // Assert
+        assertThat(resultado).contains("atualizado com sucesso");
+        LoteRespostaDto atualizado = loteService.buscaPorid(lote.getId());
+        assertThat(atualizado.getDescricao()).isEqualTo(descricaoAtualizada);
+        assertThat(atualizado.getCorBrinco()).isEqualTo("Verde");
+        assertThat(atualizado.getAlteradoPorEmail()).isEqualTo(gerente.getEmail());
+        assertThat(atualizado.getTotalAnimais()).isEqualTo(1);
+        assertThat(atualizado.getAlocacoes().get(0).getSetorId()).isEqualTo(setorNovo.getId());
     }
 
     @Test
-    void deleteLote_quandoSemVinculos_removeDefinitivamente() throws Exception {
-        EUsuario usuario = criarUsuario(EnPerfilUsuario.CUIDADOR);
-        ESetor setor = criarSetor(usuario, 3);
-        ELote lote = criarLoteViaEndpoint(usuario, setor, List.of(), "Lote Delete IT " + sufixo());
+    void deveExcluirLoteDefinitivamenteQuandoSemVinculos() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 3);
+        String descricao = "Lote Delete IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
 
-        mockMvc.perform(delete("/api/lotes/{id}", lote.getId())
-                        .header("X-Usuario-Email", usuario.getEmail()))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("LOT")));
+        // Act
+        String resultado = loteService.deleta(lote.getId(), admin.getEmail());
 
-        assertFalse(loteRepository.findById(lote.getId()).isPresent());
-        assertTrue(loteSetorRepository.findByLote_Id(lote.getId()).isEmpty());
+        // Assert
+        assertThat(resultado).contains(lote.getCodigo());
+        assertThat(loteRepository.findById(lote.getId())).isEmpty();
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId())).isEmpty();
     }
 
     @Test
-    void deleteLote_quandoPossuiMetaVinculada_inativaSemRemover() throws Exception {
-        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
-        ESetor setor = criarSetor(usuario, 3);
-        ELote lote = criarLoteViaEndpoint(usuario, setor, List.of(), "Lote Soft Delete IT " + sufixo());
+    void deveInativarLoteQuandoPossuiMetaVinculada() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 3);
+        String descricao = "Lote Soft Delete IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
         criarMetaSetor(setor);
 
-        mockMvc.perform(delete("/api/lotes/{id}", lote.getId())
-                        .header("X-Usuario-Email", usuario.getEmail()))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("inativado")));
+        // Act
+        String resultado = loteService.deleta(lote.getId(), admin.getEmail());
 
+        // Assert
+        assertThat(resultado).contains("inativado");
         ELote atualizado = loteRepository.findById(lote.getId()).orElseThrow();
-        assertEquals(EnStatus.I, atualizado.getStatus());
-        assertFalse(loteSetorRepository.findByLote_Id(lote.getId()).isEmpty());
+        assertThat(atualizado.getStatus()).isEqualTo(EnStatus.I);
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId())).isNotEmpty();
     }
 
     @Test
-    void postLote_quandoDadosInvalidosOuUsuarioSemPermissao_retornaBadRequest() throws Exception {
+    void devePermitirAlocarAnimalEmNovoLoteAposLoteAnteriorSerInativado() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-INATIVO-" + sufixo());
+
+        String descricaoInativo = "Lote Inativo IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricaoInativo, "Azul", setor.getId(), List.of(animal.getId())));
+        ELote loteInativo = buscarLotePorDescricao(descricaoInativo);
+
+        criarMetaSetor(setor);
+        loteService.deleta(loteInativo.getId(), admin.getEmail());
+        assertThat(loteRepository.findById(loteInativo.getId()).orElseThrow().getStatus())
+                .isEqualTo(EnStatus.I);
+
+        // Act: mesmo animal deve poder ser alocado em novo lote ativo
+        String descricaoNovo = "Lote Pos Inativo IT " + sufixo();
+        String resultado = loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricaoNovo, "Laranja", setor.getId(), List.of(animal.getId())));
+
+        // Assert
+        assertThat(resultado).contains("cadastrado com sucesso");
+        assertThat(buscarLotePorDescricao(descricaoNovo).getStatus()).isEqualTo(EnStatus.A);
+    }
+
+    // ── Sad Path ──────────────────────────────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteSemEmailDeUsuario() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 2);
+        LoteCadastroDto dto = novoLoteDto("Lote Sem Email IT " + sufixo(), "Amarelo", setor.getId(), List.of());
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(null, dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("e-mail");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteComUsuarioSemPermissao() {
+        // Arrange
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        ESetor setor = criarSetor(cuidador, 2);
+        LoteCadastroDto dto = novoLoteDto("Lote Sem Permissao IT " + sufixo(), "Amarelo", setor.getId(), List.of());
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(cuidador.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Administradores e Gerentes");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteComCapacidadeDeSetorExcedida() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorLimitado = criarSetor(admin, 1);
+        EAnimal animal1 = criarAnimal(admin, "LOT-ANI-CAP1-" + sufixo());
+        EAnimal animal2 = criarAnimal(admin, "LOT-ANI-CAP2-" + sufixo());
+
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto("Lote Capacidade Base IT " + sufixo(), "Azul", setorLimitado.getId(),
+                        List.of(animal1.getId())));
+
+        LoteCadastroDto dtoExcedente = novoLoteDto("Lote Capacidade Excedida IT " + sufixo(),
+                "Vermelho", setorLimitado.getId(), List.of(animal2.getId()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(admin.getEmail(), dtoExcedente))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("capacidade máxima");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteComAnimalJaAlocadoEmOutroLoteAtivo() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-CONF-" + sufixo());
+
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto("Lote Conflito Base IT " + sufixo(), "Azul", setor.getId(), List.of(animal.getId())));
+
+        LoteCadastroDto dtoConflito = novoLoteDto("Lote Conflito Dup IT " + sufixo(),
+                "Vermelho", setor.getId(), List.of(animal.getId()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(admin.getEmail(), dtoConflito))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("já está alocado ao lote");
+    }
+
+    @Test
+    void deveLancarExcecaoAoBuscarLoteComIdInexistente() {
+        assertThatThrownBy(() -> loteService.buscaPorid(Long.MAX_VALUE))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Nenhum lote ativo encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoExcluirLoteComUsuarioSemPermissao() {
+        // Arrange
         EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
         EUsuario financeiro = criarUsuario(EnPerfilUsuario.FINANCEIRO);
         ESetor setor = criarSetor(admin, 2);
-        EAnimal animal1 = criarAnimal(admin, "LOT-ANI-" + sufixo());
-        EAnimal animal2 = criarAnimal(admin, "LOT-ANI-" + sufixo());
+        String descricao = "Lote Excluir Sem Permissao IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
 
-        mockMvc.perform(post("/api/lotes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Sem Header IT", "Amarelo", setor.getId(), List.of()))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", financeiro.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Sem Permissao IT", "Amarelo", setor.getId(), List.of()))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", admin.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Sem Alocacao IT", "Amarelo", null, List.of()))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", admin.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Capacidade IT", "Amarelo", setor.getId(), List.of(animal1.getId(), animal2.getId())))))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", admin.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Capacidade Excedida IT", "Amarelo", setor.getId(), List.of(animal1.getId())))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.deleta(lote.getId(), financeiro.getEmail()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Administradores e Gerentes");
     }
 
     @Test
-    void getPutDeleteLote_quandoIdNaoExiste_retornaBadRequest() throws Exception {
-        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
-        ESetor setor = criarSetor(usuario, 2);
+    void deveLancarExcecaoAoAlterarLoteComIdInexistente() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        LotePutDto putDto = new LotePutDto();
+        putDto.setDescricao("Descricao IT");
 
-        mockMvc.perform(get("/api/lotes/{id}", Long.MAX_VALUE))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(put("/api/lotes/{id}", Long.MAX_VALUE)
-                        .header("X-Usuario-Email", usuario.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload("Lote Ausente IT", "Roxo", setor.getId(), List.of()))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
-
-        mockMvc.perform(delete("/api/lotes/{id}", Long.MAX_VALUE)
-                        .header("X-Usuario-Email", usuario.getEmail()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").exists());
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.altera(Long.MAX_VALUE, admin.getEmail(), putDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Nenhum lote ativo encontrado");
     }
 
-    private ELote criarLoteViaEndpoint(EUsuario usuario, ESetor setor, List<Long> animaisIds, String descricao) throws Exception {
-        mockMvc.perform(post("/api/lotes")
-                        .header("X-Usuario-Email", usuario.getEmail())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(lotePayload(descricao, "Azul", setor.getId(), animaisIds))))
-                .andExpect(status().isOk());
-        return buscarLotePorDescricao(descricao);
+    @Test
+    void deveLancarExcecaoAoAlterarLoteComUsuarioSemPermissao() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        ESetor setor = criarSetor(admin, 2);
+        String descricao = "Lote Perm Edicao IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        LotePutDto putDto = new LotePutDto();
+        putDto.setDescricao("Alteracao Negada IT");
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.altera(lote.getId(), cuidador.getEmail(), putDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Administradores, Gerentes e Cuidadores Chefe");
     }
 
-    private Map<String, Object> lotePayload(String descricao, String corBrinco, Long setorId, List<Long> animaisIds) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("corBrinco", corBrinco);
-        payload.put("descricao", descricao);
-        payload.put("racaPredominante", "Nelore");
-        payload.put("dataCriacao", LocalDate.now().toString());
-        if (setorId == null) {
-            payload.put("alocacoes", List.of());
-        } else {
-            payload.put("alocacoes", List.of(Map.of("setorId", setorId, "animaisIds", animaisIds)));
-        }
-        return payload;
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteComAnimalJaAlocadoEmSetorDiferente() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorA = criarSetor(admin, 50);
+        ESetor setorB = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-SETORDIF-" + sufixo());
+
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto("Lote Setor A IT " + sufixo(), "Azul", setorA.getId(), List.of(animal.getId())));
+
+        LoteCadastroDto dtoSetorB = novoLoteDto("Lote Setor B IT " + sufixo(),
+                "Verde", setorB.getId(), List.of(animal.getId()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(admin.getEmail(), dtoSetorB))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("já está alocado ao lote");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarLoteComAnimalComStatusBloqueado() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animalVendido = criarAnimal(admin, "LOT-ANI-VEND-" + sufixo());
+        animalVendido.setStatusAnimal(EnStatusAnimal.VENDIDO);
+        animalRepository.save(animalVendido);
+
+        LoteCadastroDto dto = novoLoteDto("Lote Animal Bloqueado IT " + sufixo(),
+                "Amarelo", setor.getId(), List.of(animalVendido.getId()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.cadastra(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não pode ser movimentado");
+    }
+
+    // ── Happy Path: Transferência de Animal ───────────────────────────────────
+
+    @Test
+    void deveTransferirAnimalComSucessoQuandoSetorDestinoTemCapacidade() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        ESetor setorDestino = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-TRANSF-" + sufixo());
+
+        String descOrigem = "Lote Origem IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+        ELote loteOrigem = buscarLotePorDescricao(descOrigem);
+
+        String descDestino = "Lote Destino IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorDestino.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorDestino.getId());
+
+        // Act
+        String resultado = loteService.transferirAnimal(admin.getEmail(), dto);
+
+        // Assert
+        assertThat(resultado).contains(animal.getCodigoBrinco());
+        assertThat(resultado).contains(loteDestino.getCodigo());
+        assertThat(loteSetorRepository.findByLote_Id(loteOrigem.getId()).get(0).getAnimais())
+                .noneMatch(a -> a.getId().equals(animal.getId()));
+        assertThat(loteSetorRepository.findByLote_Id(loteDestino.getId()).get(0).getAnimais())
+                .anyMatch(a -> a.getId().equals(animal.getId()));
+    }
+
+    // ── Sad Path: Transferência de Animal ─────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalParaOMesmoLoteESetor() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-SAME-" + sufixo());
+
+        String descricao = "Lote Mesmo IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricao, "Azul", setor.getId(), List.of(animal.getId())));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(lote.getId());
+        dto.setSetorDestinoId(setor.getId());
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("já está alocado no lote e setor informados");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalComStatusBloqueado() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        ESetor setorDestino = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-OBITO-" + sufixo());
+
+        String descOrigem = "Lote Origem Bloq IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+        ELote loteOrigem = buscarLotePorDescricao(descOrigem);
+
+        String descDestino = "Lote Destino Bloq IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorDestino.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        animal.setStatusAnimal(EnStatusAnimal.OBITO);
+        animalRepository.save(animal);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorDestino.getId());
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não pode ser movimentado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalParaSetorSemCapacidade() {
+        // Arrange
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        ESetor setorDestino = criarSetor(admin, 1);
+        EAnimal animalTransf = criarAnimal(admin, "LOT-ANI-TRANSF2-" + sufixo());
+        EAnimal animalOcupante = criarAnimal(admin, "LOT-ANI-OCUP-" + sufixo());
+
+        String descOrigem = "Lote Origem Cap IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animalTransf.getId())));
+        ELote loteOrigem = buscarLotePorDescricao(descOrigem);
+
+        String descDestino = "Lote Destino Cap IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorDestino.getId(), List.of(animalOcupante.getId())));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animalTransf.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorDestino.getId());
+
+        // Act & Assert
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("excede a capacidade máxima");
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private LoteCadastroDto novoLoteDto(String descricao, String corBrinco, Long setorId, List<Long> animaisIds) {
+        LoteSetorCadastroDto alocacao = new LoteSetorCadastroDto();
+        alocacao.setSetorId(setorId);
+        alocacao.setAnimaisIds(animaisIds);
+
+        LoteCadastroDto dto = new LoteCadastroDto();
+        dto.setCorBrinco(corBrinco);
+        dto.setDescricao(descricao);
+        dto.setRacaPredominante("Nelore");
+        dto.setDataCriacao(LocalDate.now());
+        dto.setAlocacoes(List.of(alocacao));
+        return dto;
     }
 
     private ELote buscarLotePorDescricao(String descricao) {
         return loteRepository.findAllByStatus(EnStatus.A)
                 .stream()
-                .filter(lote -> descricao.equals(lote.getDescricao()))
+                .filter(l -> descricao.equals(l.getDescricao()))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalStateException("Lote não encontrado para descrição: " + descricao));
     }
 
     private EUsuario criarUsuario(EnPerfilUsuario perfil) {
@@ -300,7 +579,7 @@ class LoteIntegrationTest {
         return animalRepository.save(animal);
     }
 
-    private EMetaSetor criarMetaSetor(ESetor setor) {
+    private void criarMetaSetor(ESetor setor) {
         EMetaSetor meta = new EMetaSetor();
         meta.setSetor(setor);
         meta.setDataInicial(LocalDate.now());
@@ -308,11 +587,7 @@ class LoteIntegrationTest {
         meta.setTipoMeta(EnTipoMeta.LEITE);
         meta.setQuantidadeEsperada(1000.0);
         meta.setPrecoMedio(2.5);
-        return metaSetorRepository.save(meta);
-    }
-
-    private String json(Object body) throws Exception {
-        return objectMapper.writeValueAsString(body);
+        metaSetorRepository.save(meta);
     }
 
     private static String sufixo() {

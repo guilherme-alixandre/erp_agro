@@ -7,6 +7,7 @@ import {
   cadastrarLote,
   atualizarLote,
   deletarLote,
+  transferirAnimal,
   exportarLotesCSV,
   exportarLotesPDF,
 } from '../../../services/loteApi'
@@ -14,7 +15,9 @@ import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/lotes.css'
 
-const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR']
+const PERFIS_COM_CRIACAO_LOTE  = ['ADMINISTRADOR', 'GERENTE']
+const PERFIS_COM_EDICAO_LOTE   = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
+const PERFIS_COM_TRANSFERENCIA = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 
 const defaultForm = {
   codigo: '',
@@ -53,7 +56,10 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
-  const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
+  const canCreateLote = PERFIS_COM_CRIACAO_LOTE.includes(currentUser?.perfil)
+  const canEditLote   = PERFIS_COM_EDICAO_LOTE.includes(currentUser?.perfil)
+  const canDeleteLote = PERFIS_COM_CRIACAO_LOTE.includes(currentUser?.perfil)
+  const canTransfer   = PERFIS_COM_TRANSFERENCIA.includes(currentUser?.perfil)
 
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -176,6 +182,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
       alocacoes: lote.alocacoes.map((aloc) => ({
         setorId: aloc.setorId,
         animaisIds: aloc.animais.map((a) => a.id),
+        animaisAtuais: aloc.animais,
       })),
     })
     setModal({ type: 'form', lote })
@@ -184,6 +191,37 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
 
   function openDetailsModal(lote) {
     setModal({ type: 'details', lote })
+  }
+
+  async function handleTransferirAnimais(animalIds, loteDestinoId, setorDestinoId) {
+    let transferError = null
+    try {
+      await Promise.all(
+        animalIds.map((animalId) =>
+          transferirAnimal(currentUser.email, animalId, loteDestinoId, setorDestinoId),
+        ),
+      )
+    } catch (e) {
+      transferError = e
+    }
+
+    // Atualiza sempre para refletir qualquer transferência parcialmente concluída
+    const updatedLotes = await listarLotesCompletos()
+    setLotes(updatedLotes)
+    const loteAtualizado = updatedLotes.find((l) => l.id === modal.lote?.id)
+    if (loteAtualizado) {
+      setFormData((current) => ({
+        ...current,
+        alocacoes: loteAtualizado.alocacoes.map((aloc) => ({
+          setorId: aloc.setorId,
+          animaisIds: aloc.animais.map((a) => a.id),
+          animaisAtuais: aloc.animais,
+        })),
+      }))
+      setModal((current) => ({ ...current, lote: loteAtualizado }))
+    }
+
+    if (transferError) throw transferError
   }
 
   async function handleSubmitForm(event) {
@@ -246,7 +284,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
@@ -279,9 +317,11 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -371,7 +411,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
             ) : null}
           </div>
 
-          {canEdit ? (
+          {canCreateLote ? (
             <button type="button" className="btn-new-entity" onClick={openCreateModal}>
               + Novo Lote
             </button>
@@ -429,7 +469,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
                           >
                             Detalhes
                           </button>
-                          {canEdit ? (
+                          {canEditLote ? (
                             <button
                               type="button"
                               className="btn-row btn-row--edit"
@@ -486,10 +526,14 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           feedback={formFeedback}
           setoresDisponiveis={setores}
           animaisDisponiveis={animaisDisponiveis}
+          lotesDisponiveis={lotes}
+          loteAtualId={modal.lote?.id ?? null}
+          canTransfer={canTransfer}
           currentUser={currentUser}
           onClose={closeModal}
           onChange={handleFormChange}
           onChangeAlocacoes={handleAlocacoesChange}
+          onTransferirAnimais={handleTransferirAnimais}
           onSubmit={handleSubmitForm}
         />
       ) : null}
@@ -501,6 +545,8 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.lote)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditLote}
+          canDelete={canDeleteLote}
         />
       ) : null}
     </main>

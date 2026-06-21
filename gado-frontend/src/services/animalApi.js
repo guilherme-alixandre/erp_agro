@@ -135,6 +135,7 @@ function normalizeAnimal(rawAnimal) {
     sexo: rawAnimal?.sexo ?? 'M',
     statusAnimal: rawAnimal?.statusAnimal ?? 'ATIVO',
     vacinas: normalizeVacinas(rawAnimal?.vacinas),
+    criadoPorEmail: rawAnimal?.criadoPorEmail ?? null,
   }
 }
 
@@ -161,7 +162,7 @@ function isBackendErrorMessage(payload) {
   return normalized.includes('erro') || normalized.includes('não encontrado')
 }
 
-function cadastrarAnimal(email, animal) {
+function cadastrarAnimal(email, animal, loteSectorId) {
   const emailLimpo = sanitizeText(email)
   if (!emailLimpo) {
     throw new Error('Informe o e-mail do usuario.')
@@ -170,7 +171,7 @@ function cadastrarAnimal(email, animal) {
   const emailCodificado = encodeURIComponent(emailLimpo)
   return request(`/animais/usuarios/${emailCodificado}`, {
     method: 'POST',
-    body: JSON.stringify(toPayload(animal, { incluirVacinas: true })),
+    body: JSON.stringify({ ...toPayload(animal, { incluirVacinas: true }), loteSectorId }),
   })
 }
 
@@ -200,18 +201,20 @@ async function buscarAnimalPorBrinco(brinco) {
   return normalizeAnimal(mensagem)
 }
 
-function atualizarAnimal(brinco, animal) {
+function atualizarAnimal(emailUsuario, brinco, animal) {
   const codigoBrinco = encodeURIComponent(brinco.trim())
   return request(`/animais/${codigoBrinco}`, {
     method: 'PUT',
+    headers: { 'X-Usuario-Email': String(emailUsuario ?? '').trim() },
     body: JSON.stringify(toPayload(animal)),
   })
 }
 
-function deletarAnimal(brinco) {
+function deletarAnimal(emailUsuario, brinco) {
   const codigoBrinco = encodeURIComponent(brinco.trim())
   return request(`/animais/${codigoBrinco}`, {
     method: 'DELETE',
+    headers: { 'X-Usuario-Email': String(emailUsuario ?? '').trim() },
   })
 }
 

@@ -272,16 +272,16 @@ function AnimalFormModal({
 
           {isCreate ? (
             <fieldset className="vacinas-fieldset">
-              <legend>Vincular a um lote (opcional)</legend>
+              <legend>Vincular a um lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></legend>
 
               {(lotesDisponiveis ?? []).length === 0 ? (
-                <p className="vacinas-empty">Nenhum lote ativo disponível.</p>
+                <p className="vacinas-empty">Nenhum lote ativo disponível. Crie um lote antes de cadastrar animais.</p>
               ) : (
                 <>
                   <label>
-                    <span>Lote</span>
-                    <select value={loteVinculo ?? ''} onChange={onChangeLote}>
-                      <option value="">Nenhum</option>
+                    <span>Lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
+                    <select value={loteVinculo ?? ''} onChange={onChangeLote} required>
+                      <option value="">Selecione um lote</option>
                       {(lotesDisponiveis ?? []).map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.codigo}{l.descricao ? ` — ${l.descricao}` : ''}
@@ -292,8 +292,8 @@ function AnimalFormModal({
 
                   {loteSelecionado ? (
                     <label>
-                      <span>Setor</span>
-                      <select value={setorVinculo ?? ''} onChange={onChangeSetor}>
+                      <span>Setor <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
+                      <select value={setorVinculo ?? ''} onChange={onChangeSetor} required>
                         <option value="">Selecione um setor</option>
                         {loteSelecionado.alocacoes.map((aloc) => (
                           <option key={aloc.loteSectorId} value={aloc.loteSectorId}>

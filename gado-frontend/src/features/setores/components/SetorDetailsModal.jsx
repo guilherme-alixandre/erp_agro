@@ -5,7 +5,7 @@ const TIPO_LABEL = {
   PATIO: 'Pátio',
 }
 
-function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting }) {
+function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   const ocupacaoTotal = setor.lotes.reduce(
     (acc, l) => acc + (l.quantidadeAnimais ?? 0),
     0,
@@ -92,19 +92,25 @@ function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting }) {
           </div>
         )}
 
-        <div className="modal-actions">
-          <button type="button" className="btn-secondary" onClick={onEdit}>
-            Editar
-          </button>
-          <button
-            type="button"
-            className="btn-danger"
-            onClick={() => onDelete(setor)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Excluir'}
-          </button>
-        </div>
+        {(canEdit || canDelete) ? (
+          <div className="modal-actions">
+            {canEdit ? (
+              <button type="button" className="btn-secondary" onClick={onEdit}>
+                Editar
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => onDelete(setor)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )

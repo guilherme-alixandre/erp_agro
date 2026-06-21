@@ -331,6 +331,44 @@
   font-size: 0.9rem;
 }
 
+/* ── Painel de transferência (dentro do SetorCard em modo edição) ─── */
+
+.setor-card__transferencia {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: #eaf5e0;
+  border: 1px solid #b8d99c;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.setor-card__transferencia-info {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #244011;
+  margin: 0;
+}
+
+.setor-card__transferencia-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.ssm-trigger--readonly {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f7f7f7;
+  color: #555;
+  font-size: 1rem;
+  min-height: 42px;
+}
+
 /* ── Responsividade ───────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
@@ -340,5 +378,14 @@
 
   .lote-alocacao__header {
     flex-wrap: wrap;
+  }
+
+  .setor-card__transferencia-actions {
+    flex-wrap: wrap;
+  }
+
+  .lote-card__actions button {
+    flex: 1;
+    min-width: 0;
   }
 }

@@ -5,6 +5,21 @@ import {
   validarFormMedicao,
   labelQuantidade,
 } from '../../../services/metaSetorApi'
+import SearchSelectModal from '../../../components/shared/SearchSelectModal'
+
+function RequiredLabel({ children }) {
+  return (
+    <span>
+      {children} <span className="required-marker" aria-hidden="true">*</span>
+    </span>
+  )
+}
+
+const LOTE_COLUMNS = [
+  { key: 'codigo', label: 'Código' },
+  { key: 'descricao', label: 'Descrição' },
+  { key: 'totalAnimais', label: 'Animais' },
+]
 
 const defaultForm = {
   loteId: '',
@@ -17,7 +32,7 @@ const defaultForm = {
  *
  * Props:
  *  - meta               → objeto MetaSetor normalizado (id, tipoMeta, setorNome)
- *  - lotes              → lista de lotes disponíveis para seleção
+ *  - lotes              → lista de lotes disponíveis para seleção (normalizeLote[])
  *  - emailUsuario       → string com o email do usuário logado
  *  - medicaoParaEditar  → objeto de medição existente (opcional — ausente = modo criação)
  *  - onClose            → fn() — fecha o modal sem salvar
@@ -33,11 +48,20 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
           dataMedicao: medicaoParaEditar.dataMedicao,
           quantidadeLancada: String(medicaoParaEditar.quantidadeLancada),
         }
-      : defaultForm
+      : defaultForm,
   )
   const [erros, setErros] = useState({})
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const [loteModalOpen, setLoteModalOpen] = useState(false)
+
+  const loteSelecionado = form.loteId
+    ? lotes.find((l) => String(l.id) === form.loteId) ?? null
+    : null
+
+  const loteTriggerText = loteSelecionado
+    ? `${loteSelecionado.codigo}${loteSelecionado.descricao ? ` — ${loteSelecionado.descricao}` : ''}`
+    : null
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -45,6 +69,15 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
     if (erros[name]) {
       setErros((current) => ({ ...current, [name]: '' }))
     }
+  }
+
+  function handleLoteConfirm(ids) {
+    const id = ids[0] ?? null
+    setForm((current) => ({ ...current, loteId: id !== null ? String(id) : '' }))
+    if (erros.loteId) {
+      setErros((current) => ({ ...current, loteId: '' }))
+    }
+    setLoteModalOpen(false)
   }
 
   async function handleSubmit(event) {
@@ -85,8 +118,16 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-box">
         <h2>{modoEdicao ? 'Editar Medição' : 'Adicionar Medição'}</h2>
-        <p style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '-1rem', marginBottom: '1.25rem' }}>
-          Meta: <strong>{meta.setorNome}</strong> — {meta.tipoMeta === 'LEITE' ? 'Leite' : 'Arroba'}
+        <p
+          style={{
+            fontSize: '0.82rem',
+            color: '#6b7280',
+            marginTop: '-1rem',
+            marginBottom: '1.25rem',
+          }}
+        >
+          Meta: <strong>{meta.setorNome}</strong> —{' '}
+          {meta.tipoMeta === 'LEITE' ? 'Leite' : 'Arroba'}
         </p>
 
         <form className="meta-form" onSubmit={handleSubmit} noValidate>
@@ -94,30 +135,29 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
           {/* Lote */}
           <div className="form-group">
             <label>
-              <span>Lote</span>
-              <select
-                name="loteId"
-                value={form.loteId}
-                onChange={handleChange}
-                className={erros.loteId ? 'field-error' : ''}
+              <RequiredLabel>Lote</RequiredLabel>
+              <button
+                type="button"
+                className={`ssm-trigger${erros.loteId ? ' ssm-trigger--error' : ''}`}
+                onClick={() => setLoteModalOpen(true)}
               >
-                <option value="">Selecione um lote...</option>
-                {lotes.map((lote) => (
-                  <option key={lote.id} value={lote.id}>
-                    {lote.descricao}
-                  </option>
-                ))}
-              </select>
-              {erros.loteId && (
+                <span className={loteTriggerText ? '' : 'ssm-trigger__placeholder'}>
+                  {loteTriggerText ?? 'Selecione um lote...'}
+                </span>
+                <span className="ssm-trigger__arrow" aria-hidden="true">
+                  ▼
+                </span>
+              </button>
+              {erros.loteId ? (
                 <span className="field-error-msg">{erros.loteId}</span>
-              )}
+              ) : null}
             </label>
           </div>
 
           {/* Data da medição */}
           <div className="form-group">
             <label>
-              <span>Data da Medição</span>
+              <RequiredLabel>Data da Medição</RequiredLabel>
               <input
                 type="date"
                 name="dataMedicao"
@@ -126,16 +166,16 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
                 className={erros.dataMedicao ? 'field-error' : ''}
                 max={new Date().toISOString().slice(0, 10)}
               />
-              {erros.dataMedicao && (
+              {erros.dataMedicao ? (
                 <span className="field-error-msg">{erros.dataMedicao}</span>
-              )}
+              ) : null}
             </label>
           </div>
 
           {/* Quantidade */}
           <div className="form-group">
             <label>
-              <span>{labelQuantidade(meta.tipoMeta)}</span>
+              <RequiredLabel>{labelQuantidade(meta.tipoMeta)}</RequiredLabel>
               <input
                 type="number"
                 name="quantidadeLancada"
@@ -146,15 +186,15 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
                 placeholder="0,00"
                 className={erros.quantidadeLancada ? 'field-error' : ''}
               />
-              {erros.quantidadeLancada && (
+              {erros.quantidadeLancada ? (
                 <span className="field-error-msg">{erros.quantidadeLancada}</span>
-              )}
+              ) : null}
             </label>
           </div>
 
-          {feedback && (
+          {feedback ? (
             <p className="feedback feedback--error">{feedback}</p>
-          )}
+          ) : null}
 
           <div className="modal-actions">
             <button
@@ -165,16 +205,28 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isSaving}
-            >
-              {isSaving ? 'Salvando...' : modoEdicao ? 'Salvar Alterações' : 'Salvar Medição'}
+            <button type="submit" className="btn-primary" disabled={isSaving}>
+              {isSaving
+                ? 'Salvando...'
+                : modoEdicao
+                  ? 'Salvar Alterações'
+                  : 'Salvar Medição'}
             </button>
           </div>
         </form>
       </div>
+
+      {loteModalOpen ? (
+        <SearchSelectModal
+          title="Selecionar lote"
+          items={lotes}
+          selectedIds={form.loteId ? [Number(form.loteId)] : []}
+          onConfirm={handleLoteConfirm}
+          onClose={() => setLoteModalOpen(false)}
+          multiSelect={false}
+          columns={LOTE_COLUMNS}
+        />
+      ) : null}
     </div>
   )
 }

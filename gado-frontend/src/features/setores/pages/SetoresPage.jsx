@@ -13,7 +13,8 @@ import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../../animais/styles/animais.css'
 import '../styles/setores.css'
 
-const PERFIS_COM_EDICAO = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR']
+const PERFIS_COM_CRIACAO_EDICAO_SETOR = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
+const PERFIS_COM_EXCLUSAO_SETOR      = ['ADMINISTRADOR', 'GERENTE']
 
 const defaultForm = {
   nome: '',
@@ -42,7 +43,9 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
 
   const { refreshGlobal, dispararRefresh } = useRefresh()
 
-  const canEdit = PERFIS_COM_EDICAO.includes(currentUser?.perfil)
+  const canCreateSetor = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
+  const canEditSetor   = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
+  const canDeleteSetor = PERFIS_COM_EXCLUSAO_SETOR.includes(currentUser?.perfil)
 
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -198,7 +201,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
@@ -231,9 +234,11 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -323,7 +328,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
             ) : null}
           </div>
 
-          {canEdit ? (
+          {canCreateSetor ? (
             <button type="button" className="btn-new-entity" onClick={openCreateModal}>
               + Novo Setor
             </button>
@@ -337,6 +342,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                 <th>Nome</th>
                 <th>Tipo</th>
                 <th>Cap. Máxima</th>
+                <th>Lotes</th>
                 <th>Meta</th>
                 <th>Criado Por</th>
                 <th>Ações</th>
@@ -345,13 +351,13 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="table-loading">
+                  <td colSpan={7} className="table-loading">
                     Carregando...
                   </td>
                 </tr>
               ) : paginatedSetores.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="table-empty">
+                  <td colSpan={7} className="table-empty">
                     {activeSearch
                       ? `Nenhum resultado para "${activeSearch}".`
                       : 'Nenhum setor cadastrado. Clique em "+ Novo Setor" para começar.'}
@@ -363,6 +369,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                     <td>{setor.nome}</td>
                     <td>{setor.tipo || '—'}</td>
                     <td>{setor.capacidadeMaxima ?? '—'}</td>
+                    <td>{setor.lotes.length > 0 ? setor.lotes.length : '—'}</td>
                     <td className="td-truncate">{setor.metaTexto || '—'}</td>
                     <td>{setor.criadoPorNome || '—'}</td>
                     <td>
@@ -374,7 +381,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                         >
                           Detalhes
                         </button>
-                        {canEdit ? (
+                        {canEditSetor ? (
                           <button
                             type="button"
                             className="btn-row btn-row--edit"
@@ -442,6 +449,8 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.setor)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditSetor}
+          canDelete={canDeleteSetor}
         />
       ) : null}
     </main>

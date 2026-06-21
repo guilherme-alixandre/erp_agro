@@ -10,7 +10,7 @@ function formatDate(value) {
   return String(value)
 }
 
-function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting }) {
+function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card modal-card--wide">
@@ -99,19 +99,25 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting }) {
           </div>
         )}
 
-        <div className="modal-actions">
-          <button type="button" className="btn-secondary" onClick={onEdit}>
-            Editar
-          </button>
-          <button
-            type="button"
-            className="btn-danger"
-            onClick={() => onDelete(lote)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Excluir'}
-          </button>
-        </div>
+        {(canEdit || canDelete) ? (
+          <div className="modal-actions">
+            {canEdit ? (
+              <button type="button" className="btn-secondary" onClick={onEdit}>
+                Editar
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => onDelete(lote)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )

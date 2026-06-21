@@ -160,3 +160,14 @@
   color: #2a5a0e;
   white-space: nowrap;
 }
+
+@media (max-width: 600px) {
+  .setor-card-item__top {
+    flex-wrap: wrap;
+  }
+
+  .setor-card-item__actions button {
+    flex: 1;
+    min-width: 0;
+  }
+}

@@ -10,7 +10,7 @@ import {
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import { listarVacinas } from '../../../services/insumoApi'
-import { atualizarLote, listarLotesCompletos } from '../../../services/loteApi'
+import { listarLotesCompletos } from '../../../services/loteApi'
 import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../styles/animais.css'
 
@@ -56,6 +56,20 @@ function toCardAnimal(animal) {
 }
 
 const ROWS_PER_PAGE = 10
+
+function canEditAnimal(animal, currentUser) {
+  const perfil = currentUser?.perfil
+  if (perfil === 'CUIDADOR') return animal?.criadoPorEmail === currentUser?.email
+  return true
+}
+
+function canDeleteAnimal(animal, currentUser) {
+  const perfil = currentUser?.perfil
+  if (perfil === 'CUIDADOR' || perfil === 'CUIDADOR_CHEFE') {
+    return animal?.criadoPorEmail === currentUser?.email
+  }
+  return true
+}
 
 function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
@@ -231,9 +245,15 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   async function handleSubmitForm(event) {
     event.preventDefault()
 
-    if (formMode === 'create' && loteVinculo && !setorVinculo) {
-      setFormFeedback('Selecione um setor para vincular ao lote.')
-      return
+    if (formMode === 'create') {
+      if (!loteVinculo) {
+        setFormFeedback('Selecione um lote para o animal.')
+        return
+      }
+      if (!setorVinculo) {
+        setFormFeedback('Selecione um setor do lote para o animal.')
+        return
+      }
     }
 
     setIsSaving(true)
@@ -242,45 +262,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(currentUser.email, formData)
+        const result = await cadastrarAnimal(currentUser.email, formData, setorVinculo)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
-
-        if (loteVinculo && setorVinculo) {
-          try {
-            const novoAnimalId = result?.id ?? result?.mensagem?.id ?? null
-            if (novoAnimalId !== null) {
-              const lote = lotesDisponiveis.find((l) => l.id === loteVinculo)
-              if (lote) {
-                const alocacoesUpdate = lote.alocacoes.map((aloc) => ({
-                  setorId: aloc.setorId,
-                  animaisIds: [
-                    ...aloc.animais.map((a) => a.id).filter((id) => id !== null),
-                    ...(Number(aloc.loteSectorId) === setorVinculo ? [novoAnimalId] : []),
-                  ],
-                }))
-                await atualizarLote(lote.id, currentUser.email, {
-                  corBrinco: lote.corBrinco,
-                  descricao: lote.descricao,
-                  racaPredominante: lote.racaPredominante,
-                  alocacoes: alocacoesUpdate,
-                })
-                setFeedback({ type: 'info', message: 'Animal cadastrado e vinculado ao lote com sucesso.' })
-              } else {
-                setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
-              }
-            } else {
-              setFeedback({ type: 'info', message: 'Animal cadastrado. Vincule-o ao lote manualmente na página de Lotes.' })
-            }
-          } catch (loteError) {
-            setFeedback({ type: 'info', message: `Animal cadastrado, mas falha ao vincular ao lote: ${loteError.message}` })
-          }
-        } else {
-          setFeedback({ type: 'info', message: 'Animal cadastrado com sucesso.' })
-        }
+        setFeedback({ type: 'info', message: 'Animal cadastrado e vinculado ao lote com sucesso.' })
       } else {
-        const result = await atualizarAnimal(formData.codigoBrinco, formData)
+        const result = await atualizarAnimal(currentUser.email, formData.codigoBrinco, formData)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao atualizar animal.')
         }
@@ -306,7 +294,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     setIsDeleting(true)
     setFeedback({ type: '', message: '' })
     try {
-      const result = await deletarAnimal(animal.codigoBrinco)
+      const result = await deletarAnimal(currentUser.email, animal.codigoBrinco)
       if (isBackendErrorMessage(result)) {
         throw new Error(getBackendMessage(result) || 'Falha ao excluir animal.')
       }
@@ -350,7 +338,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button type="button" className="menu-item menu-item--active">
             Animais
@@ -383,9 +371,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -475,27 +465,31 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             <option value="ABATIDO">Abatido</option>
           </select>
 
-          <input
-            type="date"
-            className="toolbar-date"
-            value={dateFrom}
-            title="Nascimento de"
-            onChange={(e) => {
-              setDateFrom(e.target.value)
-              setPage(0)
-            }}
-          />
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">Nascimento de</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
 
-          <input
-            type="date"
-            className="toolbar-date"
-            value={dateTo}
-            title="Nascimento até"
-            onChange={(e) => {
-              setDateTo(e.target.value)
-              setPage(0)
-            }}
-          />
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">Nascimento até</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
 
           <button type="button" className="btn-export-csv" onClick={exportCSV}>
             Exportar CSV
@@ -639,6 +633,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           onEdit={() => openEditModal(modal.animal)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEditAnimal(modal.animal, currentUser)}
+          canDelete={canDeleteAnimal(modal.animal, currentUser)}
         />
       ) : null}
     </main>

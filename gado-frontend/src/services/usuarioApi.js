@@ -71,12 +71,34 @@ async function listarUsuarios(adminEmail) {
   return payload
 }
 
+async function atualizarUsuario(email, data, adminEmail) {
+  const emailCodificado = encodeURIComponent(String(email).trim())
+  return request(`/usuarios/${emailCodificado}`, {
+    method: 'PUT',
+    headers: {
+      ...adminHeaders(adminEmail),       // <-- Espalha os cabeçalhos de autenticação
+      'Content-Type': 'application/json' // <-- Adiciona o aviso de que o body é JSON
+    },
+    body: JSON.stringify(data),
+  })
+}
+
 function deletarUsuario(email, adminEmail) {
   const emailCodificado = encodeURIComponent(String(email).trim())
   return request(`/usuarios/${emailCodificado}`, {
     method: 'DELETE',
     headers: adminHeaders(adminEmail),
   })
+}
+
+async function verificarCredenciais(email, senha) {
+  const payload = await request('/usuarios/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: String(email ?? '').trim(), senha }),
+  })
+  const usuario = getUsuarioDoPayload(payload)
+  if (!usuario) throw new Error('Credenciais inválidas.')
+  return usuario
 }
 
 async function loginUsuario(email, senha) {
@@ -109,10 +131,12 @@ async function loginUsuario(email, senha) {
 }
 
 export {
+  atualizarUsuario,
   buscarUsuarioPorEmail,
   cadastrarUsuario,
   deletarUsuario,
   listarUsuarios,
   loginUsuario,
+  verificarCredenciais,
 }
 
