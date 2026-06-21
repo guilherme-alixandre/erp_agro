@@ -256,6 +256,14 @@ class SInsumoTest {
             when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.of(vacinaEntity));
             assertNotNull(sInsumo.buscaPorId(ID_TESTE));
         }
+
+        @Test
+        void deveLancarExcecao_QuandoInsumoNaoEncontrado() {
+            when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.empty());
+            EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                    () -> sInsumo.buscaPorId(ID_TESTE));
+            assertEquals("Insumo não encontrado.", ex.getMessage());
+        }
     }
 
     @Nested
@@ -299,6 +307,20 @@ class SInsumoTest {
             when(insumoInterface.findById(ID_TESTE)).thenReturn(Optional.of(vacinaEntity));
             assertEquals("Insumo deletado com sucesso", sInsumo.deletaInsumo(ID_TESTE));
             verify(insumoInterface, times(1)).deleteById(ID_TESTE);
+        }
+    }
+
+    @Nested
+    class CriarVacinaAdicionaisTests {
+
+        @Test
+        void deveLancarExcecao_QuandoNomeForNulo() {
+            VacinaCadastroDto dto = new VacinaCadastroDto();
+            dto.setNome(null); // nome null, dto not null
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sInsumo.criarVacina(dto));
+            assertEquals("Informe o nome da vacina.", ex.getMessage());
         }
     }
 

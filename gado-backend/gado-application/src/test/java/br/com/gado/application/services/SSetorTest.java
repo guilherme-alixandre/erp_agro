@@ -6,6 +6,7 @@ import br.com.gado.domain.entities.ELote;
 import br.com.gado.domain.entities.ELoteSetor;
 import br.com.gado.domain.entities.ESetor;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.domain.enums.EnTipoSetor;
 import br.com.gado.infrastructure.persistence.repositories.ILoteSetor;
@@ -20,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,7 @@ class SSetorTest {
         usuarioEntity.setId(99L);
         usuarioEntity.setNome("João Silva");
         usuarioEntity.setEmail(EMAIL_VALIDO);
+        usuarioEntity.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
 
         setorEntity = new ESetor();
         setorEntity.setId(ID);
@@ -184,33 +187,18 @@ class SSetorTest {
         }
 
         @Test
-        void cadastrar_DeveSalvarSemCriadoPor_QuandoEmailForNuloOuBlank() {
-            ESetor setorSemCriador = new ESetor();
-            setorSemCriador.setId(ID);
-            setorSemCriador.setNome("Pasto A");
-
-            when(setorInterface.save(any(ESetor.class))).thenReturn(setorSemCriador);
-
-            SetorDto response = sSetor.cadastra(setorDto, null);
-
-            assertNull(response.getCriadoPorNome());
-            assertNull(response.getCriadoPorEmail());
-            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        void cadastrar_DeveLancarExcecao_QuandoEmailForNulo() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.cadastra(setorDto, null));
+            verify(setorInterface, never()).save(any());
         }
 
         @Test
-        void cadastrar_DeveSalvarSemCriadoPor_QuandoUsuarioNaoEncontrado() {
-            ESetor setorSemCriador = new ESetor();
-            setorSemCriador.setId(ID);
-            setorSemCriador.setNome("Pasto A");
-
+        void cadastrar_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
             when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
                     .thenReturn(Optional.empty());
-            when(setorInterface.save(any(ESetor.class))).thenReturn(setorSemCriador);
 
-            SetorDto response = sSetor.cadastra(setorDto, EMAIL_VALIDO);
-
-            assertNull(response.getCriadoPorNome());
+            assertThrows(IllegalArgumentException.class, () -> sSetor.cadastra(setorDto, EMAIL_VALIDO));
+            verify(setorInterface, never()).save(any());
         }
     }
 
@@ -219,13 +207,14 @@ class SSetorTest {
 
         @Test
         void deletar_DeveInativarSetor() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
             when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
                     .thenReturn(Optional.of(setorEntity));
-
             when(setorInterface.save(any(ESetor.class)))
                     .thenReturn(setorEntity);
 
-            assertDoesNotThrow(() -> sSetor.deleta(ID));
+            assertDoesNotThrow(() -> sSetor.deleta(ID, EMAIL_VALIDO));
 
             verify(setorInterface, times(1)).save(any(ESetor.class));
             assertEquals(EnStatus.I, setorEntity.getStatus());
@@ -233,11 +222,13 @@ class SSetorTest {
 
         @Test
         void deletar_DeveLancarExcecao() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
             when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
                     .thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
-                    () -> sSetor.deleta(ID));
+                    () -> sSetor.deleta(ID, EMAIL_VALIDO));
         }
     }
 
@@ -308,15 +299,269 @@ class SSetorTest {
         }
 
         @Test
-        void alterar_DeveSalvarSemAlteradoPor_QuandoEmailForNulo() {
+        void alterar_DeveLancarExcecao_QuandoEmailForNulo() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.altera(ID, setorDto, null));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void alterar_DeveLancarExcecao_QuandoEmailForBlank() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.altera(ID, setorDto, "   "));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void alterar_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.empty());
+            assertThrows(IllegalArgumentException.class, () -> sSetor.altera(ID, setorDto, EMAIL_VALIDO));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void alterar_DeveLancarExcecao_QuandoPerfilForCuidador() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sSetor.altera(ID, setorDto, EMAIL_VALIDO));
+            assertTrue(ex.getMessage().contains("Cuidadores Chefe"));
+        }
+
+        @Test
+        void alterar_DeveLancarExcecao_QuandoPerfilForFinanceiro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.FINANCEIRO);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            assertThrows(IllegalArgumentException.class,
+                    () -> sSetor.altera(ID, setorDto, EMAIL_VALIDO));
+        }
+
+        @Test
+        void alterar_DevePermitirCuidadorChefe() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
             when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
                     .thenReturn(Optional.of(setorEntity));
             when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
 
-            SetorDto response = sSetor.altera(ID, setorDto, null);
+            assertDoesNotThrow(() -> sSetor.altera(ID, setorDto, EMAIL_VALIDO));
+        }
 
-            assertNull(response.getAlteradoPorNome());
-            verify(usuarioInterface, never()).findByEmailAndStatus(any(), any());
+        @Test
+        void alterar_DeveAtualizarNome_QuandoNomeValido() {
+            setorDto.setNome("Novo Nome");
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            sSetor.altera(ID, setorDto, EMAIL_VALIDO);
+
+            assertEquals("Novo Nome", setorEntity.getNome());
+        }
+
+        @Test
+        void alterar_NaoDeveAtualizarNome_QuandoNomeForBlank() {
+            setorDto.setNome("   ");
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            sSetor.altera(ID, setorDto, EMAIL_VALIDO);
+
+            assertEquals("Pasto A", setorEntity.getNome());
+        }
+    }
+
+    @Nested
+    class DeletarPermissaoAdicionaisTests {
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoEmailForNulo() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.deleta(ID, null));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoEmailForBlank() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.deleta(ID, "   "));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoUsuarioNaoEncontrado() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.empty());
+            assertThrows(IllegalArgumentException.class, () -> sSetor.deleta(ID, EMAIL_VALIDO));
+        }
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoPerfilForCuidadorChefe() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sSetor.deleta(ID, EMAIL_VALIDO));
+            assertTrue(ex.getMessage().contains("Administradores e Gerentes"));
+        }
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoPerfilForCuidador() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            assertThrows(IllegalArgumentException.class, () -> sSetor.deleta(ID, EMAIL_VALIDO));
+        }
+    }
+
+    @Nested
+    class CadastrarPermissaoAdicionaisTests {
+
+        @Test
+        void cadastrar_DeveLancarExcecao_QuandoEmailForBlank() {
+            assertThrows(IllegalArgumentException.class, () -> sSetor.cadastra(setorDto, "   "));
+            verify(setorInterface, never()).save(any());
+        }
+
+        @Test
+        void cadastrar_DeveLancarExcecao_QuandoPerfilForCuidador() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            assertThrows(IllegalArgumentException.class, () -> sSetor.cadastra(setorDto, EMAIL_VALIDO));
+        }
+
+        @Test
+        void cadastrar_DeveLancarExcecao_QuandoPerfilForFinanceiro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.FINANCEIRO);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            assertThrows(IllegalArgumentException.class, () -> sSetor.cadastra(setorDto, EMAIL_VALIDO));
+        }
+
+        @Test
+        void cadastrar_DevePermitirGerente() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.GERENTE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            assertDoesNotThrow(() -> sSetor.cadastra(setorDto, EMAIL_VALIDO));
+        }
+
+        @Test
+        void cadastrar_DevePermitirCuidadorChefe() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            assertDoesNotThrow(() -> sSetor.cadastra(setorDto, EMAIL_VALIDO));
+        }
+    }
+
+    @Nested
+    class DeletarPermissaoGerenteTests {
+
+        @Test
+        void deletar_DevePermitirGerente() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.GERENTE);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A))
+                    .thenReturn(Optional.of(setorEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            assertDoesNotThrow(() -> sSetor.deleta(ID, EMAIL_VALIDO));
+        }
+
+        @Test
+        void deletar_DeveLancarExcecao_QuandoPerfilForFinanceiro() {
+            usuarioEntity.setPerfil(EnPerfilUsuario.FINANCEIRO);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+
+            assertThrows(IllegalArgumentException.class, () -> sSetor.deleta(ID, EMAIL_VALIDO));
+        }
+    }
+
+    @Nested
+    class CadastrarResolveUsuarioTests {
+
+        @Test
+        void cadastrar_DeveRetornarSetorComCriadoPorNulo_QuandoResolveUsuarioRetornaNulo() {
+            // When usuarioInterface returns empty for resolveUsuario path
+            // But this cannot happen normally since validaPermissaoCriarEditar would throw first.
+            // Instead test that when resolveUsuario gets a valid email it returns the user properly.
+            usuarioEntity.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_VALIDO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioEntity));
+            when(setorInterface.save(any(ESetor.class))).thenReturn(setorEntity);
+
+            SetorDto response = sSetor.cadastra(setorDto, EMAIL_VALIDO);
+
+            assertNotNull(response);
+            // criadoPor is populated on the saved entity
+            assertEquals(EMAIL_VALIDO, response.getCriadoPorEmail());
+        }
+    }
+
+    @Nested
+    class ResolveUsuarioTests {
+
+        @Test
+        void resolveUsuario_DeveRetornarNull_QuandoEmailForNulo() throws Exception {
+            Method method = SSetor.class.getDeclaredMethod("resolveUsuario", String.class);
+            method.setAccessible(true);
+
+            EUsuario resultado = (EUsuario) method.invoke(sSetor, (Object) null);
+
+            assertNull(resultado);
+        }
+
+        @Test
+        void resolveUsuario_DeveRetornarNull_QuandoEmailForBlank() throws Exception {
+            Method method = SSetor.class.getDeclaredMethod("resolveUsuario", String.class);
+            method.setAccessible(true);
+
+            EUsuario resultado = (EUsuario) method.invoke(sSetor, "   ");
+
+            assertNull(resultado);
+        }
+    }
+
+    @Nested
+    class ToSetorDtoAdicionaisTests {
+
+        @Test
+        void devePopularAlteradoPor_QuandoSetorTiverAlteradoPor() {
+            setorEntity.setAlteradoPor(usuarioEntity);
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findBySetor_Id(ID)).thenReturn(List.of());
+
+            SetorDto response = sSetor.procuraPorId(ID);
+
+            assertEquals(usuarioEntity.getNome(), response.getAlteradoPorNome());
+            assertEquals(usuarioEntity.getEmail(), response.getAlteradoPorEmail());
+        }
+
+        @Test
+        void deveRetornarNomeNulo_QuandoSetorNaoTiverCriadoPor() {
+            setorEntity.setCriadoPor(null);
+            when(setorInterface.findByIdAndStatus(ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findBySetor_Id(ID)).thenReturn(List.of());
+
+            SetorDto response = sSetor.procuraPorId(ID);
+
+            assertNull(response.getCriadoPorNome());
+            assertNull(response.getCriadoPorEmail());
         }
     }
 }

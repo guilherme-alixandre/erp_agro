@@ -537,6 +537,210 @@ class SMetaSetorTest {
     }
 
     @Nested
+    class ValidaEdicaoMedicaoAdicionaisTests {
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoCuidadorChefeAlteraMedicaoCriadaPorAdmin() {
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+
+            EUsuario adminCriador = new EUsuario();
+            adminCriador.setEmail(EMAIL_ADMIN);
+            adminCriador.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+
+            medicaoLeite.setCriadoPorEmail(EMAIL_ADMIN);
+
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidadorChefe));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_ADMIN, EnStatus.A))
+                    .thenReturn(Optional.of(adminCriador));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+            assertEquals("Cuidadores Chefe não podem alterar medições criadas por Administradores ou Gerentes.", ex.getMessage());
+        }
+
+        @Test
+        void validaEdicaoMedicao_DeveLancarExcecao_QuandoCuidadorChefeAlteraMedicaoCriadaPorGerente() {
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+
+            EUsuario gerente = new EUsuario();
+            gerente.setEmail("gerente@gado.com");
+            gerente.setPerfil(EnPerfilUsuario.GERENTE);
+
+            medicaoLeite.setCriadoPorEmail("gerente@gado.com");
+
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidadorChefe));
+            when(usuarioInterface.findByEmailAndStatus("gerente@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(gerente));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+            assertEquals("Cuidadores Chefe não podem alterar medições criadas por Administradores ou Gerentes.", ex.getMessage());
+        }
+
+        @Test
+        void validaEdicaoMedicao_DevePermitir_QuandoCuidadorChefeAlteraMedicaoCriadaPorCuidador() {
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+
+            EUsuario cuidador = new EUsuario();
+            cuidador.setEmail("cuidador@gado.com");
+            cuidador.setPerfil(EnPerfilUsuario.CUIDADOR);
+
+            medicaoLeite.setCriadoPorEmail("cuidador@gado.com");
+
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidadorChefe));
+            when(usuarioInterface.findByEmailAndStatus("cuidador@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidador));
+
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+        }
+
+        @Test
+        void validaEdicaoMedicao_DevePermitir_QuandoCuidadorChefeECriadoPorEmailNuloOuSemPerfil() {
+            // resolverPerfilPorEmail returns null when email is null => not ADMIN/GERENTE => allowed
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+
+            medicaoLeite.setCriadoPorEmail(null);
+
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidadorChefe));
+
+            // null email => resolverPerfilPorEmail returns null => no throw
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+        }
+
+        @Test
+        void validaEdicaoMedicao_DevePermitirCuidador_QuandoEmailConfere() {
+            // CUIDADOR + email matches criadoPorEmail => ok
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioCaseiro));
+
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao(EMAIL_CASEIRO, medicaoLeite));
+        }
+    }
+
+    @Nested
+    class ResolverNomePorEmailAdicionaisTests {
+
+        @Test
+        void buscarPorId_DeveRetornarNomeNulo_QuandoEmailNaoEncontradoNoBanco() {
+            // email presente na medicao mas usuario nao existe => resolverNomePorEmail retorna null
+            medicaoLeite.setCriadoPorEmail("naoexiste@gado.com");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus("naoexiste@gado.com", EnStatus.A))
+                    .thenReturn(Optional.empty());
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertNull(dto.getMedicoes().get(0).getCriadoPorNome());
+            assertNull(dto.getMedicoes().get(0).getCriadoPorPerfil());
+        }
+
+        @Test
+        void buscarPorId_DeveRetornarPerfilNulo_QuandoCriadoPorEmailForBlank() {
+            // criadoPorEmail blank => perfisPorEmail key is "", isBlank => returns null
+            medicaoLeite.setCriadoPorEmail("");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertNull(dto.getMedicoes().get(0).getCriadoPorPerfil());
+        }
+
+        @Test
+        void buscarPorId_DeveIncluirPerfilDoCriador_QuandoUsuarioEncontrado() {
+            medicaoLeite.setCriadoPorEmail(EMAIL_CASEIRO);
+            usuarioCaseiro.setNome("Caseiro");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_CASEIRO, EnStatus.A))
+                    .thenReturn(Optional.of(usuarioCaseiro));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertEquals(EnPerfilUsuario.CUIDADOR.name(), dto.getMedicoes().get(0).getCriadoPorPerfil());
+        }
+
+        @Test
+        void alterar_DeveAtualizarSomenteDataFinal_QuandoApenasDataFinalInformada() {
+            when(metaSetorInterface.findById(11L)).thenReturn(Optional.of(metaArroba));
+            MetaSetorPutDto dto = new MetaSetorPutDto();
+            LocalDate novaDataFinal = LocalDate.now().plusDays(60);
+            dto.setDataFinal(novaDataFinal);
+
+            String msg = sMetaSetor.alterar(11L, dto);
+
+            assertEquals("Meta do setor atualizada com sucesso.", msg);
+            assertEquals(novaDataFinal, metaArroba.getDataFinal());
+        }
+
+        @Test
+        void alterar_NaoDeveLancarExcecao_QuandoDataInicialForNulaAposEdicao() {
+            // meta with dataInicial = null => second && short-circuits => no exception
+            metaArroba.setDataInicial(null);
+            when(metaSetorInterface.findById(11L)).thenReturn(Optional.of(metaArroba));
+            MetaSetorPutDto dto = new MetaSetorPutDto();
+            dto.setDataFinal(LocalDate.now().plusDays(10));
+
+            String msg = sMetaSetor.alterar(11L, dto);
+
+            assertEquals("Meta do setor atualizada com sucesso.", msg);
+        }
+
+        @Test
+        void alterar_NaoDeveLancarExcecao_QuandoDataFinalForNulaAposEdicao() {
+            // meta with dataFinal = null => first && short-circuits => no exception
+            metaArroba.setDataFinal(null);
+            when(metaSetorInterface.findById(11L)).thenReturn(Optional.of(metaArroba));
+
+            String msg = sMetaSetor.alterar(11L, new MetaSetorPutDto());
+
+            assertEquals("Meta do setor atualizada com sucesso.", msg);
+        }
+
+        @Test
+        void buscarPorId_ComEmailBlank_DeveRetornarPerfilNuloViaCriadoPorEmailBlank() {
+            // resolverPerfilPorEmail with blank email returns null => criadoPorPerfil = null
+            medicaoLeite.setCriadoPorEmail("   ");
+            when(metaSetorInterface.findById(10L)).thenReturn(Optional.of(metaLeite));
+            when(medicaoMetaInterface.findByMetaSetor_Id(10L)).thenReturn(List.of(medicaoLeite));
+
+            MetaSetorRespostaDto dto = sMetaSetor.buscarPorId(10L);
+
+            assertNull(dto.getMedicoes().get(0).getCriadoPorPerfil());
+        }
+
+        @Test
+        void validaEdicaoMedicao_DevePermitir_QuandoCuidadorChefeECriadoPorEmailBlank() {
+            // resolverPerfilPorEmail called directly with blank email => return null => not ADMIN/GERENTE => allowed
+            EUsuario cuidadorChefe = new EUsuario();
+            cuidadorChefe.setEmail("chefe@gado.com");
+            cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+
+            medicaoLeite.setCriadoPorEmail("   "); // blank email
+
+            when(usuarioInterface.findByEmailAndStatus("chefe@gado.com", EnStatus.A))
+                    .thenReturn(Optional.of(cuidadorChefe));
+
+            // resolverPerfilPorEmail("   ") => isBlank => return null => not ADMIN/GERENTE => no throw
+            assertDoesNotThrow(() -> sMetaSetor.validaEdicaoMedicao("chefe@gado.com", medicaoLeite));
+        }
+    }
+
+    @Nested
     class ValidarEAtualizarMedicaoTests {
         @Test
         void deveLancarExcecao_QuandoMedicaoNaoEncontrada() {
