@@ -523,6 +523,14 @@ class SUsuarioTest {
     }
 
     @Test
+    void isSha256Hex_DeveRetornarFalse_QuandoValorForNulo() throws Exception {
+        java.lang.reflect.Method method = SUsuario.class.getDeclaredMethod("isSha256Hex", String.class);
+        method.setAccessible(true);
+        boolean resultado = (boolean) method.invoke(null, (Object) null);
+        assertFalse(resultado);
+    }
+
+    @Test
     void sha256Hex_DeveLancarRuntimeException_QuandoAlgoritmoNaoExistir() {
         UsuarioCadastroDto dto = new UsuarioCadastroDto();
         dto.setNome("Nome");

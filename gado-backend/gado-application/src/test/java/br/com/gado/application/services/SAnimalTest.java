@@ -440,6 +440,17 @@ class SAnimalTest {
                     () -> sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE));
             assertEquals("Você só pode excluir animais que você cadastrou.", ex.getMessage());
         }
+
+        @Test
+        void deveLancarExcecao_QuandoUsuarioNaoEncontradoNaDelecao() {
+            when(animalInterface.findByCodigoBrincoAndStatus(BRINCO_TESTE, EnStatus.A))
+                    .thenReturn(Optional.of(animalEntity));
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_TESTE, EnStatus.A))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> sAnimal.deletaAnimal(EMAIL_TESTE, BRINCO_TESTE));
+        }
     }
 
     @Nested

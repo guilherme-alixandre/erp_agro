@@ -264,6 +264,83 @@ class AnimalIntegrationTest {
                 .hasMessageContaining("você cadastrou");
     }
 
+    // ── Sad Path Adicionais ───────────────────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoCadastrarAnimalQuandoLoteSetorNaoExiste() {
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), Long.MAX_VALUE);
+
+        assertThatThrownBy(() -> animalService.cadastraAnimal(usuario.getEmail(), dto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Alocação de lote/setor não encontrada");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarAnimalQuandoLoteEstaInativo() {
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ELoteSetor loteSetor = criarLoteSetor();
+        loteSetor.getLote().setStatus(EnStatus.I);
+        loteRepository.save(loteSetor.getLote());
+
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), loteSetor.getId());
+
+        assertThatThrownBy(() -> animalService.cadastraAnimal(usuario.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("lote inativo");
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarAnimalQuandoCapacidadeDoSetorAtingida() {
+        EUsuario usuario = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+
+        ESetor setorLotado = new ESetor();
+        setorLotado.setNome("Setor Lotado IT " + sufixo());
+        setorLotado.setCapacidadeMaxima(0);
+        setorLotado.setTipo(EnTipoSetor.PASTO);
+        ESetor setorSalvo = setorRepository.save(setorLotado);
+
+        ELote lote = new ELote();
+        lote.setCodigo("L" + sufixo().substring(0, 5));
+        lote.setDataCriacao(LocalDate.now());
+        ELote loteSalvo = loteRepository.save(lote);
+
+        ELoteSetor loteSetor = new ELoteSetor();
+        loteSetor.setLote(loteSalvo);
+        loteSetor.setSetor(setorSalvo);
+        ELoteSetor loteSetorSalvo = loteSetorRepository.save(loteSetor);
+
+        AnimalDto dto = novoAnimalDto("ANI-" + sufixo(), loteSetorSalvo.getId());
+
+        assertThatThrownBy(() -> animalService.cadastraAnimal(usuario.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Capacidade máxima");
+    }
+
+    @Test
+    void deveLancarExcecaoAoDeletarAnimalQuandoSolicitanteNaoExisteNoBanco() {
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EAnimal animal = criarAnimal(dono, "ANI-" + sufixo());
+        String emailInexistente = "ausente-" + sufixo() + "@it.local";
+
+        assertThatThrownBy(() -> animalService.deletaAnimal(emailInexistente, animal.getCodigoBrinco()))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Usuário não encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAlterarAnimalQuandoSolicitanteNaoExisteNoBanco() {
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EAnimal animal = criarAnimal(dono, "ANI-" + sufixo());
+        String emailInexistente = "ausente-" + sufixo() + "@it.local";
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Novo Nome IT");
+
+        assertThatThrownBy(() -> animalService.alteraAnimal(emailInexistente, animal.getCodigoBrinco(), atualizacao))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Usuário não encontrado");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private AnimalDto novoAnimalDto(String brinco, Long loteSectorId) {

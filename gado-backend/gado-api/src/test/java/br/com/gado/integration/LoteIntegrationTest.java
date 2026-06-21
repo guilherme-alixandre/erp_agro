@@ -516,6 +516,134 @@ class LoteIntegrationTest {
                 .hasMessageContaining("excede a capacidade máxima");
     }
 
+    // ── Sad Path Adicionais ───────────────────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoExcluirLoteComIdInexistente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+
+        assertThatThrownBy(() -> loteService.deleta(Long.MAX_VALUE, admin.getEmail()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Nenhum lote ativo encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalComIdInexistente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(Long.MAX_VALUE);
+        dto.setLoteDestinoId(Long.MAX_VALUE);
+        dto.setSetorDestinoId(Long.MAX_VALUE);
+
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Animal não encontrado");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalNaoAlocadoEmNenhumLoteAtivo() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-NOTALOC-" + sufixo());
+
+        ESetor setorDestino = criarSetor(admin, 50);
+        String descDestino = "Lote Destino Nao Aloc IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descDestino, "Verde", setorDestino.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorDestino.getId());
+
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não está alocado em nenhum lote ativo");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalParaLoteInexistente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-LOTE-INX-" + sufixo());
+
+        String descOrigem = "Lote Origem Lote Inx IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(Long.MAX_VALUE);
+        dto.setSetorDestinoId(setorOrigem.getId());
+
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Lote de destino não encontrado ou inativo");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalParaSetorInexistente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-SETOR-INX-" + sufixo());
+
+        String descOrigem = "Lote Origem Setor Inx IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+
+        String descDestino = "Lote Destino Setor Inx IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorOrigem.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(Long.MAX_VALUE);
+
+        assertThatThrownBy(() -> loteService.transferirAnimal(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Setor de destino não encontrado ou inativo");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAlterarLoteRemovendoAnimalComStatusBloqueado() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animalBloqueado = criarAnimal(admin, "LOT-ANI-BLOQ-" + sufixo());
+
+        String descricao = "Lote Bloqueio Altera IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricao, "Azul", setor.getId(), List.of(animalBloqueado.getId())));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        animalBloqueado.setStatusAnimal(EnStatusAnimal.ABATIDO);
+        animalRepository.save(animalBloqueado);
+
+        LotePutDto putDto = new LotePutDto();
+        LoteSetorCadastroDto novaAlocacao = new LoteSetorCadastroDto();
+        novaAlocacao.setSetorId(setor.getId());
+        novaAlocacao.setAnimaisIds(List.of());
+        putDto.setAlocacoes(List.of(novaAlocacao));
+
+        assertThatThrownBy(() -> loteService.altera(lote.getId(), admin.getEmail(), putDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("está congelado neste lote");
+    }
+
+    @Test
+    void deveLancarExcecaoAoTransferirAnimalComPerfilSemPermissao() {
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(1L);
+        dto.setLoteDestinoId(1L);
+        dto.setSetorDestinoId(1L);
+
+        assertThatThrownBy(() -> loteService.transferirAnimal(cuidador.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Apenas Administradores, Gerentes e Cuidadores Chefe podem transferir");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private LoteCadastroDto novoLoteDto(String descricao, String corBrinco, Long setorId, List<Long> animaisIds) {

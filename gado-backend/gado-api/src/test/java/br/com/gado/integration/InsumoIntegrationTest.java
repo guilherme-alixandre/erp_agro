@@ -294,6 +294,84 @@ class InsumoIntegrationTest {
         assertThat(resultado).isEqualTo("Nenhum insumo com esse id foi encontrado");
     }
 
+    // ── Sad Path Adicionais ───────────────────────────────────────────────────
+
+    @Test
+    void deveListarTodasVacinas_QuandoBuscaForNula() {
+        VacinaCadastroDto dto = new VacinaCadastroDto();
+        dto.setNome("Vacina Lista Null IT " + sufixo());
+        dto.setPendente(false);
+        insumoService.criarVacina(dto);
+
+        List<InsumoDto> resultado = insumoService.listarVacinas(null);
+
+        assertThat(resultado).isNotEmpty();
+        assertThat(resultado).allMatch(v -> v.getTipo() == EnTipoInsumo.VACINA);
+    }
+
+    @Test
+    void deveListarTodasVacinas_QuandoBuscaForBlank() {
+        VacinaCadastroDto dto = new VacinaCadastroDto();
+        dto.setNome("Vacina Lista Blank IT " + sufixo());
+        dto.setPendente(false);
+        insumoService.criarVacina(dto);
+
+        List<InsumoDto> resultado = insumoService.listarVacinas("   ");
+
+        assertThat(resultado).isNotEmpty();
+        assertThat(resultado).allMatch(v -> v.getTipo() == EnTipoInsumo.VACINA);
+    }
+
+    @Test
+    void deveLancarExcecaoAoDeletarVacinaQuandoInsumoNaoEhVacina() {
+        EInsumo racao = new EInsumo();
+        racao.setNome("Racao Delete IT " + sufixo());
+        racao.setTipo(EnTipoInsumo.RACAO);
+        racao.setPendente(false);
+        EInsumo salva = insumoRepository.save(racao);
+
+        assertThatThrownBy(() -> insumoService.deletarVacina(salva.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não é uma vacina");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAlterarInsumoComIdInexistente() {
+        EParceiro fornecedor = criarParceiro();
+        InsumoDto dto = novoInsumoDto("Insumo Inexistente IT " + sufixo(), fornecedor.getId(), EnTipoInsumo.OUTROS, 10.0);
+
+        assertThatThrownBy(() -> insumoService.alteraInsumo(Long.MAX_VALUE, dto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Nenhum insumo encontrado com esse id");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAtualizarVacinaComDtoNulo() {
+        VacinaCadastroDto cadDto = new VacinaCadastroDto();
+        cadDto.setNome("Vacina Dto Nulo IT " + sufixo());
+        cadDto.setPendente(false);
+        InsumoDto criada = insumoService.criarVacina(cadDto);
+
+        assertThatThrownBy(() -> insumoService.atualizarVacina(criada.getId(), null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Dados de atualização ausentes");
+    }
+
+    @Test
+    void deveLancarExcecaoAoAtualizarVacinaComNomeBlankAposTrim() {
+        VacinaCadastroDto cadDto = new VacinaCadastroDto();
+        cadDto.setNome("Vacina Nome Blank IT " + sufixo());
+        cadDto.setPendente(false);
+        InsumoDto criada = insumoService.criarVacina(cadDto);
+
+        VacinaPutDto putDto = new VacinaPutDto();
+        putDto.setNome("   ");
+
+        assertThatThrownBy(() -> insumoService.atualizarVacina(criada.getId(), putDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nome da vacina");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private InsumoDto novoInsumoDto(String nome, Long parceiroId, EnTipoInsumo tipo, double saldoAtual) {

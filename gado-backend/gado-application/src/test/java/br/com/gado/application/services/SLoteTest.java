@@ -1210,6 +1210,14 @@ class SLoteTest {
 
             assertTrue(mensagem.contains("metas"));
         }
+
+        @Test
+        void deveLancarExcecao_QuandoLoteNaoEncontradoNaDelecao() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class, () -> sLote.deleta(LOTE_ID, EMAIL_USUARIO));
+        }
     }
 
     @Nested
