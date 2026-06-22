@@ -229,18 +229,6 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
     setFormFeedback('')
     setFeedback({ type: '', message: '' })
 
-    // Validação: cada setor selecionado deve ter pelo menos um animal
-    for (const aloc of formData.alocacoes) {
-      if (!Array.isArray(aloc.animaisIds) || aloc.animaisIds.length === 0) {
-        const setor = setores.find((s) => s.id === aloc.setorId)
-        const nome = setor?.nome ?? `setor ${aloc.setorId}`
-        setFormFeedback(
-          `O setor "${nome}" não tem animais selecionados. Adicione pelo menos um animal ou remova o setor.`,
-        )
-        return
-      }
-    }
-
     setIsSaving(true)
     try {
       if (formMode === 'create') {

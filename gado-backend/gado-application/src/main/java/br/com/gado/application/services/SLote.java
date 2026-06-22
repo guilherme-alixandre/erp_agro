@@ -381,6 +381,7 @@ public class SLote {
 
     private void aplicarAlocacoes(ELote lote, List<LoteSetorCadastroDto> alocacoesDto,
                                    Set<Long> animaisJaNesteLote) {
+        if (alocacoesDto == null || alocacoesDto.isEmpty()) return;
         for (LoteSetorCadastroDto alocDto : alocacoesDto) {
             ESetor setor = setorInterface.findByIdAndStatus(alocDto.getSetorId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException(
