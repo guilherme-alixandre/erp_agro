@@ -10,7 +10,8 @@ import {
   isBackendErrorMessage,
 } from '../../../services/animalApi'
 import { listarVacinas } from '../../../services/insumoApi'
-import { listarLotesCompletos } from '../../../services/loteApi'
+import { listarLotesCompletos, obterAlocacaoPadrao } from '../../../services/loteApi'
+import { listarSetores } from '../../../services/setorApi'
 import { useRefresh } from '../../../contexts/RefreshContext.jsx'
 import '../styles/animais.css'
 
@@ -87,6 +88,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   const [lotesDisponiveis, setLotesDisponiveis] = useState([])
   const [loteVinculo, setLoteVinculo] = useState(null)
   const [setorVinculo, setSetorVinculo] = useState(null)
+  const [setoresDisponiveis, setSetoresDisponiveis] = useState([])
+  const [setorIdParaPadrao, setSetorIdParaPadrao] = useState(null)
   const [filterSexo, setFilterSexo] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -154,6 +157,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     setFormFeedback('')
     setLoteVinculo(null)
     setSetorVinculo(null)
+    setSetorIdParaPadrao(null)
+    setSetoresDisponiveis([])
   }
 
   function handleFormChange(event) {
@@ -204,15 +209,34 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     }
   }
 
-  function handleChangeLoteVinculo(e) {
+  async function handleChangeLoteVinculo(e) {
     const val = e.target.value
-    setLoteVinculo(val ? Number(val) : null)
+    const loteId = val ? Number(val) : null
+    setLoteVinculo(loteId)
     setSetorVinculo(null)
+    setSetorIdParaPadrao(null)
+
+    const lote = loteId ? (lotesDisponiveis ?? []).find((l) => l.id === loteId) : null
+    if (lote?.padrao) {
+      try {
+        const lista = await listarSetores()
+        setSetoresDisponiveis(lista)
+      } catch {
+        setSetoresDisponiveis([])
+      }
+    } else {
+      setSetoresDisponiveis([])
+    }
   }
 
   function handleChangeSetorVinculo(e) {
     const val = e.target.value
     setSetorVinculo(val ? Number(val) : null)
+  }
+
+  function handleChangeSetorPadrao(e) {
+    const val = e.target.value
+    setSetorIdParaPadrao(val ? Number(val) : null)
   }
 
   function openCreateModal() {
@@ -221,6 +245,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     setFormFeedback('')
     setLoteVinculo(null)
     setSetorVinculo(null)
+    setSetorIdParaPadrao(null)
+    setSetoresDisponiveis([])
     setModal({ type: 'form', animal: null })
     carregarVacinasDisponiveis()
     carregarLotesDisponiveis()
@@ -245,12 +271,21 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
   async function handleSubmitForm(event) {
     event.preventDefault()
 
+    const loteSelecionado = loteVinculo
+      ? (lotesDisponiveis ?? []).find((l) => l.id === loteVinculo) ?? null
+      : null
+    const isPadraoSelecionado = loteSelecionado?.padrao === true
+
     if (formMode === 'create') {
       if (!loteVinculo) {
         setFormFeedback('Selecione um lote para o animal.')
         return
       }
-      if (!setorVinculo) {
+      if (isPadraoSelecionado && !setorIdParaPadrao) {
+        setFormFeedback('Selecione um setor do lote padrão para o animal.')
+        return
+      }
+      if (!isPadraoSelecionado && !setorVinculo) {
         setFormFeedback('Selecione um setor do lote para o animal.')
         return
       }
@@ -262,7 +297,12 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     try {
       if (formMode === 'create') {
-        const result = await cadastrarAnimal(currentUser.email, formData, setorVinculo)
+        let loteSectorId = setorVinculo
+        if (isPadraoSelecionado) {
+          const resp = await obterAlocacaoPadrao(setorIdParaPadrao, currentUser.email)
+          loteSectorId = resp.loteSectorId
+        }
+        const result = await cadastrarAnimal(currentUser.email, formData, loteSectorId)
         if (isBackendErrorMessage(result)) {
           throw new Error(getBackendMessage(result) || 'Falha ao cadastrar animal.')
         }
@@ -615,6 +655,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           lotesDisponiveis={lotesDisponiveis}
           loteVinculo={loteVinculo}
           setorVinculo={setorVinculo}
+          setoresDisponiveis={setoresDisponiveis}
+          setorIdParaPadrao={setorIdParaPadrao}
           onClose={closeModal}
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
@@ -623,6 +665,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
           onRemoveVacina={handleRemoveVacina}
           onChangeLote={handleChangeLoteVinculo}
           onChangeSetor={handleChangeSetorVinculo}
+          onChangeSetorPadrao={handleChangeSetorPadrao}
         />
       ) : null}
 

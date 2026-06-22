@@ -35,6 +35,9 @@ public class ELote extends EAbstract {
     @Column(name = "data_criacao", nullable = false)
     private LocalDate dataCriacao;
 
+    @Column(name = "padrao", nullable = false)
+    private boolean padrao = false;
+
     /**
      * Usuário que criou o lote.
      * Preenchido automaticamente pelo Service com base no email do header.

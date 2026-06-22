@@ -30,6 +30,8 @@ function AnimalFormModal({
   lotesDisponiveis,
   loteVinculo,
   setorVinculo,
+  setoresDisponiveis,
+  setorIdParaPadrao,
   onClose,
   onChange,
   onSubmit,
@@ -38,6 +40,7 @@ function AnimalFormModal({
   onRemoveVacina,
   onChangeLote,
   onChangeSetor,
+  onChangeSetorPadrao,
 }) {
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar animal' : 'Editar animal'
@@ -51,6 +54,7 @@ function AnimalFormModal({
   const loteSelecionado = loteVinculo
     ? (lotesDisponiveis ?? []).find((l) => l.id === loteVinculo) ?? null
     : null
+  const isPadraoSelecionado = loteSelecionado?.padrao === true
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -275,22 +279,28 @@ function AnimalFormModal({
               <legend>Vincular a um lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></legend>
 
               {(lotesDisponiveis ?? []).length === 0 ? (
-                <p className="vacinas-empty">Nenhum lote ativo disponível. Crie um lote antes de cadastrar animais.</p>
+                <p className="vacinas-empty">Nenhum lote disponível. Configure um lote antes de cadastrar animais.</p>
               ) : (
                 <>
+                  {(lotesDisponiveis ?? []).every((l) => l.padrao) ? (
+                    <p className="form-help">
+                      Nenhum lote personalizado criado. O animal será vinculado ao lote padrão do sistema.
+                    </p>
+                  ) : null}
+
                   <label>
                     <span>Lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
                     <select value={loteVinculo ?? ''} onChange={onChangeLote} required>
                       <option value="">Selecione um lote</option>
                       {(lotesDisponiveis ?? []).map((l) => (
                         <option key={l.id} value={l.id}>
-                          {l.codigo}{l.descricao ? ` — ${l.descricao}` : ''}
+                          {l.codigo}{l.padrao ? ' (Padrão)' : ''}{l.descricao && !l.padrao ? ` — ${l.descricao}` : ''}
                         </option>
                       ))}
                     </select>
                   </label>
 
-                  {loteSelecionado ? (
+                  {loteSelecionado && !isPadraoSelecionado ? (
                     <label>
                       <span>Setor <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
                       <select value={setorVinculo ?? ''} onChange={onChangeSetor} required>
@@ -298,6 +308,20 @@ function AnimalFormModal({
                         {loteSelecionado.alocacoes.map((aloc) => (
                           <option key={aloc.loteSectorId} value={aloc.loteSectorId}>
                             {aloc.setorNome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  {isPadraoSelecionado ? (
+                    <label>
+                      <span>Setor <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
+                      <select value={setorIdParaPadrao ?? ''} onChange={onChangeSetorPadrao} required>
+                        <option value="">Selecione um setor</option>
+                        {(setoresDisponiveis ?? []).map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.nome}
                           </option>
                         ))}
                       </select>

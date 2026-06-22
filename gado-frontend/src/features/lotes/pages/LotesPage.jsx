@@ -546,7 +546,7 @@ function LotesPage({ currentUser, setores, onNavigate, onLogout }) {
           onDelete={handleDelete}
           isDeleting={isDeleting}
           canEdit={canEditLote}
-          canDelete={canDeleteLote}
+          canDelete={canDeleteLote && !modal.lote?.padrao}
         />
       ) : null}
     </main>

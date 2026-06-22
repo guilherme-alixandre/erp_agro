@@ -31,6 +31,7 @@ export function normalizeLote(raw) {
     corBrinco: raw?.corBrinco ?? '',
     dataCriacao: raw?.dataCriacao ?? '',
     statusLote: raw?.statusLote === 'A' ? 'ATIVO' : raw?.statusLote === 'I' ? 'INATIVO' : 'ATIVO',
+    padrao: raw?.padrao ?? false,
     criadoPorNome: raw?.criadoPorNome ?? '',
     criadoPorEmail: raw?.criadoPorEmail ?? '',
     alteradoPorNome: raw?.alteradoPorNome ?? null,
@@ -160,6 +161,15 @@ export function deletarLote(id, email) {
 
   return request(`/lotes/${id}`, {
     method: 'DELETE',
+    headers: { 'X-Usuario-Email': emailLimpo },
+  })
+}
+
+export function obterAlocacaoPadrao(setorId, email) {
+  const emailLimpo = sanitize(email)
+  if (!emailLimpo) throw new Error('Usuário não identificado.')
+
+  return request(`/lotes/padrao/alocar/${setorId}`, {
     headers: { 'X-Usuario-Email': emailLimpo },
   })
 }
