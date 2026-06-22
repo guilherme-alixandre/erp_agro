@@ -5,6 +5,15 @@ import {
   validarFormMeta,
   TIPOS_GADO,
 } from '../../../services/metaSetorApi'
+import { useRefresh } from '../../../contexts/RefreshContext.jsx'
+
+function RequiredLabel({ children }) {
+  return (
+    <span>
+      {children} <span className="required-marker" aria-hidden="true">*</span>
+    </span>
+  )
+}
 
 const defaultForm = {
   setorId: '',
@@ -28,6 +37,8 @@ const defaultForm = {
  *  - onSaved      → fn() — chamado após salvar com sucesso
  */
 function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) {
+  const { dispararRefresh } = useRefresh()
+
   const [form, setForm] = useState(defaultForm)
   const [erros, setErros] = useState({})
   const [isSaving, setIsSaving] = useState(false)
@@ -95,6 +106,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
         await atualizarMeta(meta.id, emailUsuario, putDto)
       }
 
+      dispararRefresh()
       onSaved()
     } catch (error) {
       setFeedback(error.message || 'Falha ao salvar a meta.')
@@ -116,7 +128,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           {!isEdit && (
             <div className="form-group">
               <label>
-                <span>Setor</span>
+                <RequiredLabel>Setor</RequiredLabel>
                 <select
                   name="setorId"
                   value={form.setorId}
@@ -141,7 +153,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           {!isEdit && (
             <div className="form-group">
               <label>
-                <span>Tipo de Meta</span>
+                <RequiredLabel>Tipo de Meta</RequiredLabel>
                 <select
                   name="tipoMeta"
                   value={form.tipoMeta}
@@ -163,7 +175,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           {form.tipoMeta === 'ARROBA' && (
             <div className="form-group">
               <label>
-                <span>Tipo de Gado</span>
+                <RequiredLabel>Tipo de Gado</RequiredLabel>
                 <select
                   name="tipoGado"
                   value={form.tipoGado}
@@ -188,7 +200,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div className="form-group">
               <label>
-                <span>Data Inicial</span>
+                <RequiredLabel>Data Inicial</RequiredLabel>
                 <input
                   type="date"
                   name="dataInicial"
@@ -203,7 +215,7 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
             </div>
             <div className="form-group">
               <label>
-                <span>Data Final</span>
+                <RequiredLabel>Data Final</RequiredLabel>
                 <input
                   type="date"
                   name="dataFinal"
@@ -222,13 +234,13 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           {/* Quantidade esperada */}
           <div className="form-group">
             <label>
-              <span>
+              <RequiredLabel>
                 {form.tipoMeta === 'LEITE'
                   ? 'Quantidade Total Esperada (Litros)'
                   : form.tipoMeta === 'ARROBA'
                   ? 'Quantidade Total Esperada (@)'
                   : 'Quantidade Total Esperada'}
-              </span>
+              </RequiredLabel>
               <input
                 type="number"
                 name="quantidadeEsperada"
@@ -248,13 +260,13 @@ function MetaFormModal({ mode, meta, setores, emailUsuario, onClose, onSaved }) 
           {/* Preço médio */}
           <div className="form-group">
             <label>
-              <span>
+              <RequiredLabel>
                 {form.tipoMeta === 'LEITE'
                   ? 'Preço Médio (R$ / Litro)'
                   : form.tipoMeta === 'ARROBA'
                   ? 'Preço Médio (R$ / Arroba)'
                   : 'Preço Médio (R$)'}
-              </span>
+              </RequiredLabel>
               <input
                 type="number"
                 name="precoMedio"

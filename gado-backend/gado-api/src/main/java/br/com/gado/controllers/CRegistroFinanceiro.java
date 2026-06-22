@@ -15,22 +15,31 @@ public class CRegistroFinanceiro {
     }
 
     @GetMapping("/{registroFinanceiroId}")
-    public RegistroFinanceiroDTO getMovimentacaoEsotque(@PathVariable Long registroFinanceiroId) {
-        return registroFinanceiroService.buscarRegistroFinanceiroPorId(registroFinanceiroId);
+    public RegistroFinanceiroDTO getMovimentacaoEsotque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long registroFinanceiroId) {
+        return registroFinanceiroService.buscarRegistroFinanceiroPorId(emailUsuario, registroFinanceiroId);
     }
 
     @PostMapping("/")
-    public RegistroFinanceiroDTO postMovimentacaoEstoque(@RequestBody RegistroFinanceiroDTO registroFinanceiroId) {
-        return registroFinanceiroService.criarRegistroFinanceiro(registroFinanceiroId);
+    public RegistroFinanceiroDTO postMovimentacaoEstoque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @RequestBody RegistroFinanceiroDTO registroFinanceiroDto) {
+        return registroFinanceiroService.criarRegistroFinanceiro(emailUsuario, registroFinanceiroDto);
     }
 
     @DeleteMapping("/{registroFinanceiroId}")
-    public String deleteMovimentacaoEsotque(@PathVariable Long registroFinanceiroId) {
-        return registroFinanceiroService.excluirRegistroFinanceiroPorId(registroFinanceiroId);
+    public String deleteMovimentacaoEsotque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long registroFinanceiroId) {
+        return registroFinanceiroService.excluirRegistroFinanceiroPorId(emailUsuario, registroFinanceiroId);
     }
 
     @PutMapping("/{registroFinanceiroId}")
-    public RegistroFinanceiroDTO putMovimentacaoEstoque(@PathVariable Long registroFinanceiroId, @RequestBody RegistroFinanceiroDTO dto) {
-        return registroFinanceiroService.atualizarRegistroFinanceiroPorId(registroFinanceiroId, dto);
+    public RegistroFinanceiroDTO putMovimentacaoEstoque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long registroFinanceiroId,
+            @RequestBody RegistroFinanceiroDTO dto) {
+        return registroFinanceiroService.atualizarRegistroFinanceiroPorId(emailUsuario, registroFinanceiroId, dto);
     }
 }

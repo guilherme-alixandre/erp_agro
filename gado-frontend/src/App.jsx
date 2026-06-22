@@ -5,7 +5,11 @@ import AuthPage from './features/auth/pages/AuthPage'
 import InsumosPage from './features/insumos/pages/InsumosPage'
 import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import MetasPage from './features/metas/pages/MetasPage'
-import { listarSetores, listarLotes } from './services/setorApi'
+import LotesPage from './features/lotes/pages/LotesPage'
+import SetoresPage from './features/setores/pages/SetoresPage'
+import { listarSetores } from './services/setorApi'
+import { listarLotesCompletos } from './services/loteApi'
+import { useRefresh } from './contexts/RefreshContext.jsx'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -25,6 +29,8 @@ function App() {
   const [setores, setSetores] = useState([])
   const [lotes, setLotes] = useState([])
 
+  const { refreshGlobal } = useRefresh()
+
   useEffect(() => {
     const storedUser = localStorage.getItem(STORAGE_KEY)
     if (storedUser) {
@@ -36,7 +42,7 @@ function App() {
     }
   }, [])
 
-  // Carrega setores e lotes assim que o usuário logar
+  // Carrega setores e lotes assim que o usuário logar; re-executa no refresh global
   useEffect(() => {
     if (!currentUser) return
 
@@ -44,10 +50,10 @@ function App() {
       .then(setSetores)
       .catch(() => setSetores([]))
 
-    listarLotes()
+    listarLotesCompletos()
       .then(setLotes)
       .catch(() => setLotes([]))
-  }, [currentUser])
+  }, [currentUser, refreshGlobal])
 
   function handleLogin(usuario) {
     const safeUser = sanitizeUser(usuario)
@@ -55,6 +61,12 @@ function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
     setActivePage('animais')
     setSessionFeedback('')
+  }
+
+  function handleUpdateUser(updatedUser) {
+    const safeUser = sanitizeUser(updatedUser)
+    setCurrentUser(safeUser)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
   }
 
   function handleLogout() {
@@ -76,6 +88,7 @@ function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
+        onUpdateUser={handleUpdateUser}
       />
     )
   }
@@ -102,12 +115,34 @@ function App() {
     )
   }
 
+  if (activePage === 'lotes') {
+    return (
+      <LotesPage
+        currentUser={currentUser}
+        setores={setores}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'setores') {
+    return (
+      <SetoresPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
   if (activePage === 'configuracoes' && currentUser.perfil === 'ADMINISTRADOR') {
     return (
       <ConfiguracoesPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
+        onUpdateUser={handleUpdateUser}
       />
     )
   }

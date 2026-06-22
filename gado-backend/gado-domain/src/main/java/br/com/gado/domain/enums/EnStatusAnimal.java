@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum EnStatusAnimal {
     ATIVO,
-    OBERVACAO,
+    OBSERVACAO,
     VENDIDO,
     OBITO,
     ABATIDO

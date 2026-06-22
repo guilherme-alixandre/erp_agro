@@ -11,7 +11,7 @@ function formatCm(value) {
   return `${num} cm`
 }
 
-function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
+function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
@@ -83,19 +83,25 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           <p className="vacinas-empty">Nenhuma vacina cadastrada para este animal.</p>
         )}
 
-        <div className="modal-actions">
-          <button type="button" className="btn-secondary" onClick={onEdit}>
-            Editar
-          </button>
-          <button
-            type="button"
-            className="btn-danger"
-            onClick={() => onDelete(animal)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Excluir'}
-          </button>
-        </div>
+        {(canEdit || canDelete) ? (
+          <div className="modal-actions">
+            {canEdit ? (
+              <button type="button" className="btn-secondary" onClick={onEdit}>
+                Editar
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => onDelete(animal)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )

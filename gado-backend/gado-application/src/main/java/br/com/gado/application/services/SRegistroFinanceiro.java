@@ -4,6 +4,7 @@ import br.com.gado.application.dto.RegistroFinanceiroDTO;
 import br.com.gado.domain.entities.ECategoria;
 import br.com.gado.domain.entities.ERegistroFinanceiro;
 import br.com.gado.domain.entities.EUsuario;
+import br.com.gado.domain.enums.EnPerfilUsuario;
 import br.com.gado.domain.enums.EnStatus;
 import br.com.gado.infrastructure.persistence.repositories.ICategoria;
 import br.com.gado.infrastructure.persistence.repositories.IRegistroFinanceiro;
@@ -30,7 +31,21 @@ public class SRegistroFinanceiro {
         this.modelMapper = modelMapper;
     }
 
-    public RegistroFinanceiroDTO criarRegistroFinanceiro(RegistroFinanceiroDTO registroFinanceiroDto) {
+    public void validaPermissao(String emailUsuario) {
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário responsável pela operação.");
+        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        EnPerfilUsuario perfil = usuario.getPerfil();
+        if (perfil == EnPerfilUsuario.CUIDADOR || perfil == EnPerfilUsuario.CUIDADOR_CHEFE) {
+            throw new IllegalArgumentException("Cuidadores não têm acesso ao módulo financeiro.");
+        }
+    }
+
+    public RegistroFinanceiroDTO criarRegistroFinanceiro(String emailUsuario, RegistroFinanceiroDTO registroFinanceiroDto) {
+        validaPermissao(emailUsuario);
         EUsuario existingUsuario = this.usuarioInterface
                 .findByEmailAndStatus(registroFinanceiroDto.getUsuarioId().getEmail(), registroFinanceiroDto.getUsuarioId().getStatus())
                 .orElseThrow(EntityNotFoundException::new);
@@ -52,14 +67,16 @@ public class SRegistroFinanceiro {
         }
     }
 
-    public RegistroFinanceiroDTO buscarRegistroFinanceiroPorId(Long registroFinanceiroId) {
+    public RegistroFinanceiroDTO buscarRegistroFinanceiroPorId(String emailUsuario, Long registroFinanceiroId) {
+        validaPermissao(emailUsuario);
         ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
                 .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
         return modelMapper.map(existingEntity, RegistroFinanceiroDTO.class);
     }
 
-    public RegistroFinanceiroDTO atualizarRegistroFinanceiroPorId(Long registroFinanceiroId, RegistroFinanceiroDTO registroFinanceiroDto) {
+    public RegistroFinanceiroDTO atualizarRegistroFinanceiroPorId(String emailUsuario, Long registroFinanceiroId, RegistroFinanceiroDTO registroFinanceiroDto) {
+        validaPermissao(emailUsuario);
         ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
                 .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);
@@ -76,7 +93,8 @@ public class SRegistroFinanceiro {
         }
     }
 
-    public String excluirRegistroFinanceiroPorId(Long registroFinanceiroId) {
+    public String excluirRegistroFinanceiroPorId(String emailUsuario, Long registroFinanceiroId) {
+        validaPermissao(emailUsuario);
         ERegistroFinanceiro existingEntity = this.registroFinanceiroInterface
                 .findById(registroFinanceiroId)
                 .orElseThrow(EntityNotFoundException::new);

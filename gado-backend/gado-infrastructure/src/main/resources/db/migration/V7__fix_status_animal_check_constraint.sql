@@ -29,11 +29,10 @@ UPDATE public.animal
 SET status_animal = CASE btrim(status_animal::text)
     WHEN '' THEN NULL
     WHEN '0' THEN 'ATIVO'
-    WHEN '1' THEN 'OBERVACAO'
+    WHEN '1' THEN 'OBSERVACAO'
     WHEN '2' THEN 'VENDIDO'
     WHEN '3' THEN 'OBITO'
     WHEN '4' THEN 'ABATIDO'
-    WHEN 'OBSERVACAO' THEN 'OBERVACAO'
     ELSE btrim(status_animal::text)
 END
 WHERE status_animal IS NOT NULL
@@ -47,6 +46,6 @@ ALTER TABLE public.animal
         CHECK (
             status_animal IS NULL OR
             status_animal::text = ANY (
-                ARRAY['ATIVO', 'OBERVACAO', 'VENDIDO', 'OBITO', 'ABATIDO']::text[]
+                ARRAY['ATIVO', 'OBSERVACAO', 'VENDIDO', 'OBITO', 'ABATIDO']::text[]
             )
         );

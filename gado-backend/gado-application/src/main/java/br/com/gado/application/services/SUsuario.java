@@ -13,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
@@ -108,8 +106,17 @@ public class SUsuario {
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
 
+        // Extrai e nulifica senha antes do ModelMapper para evitar gravar texto puro
+        String novaSenha = dto.getSenha();
+        dto.setSenha(null);
+
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, usuario);
+
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            usuario.setSenha(sha256Hex(novaSenha));
+        }
+
         EUsuario usuarioAtualizado = usuarioInterface.save(usuario);
         return modelMapper.map(usuarioAtualizado, UsuarioDto.class);
     }

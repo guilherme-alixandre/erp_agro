@@ -27,12 +27,17 @@ function AnimalFormModal({
   feedback,
   userEmail,
   vacinasDisponiveis,
+  lotesDisponiveis,
+  loteVinculo,
+  setorVinculo,
   onClose,
   onChange,
   onSubmit,
   onAddVacina,
   onChangeVacina,
   onRemoveVacina,
+  onChangeLote,
+  onChangeSetor,
 }) {
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar animal' : 'Editar animal'
@@ -42,6 +47,10 @@ function AnimalFormModal({
       ? 'Cadastrar'
       : 'Salvar alterações'
   const maxBirthDate = todayIso()
+
+  const loteSelecionado = loteVinculo
+    ? (lotesDisponiveis ?? []).find((l) => l.id === loteVinculo) ?? null
+    : null
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -258,6 +267,44 @@ function AnimalFormModal({
               >
                 + Adicionar vacina
               </button>
+            </fieldset>
+          ) : null}
+
+          {isCreate ? (
+            <fieldset className="vacinas-fieldset">
+              <legend>Vincular a um lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></legend>
+
+              {(lotesDisponiveis ?? []).length === 0 ? (
+                <p className="vacinas-empty">Nenhum lote ativo disponível. Crie um lote antes de cadastrar animais.</p>
+              ) : (
+                <>
+                  <label>
+                    <span>Lote <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
+                    <select value={loteVinculo ?? ''} onChange={onChangeLote} required>
+                      <option value="">Selecione um lote</option>
+                      {(lotesDisponiveis ?? []).map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.codigo}{l.descricao ? ` — ${l.descricao}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {loteSelecionado ? (
+                    <label>
+                      <span>Setor <span style={{ color: 'var(--color-danger, #e53e3e)' }}>*</span></span>
+                      <select value={setorVinculo ?? ''} onChange={onChangeSetor} required>
+                        <option value="">Selecione um setor</option>
+                        {loteSelecionado.alocacoes.map((aloc) => (
+                          <option key={aloc.loteSectorId} value={aloc.loteSectorId}>
+                            {aloc.setorNome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                </>
+              )}
             </fieldset>
           ) : null}
 

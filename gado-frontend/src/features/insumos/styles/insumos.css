@@ -3,6 +3,12 @@
   gap: 6px;
   margin: 6px 0 12px;
   border-bottom: 2px solid #cfcfcf;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.insumos-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .insumos-tab {

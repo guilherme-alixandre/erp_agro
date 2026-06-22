@@ -1,6 +1,7 @@
 package br.com.gado.application.services;
 
 import br.com.gado.application.dto.metaSetorDto.MedicaoMetaCadastroDto;
+import br.com.gado.application.dto.metaSetorDto.MedicaoMetaPutDto;
 import br.com.gado.application.dto.metaSetorDto.MedicaoMetaRespostaDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorCadastroDto;
 import br.com.gado.application.dto.metaSetorDto.MetaSetorPutDto;
@@ -24,7 +25,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SMetaSetor {
@@ -79,6 +82,45 @@ public class SMetaSetor {
         }
         usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+    }
+
+    /**
+     * Valida se o usuário tem permissão para editar/excluir uma medição específica.
+     * - ADMINISTRADOR e GERENTE: podem alterar qualquer medição.
+     * - CUIDADOR_CHEFE: pode alterar apenas medições criadas por CUIDADOR ou CUIDADOR_CHEFE.
+     * - CUIDADOR: pode alterar apenas medições que ele mesmo criou.
+     */
+    public void validaEdicaoMedicao(String emailUsuario, EMedicaoMeta medicao) {
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            throw new IllegalArgumentException("É necessário informar o e-mail do usuário.");
+        }
+        EUsuario usuario = usuarioInterface.findByEmailAndStatus(emailUsuario.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        EnPerfilUsuario perfil = usuario.getPerfil();
+
+        if (perfil == EnPerfilUsuario.ADMINISTRADOR || perfil == EnPerfilUsuario.GERENTE) {
+            return;
+        }
+
+        if (perfil == EnPerfilUsuario.CUIDADOR_CHEFE) {
+            EnPerfilUsuario perfilCriador = resolverPerfilPorEmail(medicao.getCriadoPorEmail());
+            if (perfilCriador == EnPerfilUsuario.ADMINISTRADOR || perfilCriador == EnPerfilUsuario.GERENTE) {
+                throw new IllegalArgumentException(
+                        "Cuidadores Chefe não podem alterar medições criadas por Administradores ou Gerentes.");
+            }
+            return;
+        }
+
+        if (perfil == EnPerfilUsuario.CUIDADOR) {
+            if (medicao.getCriadoPorEmail() == null
+                    || !emailUsuario.trim().equalsIgnoreCase(medicao.getCriadoPorEmail())) {
+                throw new IllegalArgumentException("Você só pode editar medições que você mesmo criou.");
+            }
+            return;
+        }
+
+        throw new IllegalArgumentException("Seu perfil não permite editar medições.");
     }
 
     // ── MetaSetor ─────────────────────────────────────────────────────────────
@@ -164,7 +206,7 @@ public class SMetaSetor {
     // ── MedicaoMeta ───────────────────────────────────────────────────────────
 
     @Transactional
-    public String cadastrarMedicao(MedicaoMetaCadastroDto dto) {
+    public String cadastrarMedicao(MedicaoMetaCadastroDto dto, String emailCriador) {
         EMetaSetor meta = metaSetorInterface.findById(dto.getMetaSetorId())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Meta não encontrada para o ID: " + dto.getMetaSetorId()));
@@ -178,16 +220,46 @@ public class SMetaSetor {
         medicao.setLote(lote);
         medicao.setDataMedicao(dto.getDataMedicao());
         medicao.setQuantidadeLancada(dto.getQuantidadeLancada());
+        medicao.setCriadoPorEmail(emailCriador != null ? emailCriador.trim() : null);
 
         medicaoMetaInterface.save(medicao);
         return "Medição cadastrada com sucesso.";
     }
 
     @Transactional
-    public String deletarMedicao(Long medicaoId) {
-        if (!medicaoMetaInterface.existsById(medicaoId)) {
-            return "Medição não encontrada para o ID: " + medicaoId;
+    public String validarEAtualizarMedicao(Long medicaoId, MedicaoMetaPutDto dto, String emailUsuario) {
+        EMedicaoMeta medicao = medicaoMetaInterface.findById(medicaoId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Medição não encontrada para o ID: " + medicaoId));
+
+        validaEdicaoMedicao(emailUsuario, medicao);
+
+        if (dto.getLoteId() != null) {
+            ELote lote = loteInterface.findById(dto.getLoteId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Lote não encontrado para o ID: " + dto.getLoteId()));
+            medicao.setLote(lote);
         }
+        if (dto.getDataMedicao() != null) medicao.setDataMedicao(dto.getDataMedicao());
+        if (dto.getQuantidadeLancada() != null) medicao.setQuantidadeLancada(dto.getQuantidadeLancada());
+
+        medicaoMetaInterface.save(medicao);
+        return "Medição atualizada com sucesso.";
+    }
+
+    /**
+     * Valida e remove uma medição.
+     * Aplica a mesma regra de permissão usada na edição: ADMINISTRADOR, GERENTE
+     * e CUIDADOR_CHEFE podem excluir qualquer medição; CUIDADOR só a própria.
+     */
+    @Transactional
+    public String validarEDeletarMedicao(Long medicaoId, String emailUsuario) {
+        EMedicaoMeta medicao = medicaoMetaInterface.findById(medicaoId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Medição não encontrada para o ID: " + medicaoId));
+
+        validaEdicaoMedicao(emailUsuario, medicao);
+
         medicaoMetaInterface.deleteById(medicaoId);
         return "Medição removida com sucesso.";
     }
@@ -213,6 +285,25 @@ public class SMetaSetor {
         // ARROBA: (Peso Vivo * Taxa de Rendimento) / 15 kg
         double taxa = meta.getTipoGado().getTaxaRendimento();
         return (medicao.getQuantidadeLancada() * taxa) / KG_POR_ARROBA;
+    }
+
+    /** Busca o nome do usuário pelo e-mail registrado na medição, com cache local por requisição. */
+    private String resolverNomePorEmail(String email, Map<String, String> cache) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return cache.computeIfAbsent(email, e ->
+                usuarioInterface.findByEmailAndStatus(e, EnStatus.A)
+                        .map(EUsuario::getNome)
+                        .orElse(null));
+    }
+
+    /** Busca o perfil do usuário pelo e-mail; retorna null se não encontrado. */
+    private EnPerfilUsuario resolverPerfilPorEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        return usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .map(EUsuario::getPerfil)
+                .orElse(null);
     }
 
     private MetaSetorRespostaDto toRespostaDto(EMetaSetor meta) {
@@ -244,6 +335,8 @@ public class SMetaSetor {
         dto.setValorEsperado(arredondar(meta.getQuantidadeEsperada() * meta.getPrecoMedio()));
 
         // ── Montar lista de medições com quantidade convertida ──────────────
+        Map<String, String> nomesPorEmail = new HashMap<>();
+        Map<String, EnPerfilUsuario> perfisPorEmail = new HashMap<>();
         List<MedicaoMetaRespostaDto> medicaoDtos = medicoes.stream()
                 .map(m -> {
                     MedicaoMetaRespostaDto mDto = new MedicaoMetaRespostaDto();
@@ -253,6 +346,12 @@ public class SMetaSetor {
                     mDto.setDataMedicao(m.getDataMedicao());
                     mDto.setQuantidadeLancada(m.getQuantidadeLancada());
                     mDto.setQuantidadeConvertida(arredondar(converterQuantidade(m, meta)));
+                    mDto.setCriadoPorEmail(m.getCriadoPorEmail());
+                    mDto.setCriadoPorNome(resolverNomePorEmail(m.getCriadoPorEmail(), nomesPorEmail));
+                    EnPerfilUsuario perfilCriador = perfisPorEmail.computeIfAbsent(
+                            m.getCriadoPorEmail() != null ? m.getCriadoPorEmail() : "",
+                            e -> e.isBlank() ? null : resolverPerfilPorEmail(e));
+                    mDto.setCriadoPorPerfil(perfilCriador != null ? perfilCriador.name() : null);
                     return mDto;
                 })
                 .toList();

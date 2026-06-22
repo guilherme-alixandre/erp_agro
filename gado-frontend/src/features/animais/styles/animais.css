@@ -4,6 +4,8 @@
   grid-template-columns: 190px 1fr;
   background: #d9d9d9;
   color: #1d1d1d;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .animals-sidebar {
@@ -13,12 +15,18 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
 }
 
 .animals-logo {
-  font-size: 64px;
   text-align: center;
   margin: 6px 0 20px;
+}
+
+.animals-logo img {
+  width: 100%;
+  max-width: 140px;
+  height: auto;
 }
 
 .animals-sidebar nav {
@@ -79,6 +87,7 @@
 .animals-content {
   padding: 14px 22px 24px;
   position: relative;
+  min-width: 0;
 }
 
 .animals-header {
@@ -313,6 +322,46 @@
   font-weight: 500;
 }
 
+/* ── Campo de senha com toggle de visibilidade ───────────────────────── */
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4.5rem;
+}
+
+.password-field__toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.password-field__toggle:hover {
+  color: #374151;
+}
+
+.field-error-msg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.15rem;
+}
+
 .animal-form input,
 .animal-form select {
   border: 1px solid #d0d0d0;
@@ -344,7 +393,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset {
+.vacinas-fieldset,
+.senha-fieldset {
   margin-top: 8px;
   border: 1px solid #d0d0d0;
   border-radius: 10px;
@@ -353,7 +403,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset legend {
+.vacinas-fieldset legend,
+.senha-fieldset legend {
   padding: 0 6px;
   font-weight: 700;
   color: #244011;
@@ -519,6 +570,79 @@
   color: #fff;
 }
 
+/* ── Barra de busca com exportar ─────────────────────────────────────────── */
+
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-toolbar .animals-search {
+  flex: 1;
+}
+
+/* ── Dropdown de exportação ─────────────────────────────────────────────── */
+
+.export-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.export-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: #4f7f2f;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  background: #3d6322;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  min-width: 200px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.export-menu__item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 12px 16px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.93rem;
+  color: #1d1d1d;
+  font-weight: 500;
+}
+
+.export-menu__item:hover {
+  background: #eef5e6;
+  color: #244011;
+}
+
+.export-menu__separator {
+  height: 1px;
+  background: #e8e8e8;
+  border: none;
+  margin: 0;
+}
+
 @media (max-width: 1300px) {
   .animals-layout {
     grid-template-columns: 140px 1fr;
@@ -532,14 +656,57 @@
 @media (max-width: 900px) {
   .animals-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 
+  /* Sidebar → barra de navegação horizontal no topo */
   .animals-sidebar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .animals-logo {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .animals-logo img {
+    width: 36px;
+    max-width: 36px;
+  }
+
+  .animals-sidebar nav {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .animals-sidebar nav::-webkit-scrollbar {
     display: none;
   }
 
+  .sidebar-user {
+    display: none;
+  }
+
+  .menu-item {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    border-radius: 8px;
+  }
+
   .animals-content {
-    padding: 14px;
+    padding: 12px 14px 20px;
   }
 
   .animals-header h1 {
@@ -569,4 +736,449 @@
   .animal-card__actions button {
     font-size: 1rem;
   }
+}
+
+/* ── Data Table Layout ──────────────────────────────────────────────────── */
+
+.page-header {
+  margin-bottom: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #1d1d1d;
+  line-height: 1;
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────────────── */
+
+.data-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.toolbar-search {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.toolbar-search__icon {
+  font-size: 0.9rem;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.toolbar-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.92rem;
+  color: #1d1d1d;
+}
+
+.toolbar-search__clear {
+  border: none;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toolbar-search__clear:hover {
+  color: #555;
+}
+
+.toolbar-select,
+.toolbar-date {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: #1d1d1d;
+  outline: none;
+  height: 38px;
+  cursor: pointer;
+}
+
+.toolbar-date {
+  width: 144px;
+}
+
+.toolbar-date-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-date-label__text {
+  font-size: 0.82rem;
+  color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.btn-export-csv {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 38px;
+}
+
+.btn-export-csv:hover {
+  background: #f5f5f5;
+}
+
+.btn-new-entity {
+  border: none;
+  border-radius: 8px;
+  padding: 0 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #4f7f2f;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 38px;
+  margin-left: auto;
+}
+
+.btn-new-entity:hover {
+  background: #3d6322;
+}
+
+/* ── Data Table ─────────────────────────────────────────────────────────── */
+
+.data-table-wrapper {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table thead {
+  background: #f9f9f9;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.data-table th {
+  padding: 11px 14px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b6b6b;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1d1d1d;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover td {
+  background: #f8fdf5;
+}
+
+.td-mono {
+  font-family: monospace;
+  font-size: 0.88rem;
+  color: #555;
+  font-weight: 600;
+}
+
+/* ── Status Pills ────────────────────────────────────────────────────────── */
+
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.status-pill--ativo {
+  background: #e8f5e2;
+  color: #2e7d0e;
+  border-color: #b9e0a4;
+}
+
+.status-pill--inativo {
+  background: #fdf0f0;
+  color: #b42929;
+  border-color: #f3bdbd;
+}
+
+.status-pill--pendente {
+  background: #fff8e1;
+  color: #8a5a00;
+  border-color: #f3d774;
+}
+
+/* ── Row Actions ─────────────────────────────────────────────────────────── */
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-row {
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-row:hover {
+  background: #e8e8e8;
+}
+
+.btn-row--edit {
+  background: #eef5e6;
+  color: #2e5c12;
+  border-color: #c4deb0;
+}
+
+.btn-row--edit:hover {
+  background: #ddeece;
+}
+
+/* ── Empty / Loading states ─────────────────────────────────────────────── */
+
+.table-loading,
+.table-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #999;
+  font-size: 0.92rem;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+
+.data-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 2px 2px;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #6b6b6b;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination-btn {
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #fff;
+  color: #1d1d1d;
+  cursor: pointer;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pagination-btn:not(:disabled):hover {
+  background: #f5f5f5;
+}
+
+.pagination-pages {
+  font-size: 0.85rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .data-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-search {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar-select {
+    width: 100%;
+  }
+
+  .btn-export-csv {
+    width: 100%;
+  }
+
+  .btn-new-entity {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .toolbar-date-label {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .toolbar-date {
+    width: 100%;
+  }
+
+  .data-pagination {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-card {
+    padding: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+}
+
+/* ── Perfil Pills (Configurações) ───────────────────────────────────────── */
+
+.perfil-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.perfil-pill--admin {
+  background: #f0eaff;
+  color: #5b21b6;
+  border-color: #d4bbff;
+}
+
+.perfil-pill--gerente {
+  background: #e8f0ff;
+  color: #1d4bb5;
+  border-color: #b3caff;
+}
+
+.perfil-pill--cuidador {
+  background: #e8f5e2;
+  color: #2e7d0e;
+  border-color: #b9e0a4;
+}
+
+.perfil-pill--cuidador-chefe {
+  background: #fff3cd;
+  color: #7c5000;
+  border-color: #ffd97a;
+}
+
+.perfil-pill--financeiro {
+  background: #e0f5f5;
+  color: #006464;
+  border-color: #9dd8d8;
+}
+
+/* ── Danger action button ────────────────────────────────────────────────── */
+
+.btn-row--danger {
+  background: #fdf0f0;
+  color: #b42929;
+  border-color: #f3bdbd;
+}
+
+.btn-row--danger:hover:not(:disabled) {
+  background: #f8d8d8;
+}
+
+.btn-row--danger:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+/* ── Current user badge ──────────────────────────────────────────────────── */
+
+.current-user-badge {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 400;
+}
+
+/* ── Truncated text cell ─────────────────────────────────────────────────── */
+
+.td-truncate {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

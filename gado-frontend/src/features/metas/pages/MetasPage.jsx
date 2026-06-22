@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import MetaCard from '../components/MetaCard'
 import MetaFormModal from '../components/MetaFormModal'
 import {
   listarMetasPorSetor,
   deletarMeta,
+  exportarMetasCSV,
+  exportarMetasPDF,
 } from '../../../services/metaSetorApi'
 import '../../animais/styles/animais.css'
 import '../styles/metas.css'
@@ -25,6 +27,8 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [modal, setModal] = useState({ type: null, meta: null })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef(null)
 
   // ── Permissões ───────────────────────────────────────────────────────
   const podeGerenciar =
@@ -32,8 +36,33 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
 
   // ── Lotes do setor selecionado ────────────────────────────────────────
   const lotesDoSetor = setorSelecionado
-    ? lotes.filter((l) => String(l.setorId) === String(setorSelecionado))
-    : lotes
+    ? lotes.filter(
+        (l) =>
+          l.statusLote === 'ATIVO' &&
+          l.alocacoes.some((a) => String(a.setorId) === String(setorSelecionado))
+      )
+    : lotes.filter((l) => l.statusLote === 'ATIVO')
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [exportMenuOpen])
+
+  function handleExportarCSV() {
+    exportarMetasCSV(metas)
+    setExportMenuOpen(false)
+  }
+
+  function handleExportarPDF() {
+    exportarMetasPDF(setorSelecionado)
+    setExportMenuOpen(false)
+  }
 
   // ── Carregar metas ────────────────────────────────────────────────────
   const fetchMetas = useCallback(async (setorId) => {
@@ -96,7 +125,7 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
 
       {/* Sidebar idêntica ao padrão do projeto */}
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
@@ -105,10 +134,18 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           >
             Animais
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('lotes')}
+          >
             Lotes
           </button>
-          <button type="button" className="menu-item">
+          <button
+              type="button"
+              className="menu-item"
+              onClick={() => onNavigate('setores')}
+          >
             Setores
           </button>
           <button
@@ -125,9 +162,11 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"
@@ -156,57 +195,86 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
 
       {/* Conteúdo principal */}
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Metas de Setores</h1>
-          <span>{currentUser.email}</span>
         </header>
 
-        {/* Filtro por setor */}
-        <div className="metas-filter">
-          <label htmlFor="filtro-setor">Setor:</label>
-          <select
-            id="filtro-setor"
-            value={setorSelecionado}
-            onChange={(e) => setSetorSelecionado(e.target.value)}
-          >
-            <option value="">Selecione um setor para ver as metas...</option>
-            {setores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Contagem e estado */}
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : !setorSelecionado
-            ? 'Selecione um setor acima.'
-            : `${metas.length} ${metas.length === 1 ? 'meta cadastrada' : 'metas cadastradas'}`}
-        </p>
-
-        {/* Feedback global */}
-        {feedback.message && (
+        {feedback.message ? (
           <p
-            className={`feedback ${
-              feedback.type === 'error' ? 'feedback--error' : 'feedback--info'
-            }`}
+            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
           >
             {feedback.message}
           </p>
-        )}
+        ) : null}
+
+        {/* Filtro de setor + exportar + nova meta */}
+        <div className="data-toolbar">
+          <div className="metas-setor-filter">
+            <label htmlFor="filtro-setor">Setor:</label>
+            <select
+              id="filtro-setor"
+              value={setorSelecionado}
+              onChange={(e) => setSetorSelecionado(e.target.value)}
+            >
+              <option value="">Selecione um setor...</option>
+              {setores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="export-wrapper" ref={exportMenuRef}>
+            <button
+              type="button"
+              className="btn-export-csv"
+              disabled={!setorSelecionado || metas.length === 0}
+              onClick={() => setExportMenuOpen((v) => !v)}
+            >
+              Exportar ▾
+            </button>
+            {exportMenuOpen ? (
+              <div className="export-menu">
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarCSV}
+                >
+                  Exportar como CSV
+                </button>
+                <hr className="export-menu__separator" />
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarPDF}
+                >
+                  Exportar como PDF
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {podeGerenciar ? (
+            <button
+              type="button"
+              className="btn-new-entity"
+              onClick={() => setModal({ type: 'create', meta: null })}
+            >
+              + Nova Meta
+            </button>
+          ) : null}
+        </div>
 
         {/* Lista de cards */}
-        {!isLoading && metas.length > 0 && (
+        {!isLoading && metas.length > 0 ? (
           <div className="metas-list">
             {metas.map((meta) => (
               <MetaCard
                 key={meta.id}
                 meta={meta}
                 lotes={lotesDoSetor}
-                emailUsuario={currentUser.email}
+                currentUser={currentUser}
                 podeGerenciar={podeGerenciar}
                 onEditar={(m) => setModal({ type: 'edit', meta: m })}
                 onDeletar={handleDeletar}
@@ -214,27 +282,28 @@ function MetasPage({ currentUser, setores, lotes, onNavigate, onLogout }) {
               />
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Estado vazio */}
-        {!isLoading && setorSelecionado && metas.length === 0 && !feedback.message && (
-          <div className="animals-empty">
-            <p>Nenhuma meta cadastrada.</p>
-            <span>Clique no botão + para cadastrar a primeira meta deste setor.</span>
+        {!isLoading && setorSelecionado && metas.length === 0 && !feedback.message ? (
+          <div className="metas-estado-vazio">
+            <p>Nenhuma meta cadastrada para este setor.</p>
+            {podeGerenciar ? (
+              <span>Clique em "+ Nova Meta" para cadastrar a primeira meta.</span>
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {/* FAB — só para quem pode gerenciar */}
-        {podeGerenciar && (
-          <button
-            type="button"
-            className="fab-add"
-            aria-label="Adicionar meta"
-            onClick={() => setModal({ type: 'create', meta: null })}
-          >
-            +
-          </button>
-        )}
+        {/* Footer com contagem */}
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? 'Carregando...'
+              : setorSelecionado
+              ? `${metas.length} ${metas.length === 1 ? 'meta cadastrada' : 'metas cadastradas'}`
+              : 'Selecione um setor para ver as metas.'}
+          </span>
+        </footer>
       </section>
 
       {/* Modal de cadastro/edição */}
