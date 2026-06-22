@@ -62,10 +62,6 @@ function toCreatePayload(formData) {
   const corBrinco = sanitize(formData.corBrinco)
   if (!corBrinco) throw new Error('A cor do brinco é obrigatória.')
 
-  if (!Array.isArray(formData.alocacoes) || formData.alocacoes.length === 0) {
-    throw new Error('Selecione pelo menos um setor para o lote.')
-  }
-
   const payload = {
     corBrinco,
     alocacoes: formData.alocacoes.map(toAlocacaoPayload),

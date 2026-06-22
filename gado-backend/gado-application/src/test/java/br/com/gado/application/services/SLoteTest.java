@@ -1475,4 +1475,183 @@ class SLoteTest {
             assertEquals("Apenas Administradores e Gerentes podem criar ou excluir lotes.", ex.getMessage());
         }
     }
+
+    @Nested
+    class LotePadraoTests {
+
+        private static final Long PADRAO_ID = 999L;
+        private ELote lotePadraoEntity;
+        private ELoteSetor loteSetorComAnimais;
+
+        @BeforeEach
+        void setupPadrao() {
+            lotePadraoEntity = new ELote();
+            lotePadraoEntity.setId(PADRAO_ID);
+            lotePadraoEntity.setCodigo("PADRAO");
+            lotePadraoEntity.setPadrao(true);
+            lotePadraoEntity.setStatus(EnStatus.A);
+
+            loteSetorComAnimais = new ELoteSetor();
+            loteSetorComAnimais.setId(500L);
+            loteSetorComAnimais.setLote(loteEntity);
+            loteSetorComAnimais.setSetor(setorEntity);
+            loteSetorComAnimais.setAnimais(new ArrayList<>(List.of(animalEntity)));
+        }
+
+        // ── Proteção do lote padrão ───────────────────────────────────────────
+
+        @Test
+        void deveLancarExcecao_AoTentarExcluirLotePadrao() {
+            loteEntity.setPadrao(true);
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sLote.deleta(LOTE_ID, EMAIL_USUARIO));
+            assertEquals("O lote padrão do sistema não pode ser excluído.", ex.getMessage());
+            verify(loteInterface, never()).delete(any());
+            verify(loteInterface, never()).save(any());
+        }
+
+        // ── Migração de animais (exercitada via deleta) ───────────────────────
+
+        @Test
+        void deveMigrarAnimaisParaLotePadrao_QuandoLoteComAnimaisEExcluidoDefinitivamente() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID)).thenReturn(List.of(loteSetorComAnimais));
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(loteSetorInterface.findByLote_IdAndSetor_Id(PADRAO_ID, SETOR_ID)).thenReturn(Optional.empty());
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            String resultado = sLote.deleta(LOTE_ID, EMAIL_USUARIO);
+
+            assertEquals("Lote LOT001 excluído com sucesso.", resultado);
+            verify(loteInterface).findByPadraoTrueAndStatus(EnStatus.A);
+            verify(loteSetorInterface, atLeastOnce()).save(any(ELoteSetor.class));
+            assertTrue(loteSetorComAnimais.getAnimais().isEmpty(),
+                    "Animais devem ser desvinculados da alocação original após migração");
+        }
+
+        @Test
+        void devePularMigracao_QuandoLoteNaoTemAnimaisEmNenhumaAlocacao() {
+            ELoteSetor alocacaoVazia = new ELoteSetor();
+            alocacaoVazia.setId(501L);
+            alocacaoVazia.setLote(loteEntity);
+            alocacaoVazia.setSetor(setorEntity);
+            alocacaoVazia.setAnimais(Collections.emptyList());
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID)).thenReturn(List.of(alocacaoVazia));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            sLote.deleta(LOTE_ID, EMAIL_USUARIO);
+
+            verify(loteInterface, never()).findByPadraoTrueAndStatus(any());
+        }
+
+        @Test
+        void deveMergeAnimais_QuandoAlocacaoDestinoNoLotePadraoJaPossuiAnimais() {
+            EAnimal outroAnimal = new EAnimal();
+            outroAnimal.setId(200L);
+            ELoteSetor alocacaoExistentePadrao = new ELoteSetor();
+            alocacaoExistentePadrao.setId(600L);
+            alocacaoExistentePadrao.setLote(lotePadraoEntity);
+            alocacaoExistentePadrao.setSetor(setorEntity);
+            alocacaoExistentePadrao.setAnimais(new ArrayList<>(List.of(outroAnimal)));
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID)).thenReturn(List.of(loteSetorComAnimais));
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(loteSetorInterface.findByLote_IdAndSetor_Id(PADRAO_ID, SETOR_ID))
+                    .thenReturn(Optional.of(alocacaoExistentePadrao));
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            sLote.deleta(LOTE_ID, EMAIL_USUARIO);
+
+            assertEquals(2, alocacaoExistentePadrao.getAnimais().size(),
+                    "Alocação destino deve ter os animais originais mais os migrados");
+            assertTrue(alocacaoExistentePadrao.getAnimais().stream()
+                    .anyMatch(a -> a.getId().equals(ANIMAL_ID)));
+        }
+
+        // ── obterOuCriarAlocacaoPadrao ────────────────────────────────────────
+
+        @Test
+        void deveRetornarAlocacaoExistente_QuandoLotePadraoJaTemAlocacaoNoSetor() {
+            ELoteSetor alocacaoExistente = new ELoteSetor();
+            alocacaoExistente.setId(700L);
+
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findByLote_IdAndSetor_Id(PADRAO_ID, SETOR_ID))
+                    .thenReturn(Optional.of(alocacaoExistente));
+
+            Long resultado = sLote.obterOuCriarAlocacaoPadrao(SETOR_ID);
+
+            assertEquals(700L, resultado);
+            verify(loteSetorInterface, never()).save(any());
+        }
+
+        @Test
+        void deveCriarNovaAlocacao_QuandoLotePadraoNaoTemAlocacaoNoSetor() {
+            ELoteSetor novaAlocacao = new ELoteSetor();
+            novaAlocacao.setId(800L);
+
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.of(setorEntity));
+            when(loteSetorInterface.findByLote_IdAndSetor_Id(PADRAO_ID, SETOR_ID)).thenReturn(Optional.empty());
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenReturn(novaAlocacao);
+
+            Long resultado = sLote.obterOuCriarAlocacaoPadrao(SETOR_ID);
+
+            assertEquals(800L, resultado);
+            verify(loteSetorInterface).save(any(ELoteSetor.class));
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoLotePadraoNaoEncontradoEmObterOuCriar() {
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalStateException.class,
+                    () -> sLote.obterOuCriarAlocacaoPadrao(SETOR_ID));
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoSetorNaoEncontradoEmObterOuCriar() {
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(setorInterface.findByIdAndStatus(SETOR_ID, EnStatus.A)).thenReturn(Optional.empty());
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> sLote.obterOuCriarAlocacaoPadrao(SETOR_ID));
+            assertEquals("Setor não encontrado ou inativo.", ex.getMessage());
+        }
+
+        // ── Mapeamento do campo padrao no DTO ─────────────────────────────────
+
+        @Test
+        void deveMapearCampoPadraoTrue_QuandoLoteForPadrao() {
+            loteEntity.setPadrao(true);
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            LoteRespostaDto resultado = sLote.buscaPorid(LOTE_ID);
+
+            assertTrue(resultado.isPadrao());
+        }
+
+        @Test
+        void deveMapearCampoPadraoFalse_QuandoLoteNaoForPadrao() {
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            LoteRespostaDto resultado = sLote.buscaPorid(LOTE_ID);
+
+            assertFalse(resultado.isPadrao());
+        }
+    }
 }

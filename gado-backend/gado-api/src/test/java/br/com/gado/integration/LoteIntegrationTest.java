@@ -205,11 +205,13 @@ class LoteIntegrationTest {
     }
 
     @Test
-    void devePermitirAlocarAnimalEmNovoLoteAposLoteAnteriorSerInativado() {
-        // Arrange
+    void deveMigrarAnimaisParaLotePadraoQuandoLoteAnteriorForInativado() {
+        // Após inativação (soft delete), animais migram para o lote padrão —
+        // não ficam "órfãos" nem podem ser re-alocados diretamente em outro lote.
         EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
         ESetor setor = criarSetor(admin, 50);
         EAnimal animal = criarAnimal(admin, "LOT-ANI-INATIVO-" + sufixo());
+        ELote lotePadrao = criarLotePadrao(admin);
 
         String descricaoInativo = "Lote Inativo IT " + sufixo();
         loteService.cadastra(admin.getEmail(),
@@ -217,18 +219,19 @@ class LoteIntegrationTest {
         ELote loteInativo = buscarLotePorDescricao(descricaoInativo);
 
         criarMetaSetor(setor);
+
+        // Act
         loteService.deleta(loteInativo.getId(), admin.getEmail());
+
+        // Assert: lote foi inativado
         assertThat(loteRepository.findById(loteInativo.getId()).orElseThrow().getStatus())
                 .isEqualTo(EnStatus.I);
-
-        // Act: mesmo animal deve poder ser alocado em novo lote ativo
-        String descricaoNovo = "Lote Pos Inativo IT " + sufixo();
-        String resultado = loteService.cadastra(admin.getEmail(),
-                novoLoteDto(descricaoNovo, "Laranja", setor.getId(), List.of(animal.getId())));
-
-        // Assert
-        assertThat(resultado).contains("cadastrado com sucesso");
-        assertThat(buscarLotePorDescricao(descricaoNovo).getStatus()).isEqualTo(EnStatus.A);
+        // Assert: animal migrou para o lote padrão
+        assertThat(loteSetorRepository.findByLote_Id(lotePadrao.getId()))
+                .anyMatch(ls -> ls.getAnimais().stream().anyMatch(a -> a.getId().equals(animal.getId())));
+        // Assert: alocação original não retém o animal
+        assertThat(loteSetorRepository.findByLote_Id(loteInativo.getId()))
+                .allMatch(ls -> ls.getAnimais().stream().noneMatch(a -> a.getId().equals(animal.getId())));
     }
 
     // ── Sad Path ──────────────────────────────────────────────────────────────
@@ -644,6 +647,94 @@ class LoteIntegrationTest {
                 .hasMessageContaining("Apenas Administradores, Gerentes e Cuidadores Chefe podem transferir");
     }
 
+    // ── Lote Padrão ───────────────────────────────────────────────────────────
+
+    @Test
+    void deveLancarExcecaoAoTentarExcluirLotePadrao() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ELote lotePadrao = criarLotePadrao(admin);
+
+        assertThatThrownBy(() -> loteService.deleta(lotePadrao.getId(), admin.getEmail()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não pode ser excluído");
+        assertThat(loteRepository.findById(lotePadrao.getId())).isPresent();
+    }
+
+    @Test
+    void deveMigrarAnimaisParaLotePadraoAoExcluirLoteDefinitivamente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-HARDEL-" + sufixo());
+        ELote lotePadrao = criarLotePadrao(admin);
+
+        String descricao = "Lote Hard Delete IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricao, "Azul", setor.getId(), List.of(animal.getId())));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        // Act: hard delete (sem metas vinculadas)
+        String resultado = loteService.deleta(lote.getId(), admin.getEmail());
+
+        // Assert: lote foi excluído
+        assertThat(resultado).contains("excluído");
+        assertThat(loteRepository.findById(lote.getId())).isEmpty();
+        // Assert: animal está no lote padrão
+        assertThat(loteSetorRepository.findByLote_Id(lotePadrao.getId()))
+                .anyMatch(ls -> ls.getAnimais().stream().anyMatch(a -> a.getId().equals(animal.getId())));
+    }
+
+    @Test
+    void deveObterAlocacaoExistenteDeLotePadraoSemCriarNovamente() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        criarLotePadrao(admin);
+
+        // Primeira chamada cria o ELoteSetor
+        Long primeiraId = loteService.obterOuCriarAlocacaoPadrao(setor.getId());
+        long totalAntes = loteSetorRepository.count();
+
+        // Segunda chamada deve retornar o mesmo ID sem criar novo registro
+        Long segundaId = loteService.obterOuCriarAlocacaoPadrao(setor.getId());
+
+        assertThat(segundaId).isEqualTo(primeiraId);
+        assertThat(loteSetorRepository.count()).isEqualTo(totalAntes);
+    }
+
+    @Test
+    void deveCriarNovaAlocacaoDeLotePadraoQuandoSetorNaoEstavaMapeado() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        ELote lotePadrao = criarLotePadrao(admin);
+
+        assertThat(loteSetorRepository.findByLote_Id(lotePadrao.getId())).isEmpty();
+
+        Long loteSectorId = loteService.obterOuCriarAlocacaoPadrao(setor.getId());
+
+        assertThat(loteSectorId).isNotNull();
+        assertThat(loteSetorRepository.findByLote_Id(lotePadrao.getId())).hasSize(1);
+        assertThat(loteSetorRepository.findById(loteSectorId)).isPresent();
+    }
+
+    @Test
+    void deveRetornarPadraoTrueNaListagemDeLotes() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        criarLotePadrao(admin);
+
+        List<LoteRespostaDto> todos = loteService.listarTodos();
+
+        assertThat(todos).anyMatch(l -> l.isPadrao() && "PADRAO".equals(l.getCodigo()));
+    }
+
+    @Test
+    void deveLancarExcecaoAoObterAlocacaoPadraoQuandoLotePadraoNaoExiste() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+
+        assertThatThrownBy(() -> loteService.obterOuCriarAlocacaoPadrao(setor.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Lote padrão não encontrado");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private LoteCadastroDto novoLoteDto(String descricao, String corBrinco, Long setorId, List<Long> animaisIds) {
@@ -716,6 +807,17 @@ class LoteIntegrationTest {
         meta.setQuantidadeEsperada(1000.0);
         meta.setPrecoMedio(2.5);
         metaSetorRepository.save(meta);
+    }
+
+    private ELote criarLotePadrao(EUsuario usuario) {
+        ELote lotePadrao = new ELote();
+        lotePadrao.setCodigo("PADRAO");
+        lotePadrao.setDescricao("Lote Padrão do Sistema");
+        lotePadrao.setCorBrinco("N/A");
+        lotePadrao.setDataCriacao(LocalDate.now());
+        lotePadrao.setPadrao(true);
+        lotePadrao.setCriadoPor(usuario);
+        return loteRepository.save(lotePadrao);
     }
 
     private static String sufixo() {

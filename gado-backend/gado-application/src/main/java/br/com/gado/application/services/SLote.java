@@ -447,10 +447,16 @@ public class SLote {
     }
 
     private void migrarAnimaisParaLotePadrao(ELote lote) {
+        // JOIN FETCH garante leitura fresca do BD, evitando cache stale do Hibernate
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_IdWithAnimais(lote.getId());
+        boolean possuiAnimais = alocacoes != null && alocacoes.stream()
+                .anyMatch(a -> a.getAnimais() != null && !a.getAnimais().isEmpty());
+        if (!possuiAnimais) return;
+
         ELote lotePadrao = loteInterface.findByPadraoTrueAndStatus(EnStatus.A)
                 .orElseThrow(() -> new IllegalStateException("Lote padrão não encontrado."));
 
-        for (ELoteSetor alocacao : lote.getAlocacoes()) {
+        for (ELoteSetor alocacao : alocacoes) {
             List<EAnimal> animais = new ArrayList<>(
                     alocacao.getAnimais() != null ? alocacao.getAnimais() : List.of());
             if (animais.isEmpty()) continue;
