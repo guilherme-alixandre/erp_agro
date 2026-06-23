@@ -203,6 +203,12 @@ public class SLote {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Nenhum lote ativo encontrado para o ID: " + id));
 
+        if (lote.isPadrao()) {
+            throw new IllegalArgumentException("O lote padrão do sistema não pode ser excluído.");
+        }
+
+        migrarAnimaisParaLotePadrao(lote);
+
         boolean temMeta          = temMetaVinculada(lote.getId());
         boolean temMovimentacao  = temMovimentacaoFinanceira(lote.getId()); // placeholder
 
@@ -221,6 +227,24 @@ public class SLote {
         loteInterface.delete(lote);
         log.info("Lote {} excluído definitivamente por {}", lote.getCodigo(), emailUsuario);
         return "Lote " + lote.getCodigo() + " excluído com sucesso.";
+    }
+
+    @Transactional
+    public Long obterOuCriarAlocacaoPadrao(Long setorId) {
+        ELote lotePadrao = loteInterface.findByPadraoTrueAndStatus(EnStatus.A)
+                .orElseThrow(() -> new IllegalStateException("Lote padrão não encontrado."));
+
+        ESetor setor = setorInterface.findByIdAndStatus(setorId, EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Setor não encontrado ou inativo."));
+
+        return loteSetorInterface
+                .findByLote_IdAndSetor_Id(lotePadrao.getId(), setor.getId())
+                .orElseGet(() -> {
+                    ELoteSetor novo = new ELoteSetor();
+                    novo.setLote(lotePadrao);
+                    novo.setSetor(setor);
+                    return loteSetorInterface.save(novo);
+                }).getId();
     }
 
     // ── Transferência de animal ───────────────────────────────────────────
@@ -357,6 +381,7 @@ public class SLote {
 
     private void aplicarAlocacoes(ELote lote, List<LoteSetorCadastroDto> alocacoesDto,
                                    Set<Long> animaisJaNesteLote) {
+        if (alocacoesDto == null || alocacoesDto.isEmpty()) return;
         for (LoteSetorCadastroDto alocDto : alocacoesDto) {
             ESetor setor = setorInterface.findByIdAndStatus(alocDto.getSetorId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException(
@@ -422,6 +447,42 @@ public class SLote {
         }
     }
 
+    private void migrarAnimaisParaLotePadrao(ELote lote) {
+        // JOIN FETCH garante leitura fresca do BD, evitando cache stale do Hibernate
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_IdWithAnimais(lote.getId());
+        boolean possuiAnimais = alocacoes != null && alocacoes.stream()
+                .anyMatch(a -> !a.getAnimais().isEmpty());
+        if (!possuiAnimais) return;
+
+        ELote lotePadrao = loteInterface.findByPadraoTrueAndStatus(EnStatus.A)
+                .orElseThrow(() -> new IllegalStateException("Lote padrão não encontrado."));
+
+        for (ELoteSetor alocacao : alocacoes) {
+            List<EAnimal> animais = new ArrayList<>(alocacao.getAnimais());
+            if (animais.isEmpty()) continue;
+
+            ELoteSetor destino = loteSetorInterface
+                    .findByLote_IdAndSetor_Id(lotePadrao.getId(), alocacao.getSetor().getId())
+                    .orElseGet(() -> {
+                        ELoteSetor novo = new ELoteSetor();
+                        novo.setLote(lotePadrao);
+                        novo.setSetor(alocacao.getSetor());
+                        return loteSetorInterface.save(novo);
+                    });
+
+            List<EAnimal> animaisDestino = new ArrayList<>(destino.getAnimais());
+            animaisDestino.addAll(animais);
+            destino.setAnimais(animaisDestino);
+            loteSetorInterface.save(destino);
+
+            alocacao.getAnimais().clear();
+            loteSetorInterface.save(alocacao);
+
+            log.info("Migrados {} animais do lote {} para o lote padrão (setor {})",
+                    animais.size(), lote.getCodigo(), alocacao.getSetor().getNome());
+        }
+    }
+
     private boolean isStatusBloqueado(EnStatusAnimal status) {
         return status == EnStatusAnimal.VENDIDO
                 || status == EnStatusAnimal.OBITO
@@ -460,6 +521,7 @@ public class SLote {
         LoteRespostaDto dto = new LoteRespostaDto();
         dto.setId(lote.getId());
         dto.setStatus(lote.getStatus());
+        dto.setPadrao(lote.isPadrao());
         dto.setCreatedAt(lote.getCreatedAt());
         dto.setUpdatedAt(lote.getUpdatedAt());
         dto.setCodigo(lote.getCodigo());

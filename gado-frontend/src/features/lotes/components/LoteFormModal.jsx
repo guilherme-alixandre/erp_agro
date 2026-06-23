@@ -428,12 +428,10 @@ function LoteFormModal({
           </label>
 
           <fieldset className="setores-fieldset">
-            <legend>
-              <RequiredLabel>Setores e alocação de animais</RequiredLabel>
-            </legend>
+            <legend>Setores e alocação de animais</legend>
             <p className="form-help">
-              Selecione os setores que este lote vai ocupar. Para cada setor,
-              escolha os animais alocados.
+              Opcional. Selecione os setores que este lote vai ocupar. Para cada
+              setor, você pode alocar animais agora ou depois.
             </p>
 
             <div className="setores-fieldset__select">

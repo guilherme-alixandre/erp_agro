@@ -18,6 +18,12 @@ public interface ILoteSetor extends JpaRepository<ELoteSetor, Long> {
 
     boolean existsByLote_IdAndSetor_Id(Long loteId, Long setorId);
 
+    java.util.Optional<ELoteSetor> findByLote_IdAndSetor_Id(Long loteId, Long setorId);
+
+    // Carrega alocações de um lote com os animais em JOIN FETCH (evita cache stale)
+    @Query("SELECT DISTINCT ls FROM ELoteSetor ls LEFT JOIN FETCH ls.animais WHERE ls.lote.id = :loteId")
+    List<ELoteSetor> findByLote_IdWithAnimais(@Param("loteId") Long loteId);
+
     // Busca conflitos apenas em lotes ATIVOS, ignorando registros de lotes inativados
     @Query("SELECT ls FROM ELoteSetor ls JOIN ls.animais a " +
            "WHERE a.id = :animalId AND ls.lote.id <> :loteId AND ls.lote.status = :statusAtivo")

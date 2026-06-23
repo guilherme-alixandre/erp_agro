@@ -12,6 +12,7 @@ import java.util.List;
 @Data
 public class LoteRespostaDto extends AbstractDTO {
 
+    private boolean padrao;
     private String codigo;
     private String descricao;
     private String racaPredominante;

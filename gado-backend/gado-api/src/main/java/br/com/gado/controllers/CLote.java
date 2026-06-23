@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lotes")
@@ -89,6 +90,19 @@ public class CLote {
             @PathVariable Long id,
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
         return loteService.deleta(id, emailUsuario);
+    }
+
+    /**
+     * Retorna (ou cria) a alocação do lote padrão no setor informado.
+     * Usado pelo frontend quando o usuário cadastra um animal no lote padrão.
+     * GET /api/lotes/padrao/alocar/{setorId}
+     */
+    @GetMapping("/padrao/alocar/{setorId}")
+    public ResponseEntity<Map<String, Long>> alocarSetorPadrao(
+            @PathVariable Long setorId,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+        Long loteSectorId = loteService.obterOuCriarAlocacaoPadrao(setorId);
+        return ResponseEntity.ok(Map.of("loteSectorId", loteSectorId));
     }
 
     /**

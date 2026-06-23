@@ -21,10 +21,12 @@ public interface ILote extends JpaRepository<ELote, Long> {
 
     Optional<ELote> findByIdAndStatus(Long id, EnStatus status);
 
+    Optional<ELote> findByPadraoTrueAndStatus(EnStatus status);
+
     /**
-     * Busca o maior código existente para gerar o próximo incremento.
-     * Retorna algo como "LOT042" para que o Service extraia o número.
+     * Busca o maior código LOT* existente para gerar o próximo incremento.
+     * Filtra apenas códigos com prefixo LOT para não confundir com 'PADRAO'.
      */
-    @Query("SELECT l.codigo FROM ELote l ORDER BY l.codigo DESC LIMIT 1")
+    @Query("SELECT l.codigo FROM ELote l WHERE l.codigo LIKE 'LOT%' ORDER BY l.codigo DESC LIMIT 1")
     Optional<String> findUltimoCodigoGerado();
 }
