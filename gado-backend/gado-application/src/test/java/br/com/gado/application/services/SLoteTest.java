@@ -1373,6 +1373,20 @@ class SLoteTest {
     class AplicarAlocacoesAdicionaisTests {
 
         @Test
+        void deveCadastrar_QuandoAlocacoesNulasNoDto() {
+            loteCadastroDto.setAlocacoes(null);
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findUltimoCodigoGerado()).thenReturn(Optional.of("LOT000"));
+            when(loteInterface.save(any(ELote.class))).thenReturn(loteEntity);
+
+            String resultado = sLote.cadastra(EMAIL_USUARIO, loteCadastroDto);
+
+            assertEquals("Lote LOT001 cadastrado com sucesso.", resultado);
+            verify(loteSetorInterface, never()).save(any());
+        }
+
+        @Test
         void deveCadastrar_QuandoCapacidadeDoSetorNaoEhExcedida() {
             // setor.capacidadeMaxima > 0, totalDepois <= capacidade => no exception
             setorEntity.setCapacidadeMaxima(10); // can hold 10
@@ -1629,6 +1643,54 @@ class SLoteTest {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                     () -> sLote.obterOuCriarAlocacaoPadrao(SETOR_ID));
             assertEquals("Setor não encontrado ou inativo.", ex.getMessage());
+        }
+
+        // ── Cobertura: migrarAnimaisParaLotePadrao ────────────────────────────
+
+        @Test
+        void devePularMigracao_QuandoRepositorioRetornarNullParaFindByLoteIdWithAnimais() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID)).thenReturn(null);
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            String resultado = sLote.deleta(LOTE_ID, EMAIL_USUARIO);
+
+            assertEquals("Lote LOT001 excluído com sucesso.", resultado);
+            verify(loteInterface, never()).findByPadraoTrueAndStatus(any());
+        }
+
+        @Test
+        void deveLancarIllegalStateException_QuandoLotePadraoNaoEncontradoDuranteMigracao() {
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID)).thenReturn(List.of(loteSetorComAnimais));
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalStateException.class, () -> sLote.deleta(LOTE_ID, EMAIL_USUARIO));
+        }
+
+        @Test
+        void devePularAlocacaoVaziaNoLoop_QuandoUmaAlocacaoSemAnimaisMisturadaComOutraComAnimais() {
+            ELoteSetor alocacaoVazia = new ELoteSetor();
+            alocacaoVazia.setLote(loteEntity);
+            alocacaoVazia.setSetor(setorEntity);
+            // animais = new ArrayList<>() (vazio) por inicialização padrão da entidade
+
+            when(usuarioInterface.findByEmailAndStatus(EMAIL_USUARIO, EnStatus.A)).thenReturn(Optional.of(usuarioEntity));
+            when(loteInterface.findByIdAndStatus(LOTE_ID, EnStatus.A)).thenReturn(Optional.of(loteEntity));
+            when(loteSetorInterface.findByLote_IdWithAnimais(LOTE_ID))
+                    .thenReturn(List.of(loteSetorComAnimais, alocacaoVazia));
+            when(loteInterface.findByPadraoTrueAndStatus(EnStatus.A)).thenReturn(Optional.of(lotePadraoEntity));
+            when(loteSetorInterface.findByLote_IdAndSetor_Id(PADRAO_ID, SETOR_ID)).thenReturn(Optional.empty());
+            when(loteSetorInterface.save(any(ELoteSetor.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(loteSetorInterface.findByLote_Id(LOTE_ID)).thenReturn(Collections.emptyList());
+
+            String resultado = sLote.deleta(LOTE_ID, EMAIL_USUARIO);
+
+            assertEquals("Lote LOT001 excluído com sucesso.", resultado);
+            // save chamado pelo menos uma vez (para a alocação com animais); alocação vazia usa continue
+            verify(loteSetorInterface, atLeastOnce()).save(any(ELoteSetor.class));
         }
 
         // ── Mapeamento do campo padrao no DTO ─────────────────────────────────

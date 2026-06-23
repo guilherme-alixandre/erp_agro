@@ -735,6 +735,240 @@ class LoteIntegrationTest {
                 .hasMessageContaining("Lote padrão não encontrado");
     }
 
+    // ── Cobertura de branches adicionais ─────────────────────────────────────
+
+    @Test
+    void deveCadastrarLote_QuandoDataCriacaoForNula_UsandoDataAtual() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 5);
+
+        LoteSetorCadastroDto alocacao = new LoteSetorCadastroDto();
+        alocacao.setSetorId(setor.getId());
+        alocacao.setAnimaisIds(List.of());
+
+        LoteCadastroDto dto = new LoteCadastroDto();
+        dto.setCorBrinco("Azul");
+        String descricao = "Lote Data Nula IT " + sufixo();
+        dto.setDescricao(descricao);
+        dto.setDataCriacao(null);
+        dto.setAlocacoes(List.of(alocacao));
+
+        loteService.cadastra(admin.getEmail(), dto);
+
+        ELote lote = buscarLotePorDescricao(descricao);
+        assertThat(lote.getDataCriacao()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    void deveCadastrarLote_QuandoAlocacoesForemNulas_SemAlocacoesSalvas() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+
+        LoteCadastroDto dto = new LoteCadastroDto();
+        dto.setCorBrinco("Verde");
+        String descricao = "Lote Aloc Nula IT " + sufixo();
+        dto.setDescricao(descricao);
+        dto.setDataCriacao(LocalDate.now());
+        dto.setAlocacoes(null);
+
+        loteService.cadastra(admin.getEmail(), dto);
+
+        ELote lote = buscarLotePorDescricao(descricao);
+        assertThat(lote).isNotNull();
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId())).isEmpty();
+    }
+
+    @Test
+    void deveCadastrarLote_QuandoAlocacoesForemVazias_SemAlocacoesSalvas() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+
+        LoteCadastroDto dto = new LoteCadastroDto();
+        dto.setCorBrinco("Branco");
+        String descricao = "Lote Aloc Vazia IT " + sufixo();
+        dto.setDescricao(descricao);
+        dto.setDataCriacao(LocalDate.now());
+        dto.setAlocacoes(List.of());
+
+        loteService.cadastra(admin.getEmail(), dto);
+
+        ELote lote = buscarLotePorDescricao(descricao);
+        assertThat(lote).isNotNull();
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId())).isEmpty();
+    }
+
+    @Test
+    void deveLancarExcecao_QuandoAlgunsAnimaisNaoEncontradosEmAplicarAlocacoes() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animalReal = criarAnimal(admin, "LOT-ANI-PARTIALMISS-" + sufixo());
+
+        LoteCadastroDto dto = novoLoteDto("Lote Parcial Inex IT " + sufixo(), "Azul",
+                setor.getId(), List.of(animalReal.getId(), Long.MAX_VALUE));
+
+        assertThatThrownBy(() -> loteService.cadastra(admin.getEmail(), dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("não foram encontrados");
+    }
+
+    @Test
+    void devePermitirAnimalBloqueadoPermanecerNoMesmoLote_QuandoJaEstaNesteLote() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 50);
+        EAnimal animalBloqueado = criarAnimal(admin, "LOT-ANI-BLOQMAINT-" + sufixo());
+
+        String descricao = "Lote Bloq Manter IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descricao, "Azul", setor.getId(), List.of(animalBloqueado.getId())));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        animalBloqueado.setStatusAnimal(EnStatusAnimal.VENDIDO);
+        animalRepository.save(animalBloqueado);
+
+        LotePutDto putDto = new LotePutDto();
+        LoteSetorCadastroDto alocacaoComBloqueado = new LoteSetorCadastroDto();
+        alocacaoComBloqueado.setSetorId(setor.getId());
+        alocacaoComBloqueado.setAnimaisIds(List.of(animalBloqueado.getId()));
+        putDto.setAlocacoes(List.of(alocacaoComBloqueado));
+
+        String resultado = loteService.altera(lote.getId(), admin.getEmail(), putDto);
+
+        assertThat(resultado).contains("atualizado com sucesso");
+        assertThat(loteSetorRepository.findByLote_Id(lote.getId()).get(0).getAnimais())
+                .anyMatch(a -> a.getId().equals(animalBloqueado.getId()));
+    }
+
+    @Test
+    void deveAlterarLote_QuandoCorBrincoForNula_NaoAlteraCorBrinco() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 3);
+        String descricao = "Lote Cor Nula IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        LotePutDto putDto = new LotePutDto();
+        putDto.setCorBrinco(null);
+        putDto.setDescricao("Desc Atualizada IT");
+        loteService.altera(lote.getId(), admin.getEmail(), putDto);
+
+        LoteRespostaDto resultado = loteService.buscaPorid(lote.getId());
+        assertThat(resultado.getCorBrinco()).isEqualTo("Azul");
+        assertThat(resultado.getDescricao()).isEqualTo("Desc Atualizada IT");
+    }
+
+    @Test
+    void deveAlterarLote_QuandoRacaPredominanteForNaoNula_Atualiza() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setor = criarSetor(admin, 3);
+        String descricao = "Lote Raca IT " + sufixo();
+        loteService.cadastra(admin.getEmail(), novoLoteDto(descricao, "Azul", setor.getId(), List.of()));
+        ELote lote = buscarLotePorDescricao(descricao);
+
+        LotePutDto putDto = new LotePutDto();
+        putDto.setRacaPredominante("Angus");
+        loteService.altera(lote.getId(), admin.getEmail(), putDto);
+
+        LoteRespostaDto resultado = loteService.buscaPorid(lote.getId());
+        assertThat(resultado.getRacaPredominante()).isEqualTo("Angus");
+    }
+
+    @Test
+    void deveBuscarLote_QuandoCriadoPorForNulo_RetornandoCamposNulos() {
+        ELote lote = new ELote();
+        lote.setCodigo("LN" + sufixo().substring(0, 4));
+        lote.setDescricao("Lote Sem Criador IT");
+        lote.setCorBrinco("Rosa");
+        lote.setDataCriacao(LocalDate.now());
+        ELote salvo = loteRepository.save(lote);
+
+        LoteRespostaDto resultado = loteService.buscaPorid(salvo.getId());
+
+        assertThat(resultado.getCriadoPorEmail()).isNull();
+        assertThat(resultado.getCriadoPorNome()).isNull();
+    }
+
+    @Test
+    void deveListarLotes_QuandoNenhumAtivo_RetornaListaVazia() {
+        List<LoteRespostaDto> resultado = loteService.listarTodos();
+
+        assertThat(resultado).isEmpty();
+    }
+
+    @Test
+    void deveLancarExcecao_QuandoSetorNaoEncontradoEmObterOuCriarAlocacaoPadrao() {
+        criarLotePadrao(criarUsuario(EnPerfilUsuario.ADMINISTRADOR));
+
+        assertThatThrownBy(() -> loteService.obterOuCriarAlocacaoPadrao(Long.MAX_VALUE))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Setor não encontrado ou inativo");
+    }
+
+    @Test
+    void deveTransferirAnimal_QuandoSetorDestinoComCapacidadeZero_NaoLimitaQuantidade() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+
+        ESetor setorIlimitado = new ESetor();
+        setorIlimitado.setNome("Setor Ilimitado IT " + sufixo());
+        setorIlimitado.setCapacidadeMaxima(0);
+        setorIlimitado.setTipo(EnTipoSetor.PASTO);
+        ESetor setorIlimitadoSalvo = setorRepository.save(setorIlimitado);
+
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-CAP0-" + sufixo());
+
+        String descOrigem = "Lote Cap0 Origem IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+
+        String descDestino = "Lote Cap0 Destino IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorIlimitadoSalvo.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorIlimitadoSalvo.getId());
+
+        String resultado = loteService.transferirAnimal(admin.getEmail(), dto);
+
+        assertThat(resultado).contains(animal.getCodigoBrinco());
+        assertThat(loteSetorRepository.findByLote_Id(loteDestino.getId()).get(0).getAnimais())
+                .anyMatch(a -> a.getId().equals(animal.getId()));
+    }
+
+    @Test
+    void deveTransferirAnimal_CriandoNovoLoteSetorNoDestino_QuandoSetorNaoEstavaNoLoteDestino() {
+        EUsuario admin = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        ESetor setorOrigem = criarSetor(admin, 50);
+        ESetor setorDoLoteDestino = criarSetor(admin, 50);
+        ESetor setorDestinoSeparado = criarSetor(admin, 50);
+
+        EAnimal animal = criarAnimal(admin, "LOT-ANI-NEWLS-" + sufixo());
+
+        String descOrigem = "Lote NewLS Origem IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descOrigem, "Azul", setorOrigem.getId(), List.of(animal.getId())));
+
+        String descDestino = "Lote NewLS Destino IT " + sufixo();
+        loteService.cadastra(admin.getEmail(),
+                novoLoteDto(descDestino, "Verde", setorDoLoteDestino.getId(), List.of()));
+        ELote loteDestino = buscarLotePorDescricao(descDestino);
+
+        long contadorAntes = loteSetorRepository.count();
+
+        TransferenciaAnimalDto dto = new TransferenciaAnimalDto();
+        dto.setAnimalId(animal.getId());
+        dto.setLoteDestinoId(loteDestino.getId());
+        dto.setSetorDestinoId(setorDestinoSeparado.getId());
+
+        String resultado = loteService.transferirAnimal(admin.getEmail(), dto);
+
+        assertThat(resultado).contains(animal.getCodigoBrinco());
+        assertThat(loteSetorRepository.count()).isGreaterThan(contadorAntes);
+        assertThat(loteSetorRepository.findByLote_Id(loteDestino.getId()))
+                .anyMatch(ls -> ls.getSetor().getId().equals(setorDestinoSeparado.getId())
+                        && ls.getAnimais().stream().anyMatch(a -> a.getId().equals(animal.getId())));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private LoteCadastroDto novoLoteDto(String descricao, String corBrinco, Long setorId, List<Long> animaisIds) {

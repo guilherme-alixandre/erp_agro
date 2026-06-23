@@ -451,15 +451,14 @@ public class SLote {
         // JOIN FETCH garante leitura fresca do BD, evitando cache stale do Hibernate
         List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_IdWithAnimais(lote.getId());
         boolean possuiAnimais = alocacoes != null && alocacoes.stream()
-                .anyMatch(a -> a.getAnimais() != null && !a.getAnimais().isEmpty());
+                .anyMatch(a -> !a.getAnimais().isEmpty());
         if (!possuiAnimais) return;
 
         ELote lotePadrao = loteInterface.findByPadraoTrueAndStatus(EnStatus.A)
                 .orElseThrow(() -> new IllegalStateException("Lote padrão não encontrado."));
 
         for (ELoteSetor alocacao : alocacoes) {
-            List<EAnimal> animais = new ArrayList<>(
-                    alocacao.getAnimais() != null ? alocacao.getAnimais() : List.of());
+            List<EAnimal> animais = new ArrayList<>(alocacao.getAnimais());
             if (animais.isEmpty()) continue;
 
             ELoteSetor destino = loteSetorInterface
@@ -471,8 +470,7 @@ public class SLote {
                         return loteSetorInterface.save(novo);
                     });
 
-            List<EAnimal> animaisDestino = destino.getAnimais() != null
-                    ? new ArrayList<>(destino.getAnimais()) : new ArrayList<>();
+            List<EAnimal> animaisDestino = new ArrayList<>(destino.getAnimais());
             animaisDestino.addAll(animais);
             destino.setAnimais(animaisDestino);
             loteSetorInterface.save(destino);

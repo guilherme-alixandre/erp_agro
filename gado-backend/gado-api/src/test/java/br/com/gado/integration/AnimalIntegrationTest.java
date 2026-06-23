@@ -341,6 +341,126 @@ class AnimalIntegrationTest {
                 .hasMessageContaining("Usuário não encontrado");
     }
 
+    // ── Cobertura de branches adicionais ─────────────────────────────────────
+
+    @Test
+    void deveBuscarAnimal_QuandoUsuarioForNulo_RetornandoCriadoPorEmailNulo() {
+        EAnimal animal = new EAnimal();
+        animal.setCodigoBrinco("ANI-SEMUSER-" + sufixo());
+        animal.setNome("Animal Sem Dono IT");
+        animal.setCor("Cinza");
+        animal.setDataNascimento(LocalDateTime.now().minusYears(1));
+        animal.setPesoAtual(300.0);
+        animal.setRaca("Gir");
+        animal.setAlturaCernelha(1.20);
+        animal.setPerimetroToracico(1.60);
+        animal.setComprimentoCorporal(1.70);
+        animal.setSexo(EnSexoAnimal.F);
+        animal.setStatusAnimal(EnStatusAnimal.ATIVO);
+        animalRepository.save(animal);
+
+        AnimalDto resultado = animalService.buscarPorBrinco(animal.getCodigoBrinco());
+
+        assertThat(resultado.getCodigoBrinco()).isEqualTo(animal.getCodigoBrinco());
+        assertThat(resultado.getCriadoPorEmail()).isNull();
+    }
+
+    @Test
+    void deveDeletarAnimal_QuandoCuidadorEOMesmoCriador() {
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animal = criarAnimal(cuidador, "ANI-OWN-DEL-" + sufixo());
+
+        String resultado = animalService.deletaAnimal(cuidador.getEmail(), animal.getCodigoBrinco());
+
+        assertThat(resultado).isEqualTo("animal deletado com sucesso");
+        assertThat(animalRepository.findByCodigoBrincoAndStatus(animal.getCodigoBrinco(), EnStatus.A)).isEmpty();
+    }
+
+    @Test
+    void deveDeletarAnimal_QuandoCuidadorChefeEOMesmoCriador() {
+        EUsuario cuidadorChefe = criarUsuario(EnPerfilUsuario.CUIDADOR_CHEFE);
+        EAnimal animal = criarAnimal(cuidadorChefe, "ANI-CC-OWN-DEL-" + sufixo());
+
+        String resultado = animalService.deletaAnimal(cuidadorChefe.getEmail(), animal.getCodigoBrinco());
+
+        assertThat(resultado).isEqualTo("animal deletado com sucesso");
+        assertThat(animalRepository.findByCodigoBrincoAndStatus(animal.getCodigoBrinco(), EnStatus.A)).isEmpty();
+    }
+
+    @Test
+    void deveLancarExcecao_QuandoCuidadorTentaDeletarAnimalSemDono() {
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animal = new EAnimal();
+        animal.setCodigoBrinco("ANI-NODONO-DEL-" + sufixo());
+        animal.setNome("Sem Dono DEL IT");
+        animal.setCor("Branco");
+        animal.setDataNascimento(LocalDateTime.now().minusYears(2));
+        animal.setPesoAtual(400.0);
+        animal.setRaca("Nelore");
+        animal.setAlturaCernelha(1.30);
+        animal.setPerimetroToracico(1.80);
+        animal.setComprimentoCorporal(1.90);
+        animal.setSexo(EnSexoAnimal.M);
+        animal.setStatusAnimal(EnStatusAnimal.ATIVO);
+        animalRepository.save(animal);
+
+        assertThatThrownBy(() -> animalService.deletaAnimal(cuidador.getEmail(), animal.getCodigoBrinco()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("você cadastrou");
+    }
+
+    @Test
+    void deveAlterarAnimal_QuandoCuidadorEOMesmoCriador() {
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animal = criarAnimal(cuidador, "ANI-OWN-ALT-" + sufixo());
+
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Editado Pelo Proprio Cuidador IT");
+
+        AnimalDto resultado = animalService.alteraAnimal(cuidador.getEmail(), animal.getCodigoBrinco(), atualizacao);
+
+        assertThat(resultado.getNome()).isEqualTo("Editado Pelo Proprio Cuidador IT");
+    }
+
+    @Test
+    void deveAlterarAnimal_QuandoCuidadorChefeNaoEDono_SemRestricao() {
+        EUsuario dono = criarUsuario(EnPerfilUsuario.ADMINISTRADOR);
+        EUsuario cuidadorChefe = criarUsuario(EnPerfilUsuario.CUIDADOR_CHEFE);
+        EAnimal animal = criarAnimal(dono, "ANI-CC-NOTOWNER-" + sufixo());
+
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Editado Por CC Sem Ser Dono IT");
+
+        AnimalDto resultado = animalService.alteraAnimal(cuidadorChefe.getEmail(), animal.getCodigoBrinco(), atualizacao);
+
+        assertThat(resultado.getNome()).isEqualTo("Editado Por CC Sem Ser Dono IT");
+    }
+
+    @Test
+    void deveLancarExcecao_QuandoCuidadorTentaAlterarAnimalSemDono() {
+        EUsuario cuidador = criarUsuario(EnPerfilUsuario.CUIDADOR);
+        EAnimal animal = new EAnimal();
+        animal.setCodigoBrinco("ANI-NODONO-ALT-" + sufixo());
+        animal.setNome("Sem Dono ALT IT");
+        animal.setCor("Preto");
+        animal.setDataNascimento(LocalDateTime.now().minusYears(1));
+        animal.setPesoAtual(350.0);
+        animal.setRaca("Angus");
+        animal.setAlturaCernelha(1.25);
+        animal.setPerimetroToracico(1.75);
+        animal.setComprimentoCorporal(1.85);
+        animal.setSexo(EnSexoAnimal.F);
+        animal.setStatusAnimal(EnStatusAnimal.ATIVO);
+        animalRepository.save(animal);
+
+        AnimalDto atualizacao = new AnimalDto();
+        atualizacao.setNome("Tentativa IT");
+
+        assertThatThrownBy(() -> animalService.alteraAnimal(cuidador.getEmail(), animal.getCodigoBrinco(), atualizacao))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("você cadastrou");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private AnimalDto novoAnimalDto(String brinco, Long loteSectorId) {
