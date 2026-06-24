@@ -28,8 +28,6 @@ jobs:
           mvn clean install
 
       - name: Disparar Deploy no Render
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           echo "Testes passaram! Avisando o Render para colocar no ar..."
-          curl -X POST $DEPLOY_HOOK_URL
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
