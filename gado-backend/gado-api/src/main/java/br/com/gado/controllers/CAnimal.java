@@ -46,3 +46,4 @@ public class CAnimal {
         return ResponseEntity.ok(animalService.alteraAnimal(emailUsuario, brinco, animal));
     }
 }
+
