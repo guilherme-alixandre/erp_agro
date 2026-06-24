@@ -1,0 +1,35 @@
+name: CI/CD Pipeline - Gado Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'gado-backend/**' # Só roda a pipeline se você alterar algo dentro do backend
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar o Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilar e rodar os testes
+        run: |
+          cd gado-backend
+          mvn clean install
+
+      - name: Disparar Deploy no Render
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          echo "Testes passaram! Avisando o Render para colocar no ar..."
+          curl -X POST $DEPLOY_HOOK_URL
