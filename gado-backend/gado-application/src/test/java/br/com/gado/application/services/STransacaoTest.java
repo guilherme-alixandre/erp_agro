@@ -63,7 +63,7 @@ class STrasacaoTest {
         transacaoEntity.setParceiro(parceiroEntity);
         transacaoEntity.setLote(loteEntity);
 
-        // CORREÇÃO: Usando lenient() para o Mockito não reclamar nos testes que não usam o DTO completo
+        // Usando lenient() para o Mockito não reclamar nos testes que não usam o DTO completo
         lenient().when(trasacaoDto.getParceiro().getCpfCnpj()).thenReturn("12345678900");
         lenient().when(trasacaoDto.getLote().getId()).thenReturn(ID);
     }
