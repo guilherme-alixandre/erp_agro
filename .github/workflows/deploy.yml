@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
+      - dev  # <-- Monitora as duas
     paths:
-      - 'gado-backend/**' # Só roda a pipeline se você alterar algo dentro do backend
+      - 'gado-backend/**'
 
 jobs:
   build-and-test:
@@ -27,7 +28,14 @@ jobs:
           cd gado-backend
           mvn clean install
 
-      - name: Disparar Deploy no Render
+      - name: Disparar Deploy de Produção (main)
+        if: github.ref == 'refs/heads/main'
         run: |
-          echo "Testes passaram! Avisando o Render para colocar no ar..."
+          echo "Avisando o Render de Produção..."
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+      - name: Disparar Deploy de Desenvolvimento (dev)
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          echo "Avisando o Render de Desenvolvimento (Dev)..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_DEV }}"
