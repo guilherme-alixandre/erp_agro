@@ -35,10 +35,12 @@ public class SAnimal {
         return modelMapper.map(animal, AnimalDto.class);
     }
 
-    public ArrayList<AnimalDto> buscarTodosAnimais() {
-        Optional<ArrayList<EAnimal>> animais = animalInterface.findAllByStatus(EnStatus.A);
-        if (animais.isEmpty())
-            return new ArrayList<>();
+    public ArrayList<AnimalDto> buscarTodosAnimais(String termo) {
+        String termoLimpo = termo == null ? "" : termo.trim();
+
+        ArrayList<EAnimal> animais = termoLimpo.isBlank()
+                ? animalInterface.findAllByStatus(EnStatus.A).orElse(new ArrayList<>())
+                : new ArrayList<>(animalInterface.buscarPorTermo(EnStatus.A, termoLimpo));
 
         return animais.stream()
                 .map(animal -> modelMapper.map(animal, AnimalDto.class))

@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface IInsumo extends JpaRepository<EInsumo, Long> {
     Optional<EInsumo> findFirstByNomeIgnoreCase(String nome);
 
+    Optional<EInsumo> findFirstByTipoAndNomeIgnoreCase(EnTipoInsumo tipo, String nome);
+
     List<EInsumo> findByTipoOrderByNomeAsc(EnTipoInsumo tipo);
 
     List<EInsumo> findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(

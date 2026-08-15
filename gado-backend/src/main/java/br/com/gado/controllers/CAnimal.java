@@ -23,8 +23,8 @@ public class CAnimal {
     }
 
     @GetMapping
-    public ResponseEntity<ArrayList<AnimalDto>> getAnimals(){
-        return ResponseEntity.ok(animalService.buscarTodosAnimais());
+    public ResponseEntity<ArrayList<AnimalDto>> getAnimals(@RequestParam(required = false) String busca){
+        return ResponseEntity.ok(animalService.buscarTodosAnimais(busca));
     }
 
     @PostMapping("/usuarios/{email}")
