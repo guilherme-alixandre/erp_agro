@@ -2,6 +2,7 @@ package br.com.gado.controllers;
 
 import br.com.gado.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.dto.usuarioDto.UsuarioDto;
+import br.com.gado.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.services.SUsuario;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -32,6 +34,12 @@ public class CUsuario {
     @PostMapping
     public ResponseEntity<UsuarioDto> postUsuario(@RequestBody UsuarioCadastroDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastra(dto));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody UsuarioLoginDto dto) {
+        UsuarioDto usuario = usuarioService.login(dto);
+        return ResponseEntity.ok(Map.of("usuario", usuario));
     }
 
     @DeleteMapping("/{email}")
