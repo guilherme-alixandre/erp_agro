@@ -18,8 +18,9 @@ import java.util.List;
 /**
  * Popula o banco com dados de teste ao iniciar em ambiente de desenvolvimento.
  *
- * Ativação: adicione spring.profiles.active=dev em application.properties
- * (ou passe -Dspring.profiles.active=dev na JVM / SPRING_PROFILES_ACTIVE=dev no ambiente).
+ * Ativação: já vem ligado por padrão via spring.profiles.active=dev em application.properties.
+ * Para desativar (ex: ambiente de produção), remova essa linha ou sobrescreva o perfil
+ * ativo por variável de ambiente/VM option.
  *
  * O guard count() == 1 garante que o seed só roda uma vez, pois a migration
  * Flyway já cria exatamente 1 usuário administrador padrão no banco vazio.
