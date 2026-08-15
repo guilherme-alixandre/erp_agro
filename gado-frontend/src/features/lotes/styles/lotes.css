@@ -1,0 +1,274 @@
+/* ── LoteCard ─────────────────────────────────────────────────────── */
+
+.lote-card {
+  display: grid;
+  gap: 8px;
+}
+
+.lote-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lote-card__codigo {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #244011;
+}
+
+.lote-card__status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lote-card__status--ativo {
+  background: #e3f3d8;
+  color: #244011;
+  border: 1px solid #b7dc9a;
+}
+
+.lote-card__status--inativo {
+  background: #f0f0f0;
+  color: #6a6a6a;
+  border: 1px solid #d0d0d0;
+}
+
+.lote-card__cor {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.lote-card__info,
+.lote-card__criado {
+  margin: 0;
+  color: #5a5a5a;
+  font-size: 0.9rem;
+}
+
+/* ── Formulário de Lote ───────────────────────────────────────────── */
+
+.lote-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.lote-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.lote-form input,
+.lote-form select {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* ── Fieldset de Setores ──────────────────────────────────────────── */
+
+.setores-fieldset {
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.setores-fieldset legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #244011;
+}
+
+.setores-fieldset__select {
+  display: grid;
+  gap: 4px;
+}
+
+.setores-cards {
+  display: grid;
+  gap: 12px;
+}
+
+/* ── Card de alocação (setor + animais) dentro do formulário ───────── */
+
+.aloc-card {
+  border: 1px solid #c8dfb1;
+  border-radius: 10px;
+  background: #f5faf0;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.aloc-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aloc-card__nome {
+  flex: 1;
+  font-size: 1.05rem;
+  color: #244011;
+}
+
+.aloc-card__capacidade {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dff5cc;
+  color: #2a5a0e;
+  white-space: nowrap;
+}
+
+.aloc-card__capacidade--excedido {
+  background: #ffeaea;
+  color: #8e2222;
+}
+
+.aloc-card__remover {
+  border: 0;
+  background: #e8e8e8;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aloc-card__label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.aloc-card__aviso {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8e2222;
+  font-weight: 600;
+}
+
+.aloc-card__transferencia {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: #eaf5e0;
+  border: 1px solid #b8d99c;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.aloc-card__transferencia-info {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #244011;
+  margin: 0;
+}
+
+.aloc-card__transferencia-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+/* ── Detalhes — Alocações por Setor ──────────────────────────────── */
+
+.lote-alocacoes {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.lote-alocacao {
+  border: 1px solid #c8dfb1;
+  border-radius: 10px;
+  background: #f5faf0;
+  padding: 10px 12px;
+}
+
+.lote-alocacao__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.lote-alocacao__capacidade {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dff5cc;
+  color: #2a5a0e;
+  white-space: nowrap;
+}
+
+.lote-alocacao__animais {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.lote-alocacao__animais li {
+  background: #fff;
+  border: 1px solid #d8ecc4;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.lotes-export {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.lotes-export button {
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #244011;
+  cursor: pointer;
+}
+
+.lotes-export button:hover {
+  background: #f0f6ea;
+}
+
+/* ── Responsividade ───────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .aloc-card__header {
+    flex-wrap: wrap;
+  }
+
+  .lote-alocacao__header {
+    flex-wrap: wrap;
+  }
+
+  .aloc-card__transferencia-actions {
+    flex-wrap: wrap;
+  }
+}

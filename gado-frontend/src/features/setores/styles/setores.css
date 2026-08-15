@@ -1,0 +1,97 @@
+.setor-card {
+  display: grid;
+  gap: 8px;
+}
+
+.setor-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.15rem;
+}
+
+.setor-card__tipo {
+  margin: 0;
+  color: #4f7f2f;
+  font-weight: 700;
+}
+
+.setor-card__info,
+.setor-card__criado {
+  margin: 0;
+  color: #5a5a5a;
+  font-size: 0.9rem;
+}
+
+.setor-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.setor-badge--ativo {
+  background: #e3f3d8;
+  color: #244011;
+  border: 1px solid #b7dc9a;
+}
+
+.setor-badge--inativo {
+  background: #f0f0f0;
+  color: #6a6a6a;
+  border: 1px solid #d0d0d0;
+}
+
+.setor-lotes {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.setor-lote-item {
+  padding: 8px 12px;
+  background: #f7f7f7;
+  border-radius: 8px;
+}
+
+.setor-lote-item__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setor-lote-item__cor {
+  color: #6a6a6a;
+  font-size: 0.85rem;
+}
+
+.setor-lote-item__animais {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #4f7f2f;
+  font-weight: 600;
+}
+
+.setores-export {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.setores-export button {
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #244011;
+  cursor: pointer;
+}
+
+.setores-export button:hover {
+  background: #f0f6ea;
+}
