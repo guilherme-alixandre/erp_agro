@@ -1,12 +1,10 @@
 package br.com.gado.entities;
 
 import br.com.gado.enums.EnTipoSetor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -23,7 +21,14 @@ public class ESetor extends EAbstract{
     @Enumerated(EnumType.STRING)
     private EnTipoSetor tipo;
 
-    @OneToMany(mappedBy = "setor")
-    private List<ELote> lotes = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "criado_por_id")
+    @JsonIgnore
+    private EUsuario criadoPor;
+
+    @ManyToOne
+    @JoinColumn(name = "alterado_por_id")
+    @JsonIgnore
+    private EUsuario alteradoPor;
 }
 

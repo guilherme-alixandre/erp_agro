@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { loginUsuario } from '../../../services/usuarioApi'
+import { loginUsuario } from '../../configuracoes/integration/usuarioApi'
 import '../../animais/styles/animais.css'
 import '../styles/auth.css'
 

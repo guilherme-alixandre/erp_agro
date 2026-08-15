@@ -5,7 +5,7 @@ import {
   cadastrarUsuario,
   deletarUsuario,
   listarUsuarios,
-} from '../../../services/usuarioApi'
+} from '../integration/usuarioApi'
 import '../../animais/styles/animais.css'
 import '../styles/configuracoes.css'
 
@@ -136,11 +136,26 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout }) {
           >
             Animais
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('lotes')}
+          >
             Lotes
           </button>
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('setores')}
+          >
             Setores
+          </button>
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => onNavigate('metas')}
+          >
+            Metas
           </button>
           <button
             type="button"

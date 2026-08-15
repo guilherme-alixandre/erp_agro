@@ -7,6 +7,7 @@ public enum EnPerfilUsuario {
     // adicionar conforme for lembrando e precisando
     GERENTE,
     CUIDADOR,
+    CUIDADOR_CHEFE,
     ADMINISTRADOR,
     FINANCEIRO
 }

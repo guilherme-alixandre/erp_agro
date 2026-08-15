@@ -1,4 +1,4 @@
-const PERFIL_OPTIONS = ['GERENTE', 'CASEIRO', 'ADMINISTRADOR']
+const PERFIL_OPTIONS = ['GERENTE', 'ADMINISTRADOR']
 
 function UsuarioFormModal({
   formData,

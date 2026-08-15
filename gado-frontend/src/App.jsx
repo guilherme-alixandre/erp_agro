@@ -4,6 +4,9 @@ import PerfilPage from './features/perfil/pages/PerfilPage'
 import AuthPage from './features/auth/pages/AuthPage'
 import InsumosPage from './features/insumos/pages/InsumosPage'
 import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
+import SetoresPage from './features/setores/pages/SetoresPage'
+import LotesPage from './features/lotes/pages/LotesPage'
+import MetasPage from './features/metas/pages/MetasPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -62,6 +65,36 @@ function App() {
   if (activePage === 'insumos') {
     return (
       <InsumosPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'metas') {
+    return (
+      <MetasPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'lotes') {
+    return (
+      <LotesPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'setores') {
+    return (
+      <SetoresPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
