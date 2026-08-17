@@ -320,6 +320,46 @@
   padding: 10px;
 }
 
+/* ── Campo de senha com toggle de visibilidade ───────────────────────── */
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4.5rem;
+}
+
+.password-field__toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.password-field__toggle:hover {
+  color: #374151;
+}
+
+.field-error-msg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.15rem;
+}
+
 .details-grid {
   margin: 14px 0;
   display: grid;
@@ -344,7 +384,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset {
+.vacinas-fieldset,
+.senha-fieldset {
   margin-top: 8px;
   border: 1px solid #d0d0d0;
   border-radius: 10px;
@@ -353,7 +394,8 @@
   gap: 10px;
 }
 
-.vacinas-fieldset legend {
+.vacinas-fieldset legend,
+.senha-fieldset legend {
   padding: 0 6px;
   font-weight: 700;
   color: #244011;

@@ -9,9 +9,24 @@ function toCadastroPayload(usuario) {
   }
 }
 
+function isUsuarioDto(payload) {
+  return (
+    payload &&
+    typeof payload === 'object' &&
+    !Array.isArray(payload) &&
+    ('email' in payload || 'nome' in payload || 'perfil' in payload)
+  )
+}
+
 function getUsuarioDoPayload(payload) {
-  if (!payload || typeof payload !== 'object') return null
-  return payload['Usuário'] ?? payload.usuario ?? payload.mensagem ?? null
+  if (!payload) return null
+  if (isUsuarioDto(payload)) return payload
+
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    return payload['Usuário'] ?? payload.usuario ?? payload.mensagem ?? null
+  }
+
+  return null
 }
 
 function adminHeaders(adminEmail) {
@@ -49,6 +64,17 @@ async function listarUsuarios(adminEmail) {
   return payload
 }
 
+async function atualizarUsuario(email, data, adminEmail) {
+  const emailCodificado = encodeURIComponent(String(email).trim())
+  const payload = await request(`/usuarios/${emailCodificado}`, {
+    method: 'PUT',
+    headers: adminHeaders(adminEmail),
+    body: JSON.stringify(data),
+  })
+  const usuario = getUsuarioDoPayload(payload)
+  return usuario ?? payload
+}
+
 function deletarUsuario(email, adminEmail) {
   const emailCodificado = encodeURIComponent(String(email).trim())
   return request(`/usuarios/${emailCodificado}`, {
@@ -74,10 +100,22 @@ async function loginUsuario(email, senha) {
   return usuario
 }
 
+async function verificarCredenciais(email, senha) {
+  const payload = await request('/usuarios/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: String(email ?? '').trim(), senha }),
+  })
+  const usuario = getUsuarioDoPayload(payload)
+  if (!usuario) throw new Error('Credenciais inválidas.')
+  return usuario
+}
+
 export {
+  atualizarUsuario,
   buscarUsuarioPorEmail,
   cadastrarUsuario,
   deletarUsuario,
   listarUsuarios,
   loginUsuario,
+  verificarCredenciais,
 }

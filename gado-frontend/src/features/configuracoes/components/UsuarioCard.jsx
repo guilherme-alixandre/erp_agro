@@ -1,4 +1,4 @@
-function UsuarioCard({ usuario, onExcluir, isCurrentUser }) {
+function UsuarioCard({ usuario, onEditar, onExcluir, isCurrentUser }) {
   return (
     <article className="animal-card usuario-card">
       <div className="usuario-card__header">
@@ -8,8 +8,17 @@ function UsuarioCard({ usuario, onExcluir, isCurrentUser }) {
 
       <p className="usuario-card__email">{usuario.email}</p>
 
-      {!isCurrentUser ? (
-        <div className="animal-card__actions">
+      {isCurrentUser ? <p className="usuario-card__hint">Sua conta</p> : null}
+
+      <div className="animal-card__actions">
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => onEditar(usuario)}
+        >
+          Editar
+        </button>
+        {!isCurrentUser ? (
           <button
             type="button"
             className="btn-danger"
@@ -17,10 +26,8 @@ function UsuarioCard({ usuario, onExcluir, isCurrentUser }) {
           >
             Excluir
           </button>
-        </div>
-      ) : (
-        <p className="usuario-card__hint">Sua conta</p>
-      )}
+        ) : null}
+      </div>
     </article>
   )
 }

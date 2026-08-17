@@ -41,6 +41,12 @@ function App() {
     setSessionFeedback('')
   }
 
+  function handleUpdateUser(updatedUser) {
+    const safeUser = sanitizeUser(updatedUser)
+    setCurrentUser(safeUser)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
+  }
+
   function handleLogout() {
     setCurrentUser(null)
     localStorage.removeItem(STORAGE_KEY)
@@ -58,6 +64,7 @@ function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
+        onUpdateUser={handleUpdateUser}
       />
     )
   }
@@ -108,6 +115,7 @@ function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
+        onUpdateUser={handleUpdateUser}
       />
     )
   }
