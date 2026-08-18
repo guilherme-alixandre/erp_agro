@@ -4,6 +4,8 @@ import br.com.gado.dto.UnidadeMedidaDTO;
 import br.com.gado.services.SUnidadeMedida;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/unidadeMedida")
@@ -13,6 +15,11 @@ public class CUnidadeMedida {
 
     public CUnidadeMedida(SUnidadeMedida unidadeMedidaService) {
         this.unidadeMedidaService = unidadeMedidaService;
+    }
+
+    @GetMapping
+    public List<UnidadeMedidaDTO> getUnidadesMedida() {
+        return unidadeMedidaService.listarTodas();
     }
 
     @GetMapping("/{unidadeMedidaId}")

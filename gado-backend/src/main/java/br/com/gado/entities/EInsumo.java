@@ -13,6 +13,8 @@ public class EInsumo extends EAbstract{
 
     private String nome;
     private Double estoqueMinimo;
+
+    /** Saldo em estoque, sempre expresso na unidade de medida primária. */
     private Double saldoAtual;
 
     @ManyToOne
@@ -24,6 +26,37 @@ public class EInsumo extends EAbstract{
 
     private Boolean pendente;
 
-    // fazer depois o unidade_medida pq não lembro pra que isso
+    // ── Unidades de medida e conversão ──────────────────────────────────
+
+    /** Unidade em que o saldo/estoque é controlado (ex: SACA). */
+    @ManyToOne
+    @JoinColumn(name = "unidade_medida_primaria_id")
+    private EUnidadeMedida unidadeMedidaPrimaria;
+
+    /** Unidade usada no consumo diário (ex: KG). Opcional. */
+    @ManyToOne
+    @JoinColumn(name = "unidade_medida_secundaria_id")
+    private EUnidadeMedida unidadeMedidaSecundaria;
+
+    /**
+     * Quantas unidades secundárias equivalem a 1 unidade primária
+     * (ex: fatorConversao = 40 significa 1 SACA = 40 KG).
+     * Obrigatório sempre que unidadeMedidaSecundaria estiver preenchida.
+     */
+    private Double fatorConversao;
+
+    // ── Financeiro ───────────────────────────────────────────────────────
+
+    /** Preço médio ponderado por unidade primária, recalculado a cada entrada manual de estoque. */
+    private Double precoCompraMedio;
+
+    /** Preço unitário (unidade primária) pago na última compra registrada. */
+    private Double precoUltimaCompra;
+
+    // ── Dados da Nota Fiscal (base para futura importação de XML) ──────
+
+    private String numeroNf;
+
+    private String chaveAcessoNf;
 
 }

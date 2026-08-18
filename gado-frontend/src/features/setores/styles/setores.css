@@ -45,6 +45,10 @@
   border: 1px solid #d0d0d0;
 }
 
+.details-grid__full {
+  grid-column: 1 / -1;
+}
+
 .setor-lotes {
   display: grid;
   gap: 8px;
@@ -73,25 +77,4 @@
   font-size: 0.85rem;
   color: #4f7f2f;
   font-weight: 600;
-}
-
-.setores-export {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 10px;
-}
-
-.setores-export button {
-  border: 1px solid #cfcfcf;
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #244011;
-  cursor: pointer;
-}
-
-.setores-export button:hover {
-  background: #f0f6ea;
 }

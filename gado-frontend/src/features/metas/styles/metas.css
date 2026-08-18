@@ -1,70 +1,11 @@
-/* ── Toolbar (filtro de setor + exportar + nova meta) ─────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   metas.css — Módulo de Metas de Setores
+   Herda o layout base (animals-layout, sidebar, header, data-toolbar,
+   modal-card, btn-*) de animais.css. Define apenas o que é específico
+   deste módulo.
+   ═══════════════════════════════════════════════════════════════════ */
 
-.metas-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 0 0 16px;
-}
-
-.metas-setor-filter {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex: 1;
-}
-
-.metas-setor-filter label {
-  font-size: 0.85rem;
-  color: #374151;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.metas-setor-filter select {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  color: #111827;
-  background: #fff;
-  min-width: 180px;
-  max-width: 340px;
-}
-
-.metas-toolbar > button {
-  border: 1px solid #cfcfcf;
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #244011;
-  cursor: pointer;
-}
-
-.metas-toolbar > button:hover:not(:disabled) {
-  background: #f0f6ea;
-}
-
-.metas-toolbar > button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.metas-toolbar .fab-add-inline {
-  background: #4f7f2f;
-  color: #fff;
-  border-color: #4f7f2f;
-}
-
-.metas-toolbar .fab-add-inline:hover:not(:disabled) {
-  background: #3f6624;
-}
-
-/* ── Lista de metas ────────────────────────────────────────────────── */
+/* ── Lista de metas ───────────────────────────────────────────────── */
 
 .metas-list {
   display: flex;
@@ -73,7 +14,7 @@
   margin-top: 0.5rem;
 }
 
-/* ── Card full-width ───────────────────────────────────────────────── */
+/* ── Card full-width ──────────────────────────────────────────────── */
 
 .meta-card {
   width: 100%;
@@ -88,6 +29,8 @@
 .meta-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* ── Cabeçalho do card ────────────────────────────────────────────── */
 
 .meta-card__header {
   display: flex;
@@ -138,7 +81,7 @@
   color: #92400e;
 }
 
-/* ── Barra de progresso ────────────────────────────────────────────── */
+/* ── Barra de progresso ───────────────────────────────────────────── */
 
 .meta-progress {
   margin-bottom: 1.25rem;
@@ -185,7 +128,7 @@
   background: linear-gradient(90deg, #3b82f6, #2563eb);
 }
 
-/* ── Grid de stats ─────────────────────────────────────────────────── */
+/* ── Grid de stats ────────────────────────────────────────────────── */
 
 .meta-stats {
   display: grid;
@@ -216,7 +159,7 @@
   color: #111827;
 }
 
-/* ── Tabela de medições ────────────────────────────────────────────── */
+/* ── Tabela de medições ───────────────────────────────────────────── */
 
 .meta-medicoes {
   margin-top: 0.25rem;
@@ -275,7 +218,7 @@
   font-style: italic;
 }
 
-/* ── Botões de ação em linha da medição ────────────────────────────── */
+/* ── Botões de ação em linha da medição ───────────────────────────── */
 
 .btn-edit-medicao {
   background: none;
@@ -308,7 +251,7 @@
   background: #fee2e2;
 }
 
-/* ── Ações do card ─────────────────────────────────────────────────── */
+/* ── Ações do card ────────────────────────────────────────────────── */
 
 .meta-card__actions {
   display: flex;
@@ -319,7 +262,35 @@
   flex-wrap: wrap;
 }
 
-/* ── Estado vazio ──────────────────────────────────────────────────── */
+/* ── Filtro de setor (dentro do data-toolbar) ─────────────────────── */
+
+.metas-setor-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.metas-setor-filter label {
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.metas-setor-filter select {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  min-width: 180px;
+  max-width: 340px;
+}
+
+/* ── Estado vazio ─────────────────────────────────────────────────── */
 
 .metas-estado-vazio {
   display: flex;
@@ -341,18 +312,12 @@
   font-size: 0.82rem;
 }
 
-/* ── Formulário de meta / medição ─────────────────────────────────── */
+/* ── Formulário (herda .animal-form / .modal-card de animais.css) ──── */
 
 .meta-form__subtitle {
   font-size: 0.82rem;
   color: #6b7280;
   margin: -4px 0 12px;
-}
-
-.meta-form__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
 }
 
 .meta-form .form-group {
@@ -395,10 +360,10 @@
   border-color: #ef4444;
 }
 
-.field-error-msg {
-  font-size: 0.75rem;
-  color: #ef4444;
-  margin-top: 0.15rem;
+.meta-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 
 @media (max-width: 768px) {

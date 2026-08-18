@@ -3,6 +3,12 @@
   gap: 6px;
   margin: 6px 0 12px;
   border-bottom: 2px solid #cfcfcf;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.insumos-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .insumos-tab {
@@ -67,4 +73,47 @@
   padding: 22px;
   text-align: center;
   color: #6a6a6a;
+}
+
+/* ── Estoque ──────────────────────────────────────────────────────────── */
+
+.estoque-badge {
+  margin-left: 8px;
+}
+
+/* ── Alimentar Lote ───────────────────────────────────────────────────── */
+
+.alimentar-lote {
+  margin-top: 18px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.alimentar-lote__form-card {
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.alimentar-lote__form-card h2 {
+  margin: 0;
+}
+
+.alimentar-lote__resultado {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.alimentar-lote__historico h3 {
+  margin: 0 0 10px;
+}
+
+@media (max-width: 1100px) {
+  .alimentar-lote {
+    grid-template-columns: 1fr;
+  }
 }

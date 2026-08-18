@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class SUnidadeMedida {
 
@@ -20,6 +23,12 @@ public class SUnidadeMedida {
     public SUnidadeMedida(IUnidadeMedida unidadeMedidaInterface, ModelMapper modelMapper) {
         this.unidadeMedidaInterface = unidadeMedidaInterface;
         this.modelMapper = modelMapper;
+    }
+
+    public List<UnidadeMedidaDTO> listarTodas() {
+        return unidadeMedidaInterface.findAllByStatusOrderByUnidadeAsc(EnStatus.A).stream()
+                .map(u -> modelMapper.map(u, UnidadeMedidaDTO.class))
+                .collect(Collectors.toList());
     }
 
     public UnidadeMedidaDTO criarUnidadeMedida(UnidadeMedidaDTO unidadeMedidaDto) {

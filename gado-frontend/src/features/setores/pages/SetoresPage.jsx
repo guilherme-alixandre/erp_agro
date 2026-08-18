@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
-import SetorCard from '../components/SetorCard'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import SetorFormModal from '../components/SetorFormModal'
 import SetorDetailsModal from '../components/SetorDetailsModal'
 import {
@@ -23,6 +22,8 @@ const defaultForm = {
   metaTexto: '',
 }
 
+const ROWS_PER_PAGE = 10
+
 function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -35,10 +36,51 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   const [formMode, setFormMode] = useState('create')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef(null)
+  const [page, setPage] = useState(0)
 
   const canCreateSetor = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
   const canEditSetor = PERFIS_COM_CRIACAO_EDICAO_SETOR.includes(currentUser?.perfil)
   const canDeleteSetor = PERFIS_COM_EXCLUSAO_SETOR.includes(currentUser?.perfil)
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [exportMenuOpen])
+
+  function handleExportarCSV() {
+    exportarSetoresCSV(filteredSetores)
+    setExportMenuOpen(false)
+  }
+
+  function handleExportarPDF() {
+    exportarSetoresPDF()
+    setExportMenuOpen(false)
+  }
+
+  const filteredSetores = useMemo(() => {
+    const termo = activeSearch.toLowerCase()
+    if (!termo) return setores
+    return setores.filter(
+      (s) =>
+        s.nome.toLowerCase().includes(termo) ||
+        s.tipo.toLowerCase().includes(termo) ||
+        (s.criadoPorNome ?? '').toLowerCase().includes(termo),
+    )
+  }, [setores, activeSearch])
+
+  const totalPages = Math.max(1, Math.ceil(filteredSetores.length / ROWS_PER_PAGE))
+  const paginatedSetores = filteredSetores.slice(
+    page * ROWS_PER_PAGE,
+    (page + 1) * ROWS_PER_PAGE,
+  )
 
   const fetchSetores = useCallback(async () => {
     setIsLoading(true)
@@ -60,25 +102,16 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
     fetchSetores()
   }, [fetchSetores])
 
-  const setoresFiltrados = activeSearch
-    ? setores.filter((s) => {
-        const termo = activeSearch.toLowerCase()
-        return (
-          s.nome.toLowerCase().includes(termo) ||
-          s.tipo.toLowerCase().includes(termo) ||
-          (s.criadoPorNome ?? '').toLowerCase().includes(termo)
-        )
-      })
-    : setores
-
   function handleSearchSubmit(event) {
     event.preventDefault()
     setActiveSearch(search.trim())
+    setPage(0)
   }
 
   function handleClearSearch() {
     setSearch('')
     setActiveSearch('')
+    setPage(0)
   }
 
   function closeModal() {
@@ -139,7 +172,8 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   }
 
   async function handleDelete(setor) {
-    if (!window.confirm(`Deseja excluir o setor "${setor.nome}"?`)) return
+    const confirmDelete = window.confirm(`Deseja excluir o setor "${setor.nome}"?`)
+    if (!confirmDelete) return
 
     setIsDeleting(true)
     setFeedback({ type: '', message: '' })
@@ -161,7 +195,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button type="button" className="menu-item" onClick={() => onNavigate('animais')}>
             Animais
@@ -184,11 +218,11 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item" onClick={() => onNavigate('perfil')}>
             Perfil
           </button>
-          {currentUser.perfil === 'ADMINISTRADOR' && (
+          {currentUser.perfil === 'ADMINISTRADOR' ? (
             <button type="button" className="menu-item" onClick={() => onNavigate('configuracoes')}>
               ⚙ Configurações
             </button>
-          )}
+          ) : null}
         </nav>
         <div className="sidebar-user">
           <strong>{currentUser.nome}</strong>
@@ -200,86 +234,170 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Setores</h1>
-          <span>{currentUser.email}</span>
         </header>
 
-        <div className="setores-export">
-          <button type="button" onClick={() => exportarSetoresCSV(setoresFiltrados)}>
-            Exportar CSV
-          </button>
-          <button type="button" onClick={exportarSetoresPDF}>
-            Exportar PDF
-          </button>
-        </div>
-
-        <form className="animals-search" onSubmit={handleSearchSubmit}>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, tipo ou criado por"
-          />
-          <button type="submit" disabled={isLoading}>
-            Buscar
-          </button>
-          {activeSearch && (
-            <button type="button" onClick={handleClearSearch} disabled={isLoading}>
-              Limpar
-            </button>
-          )}
-        </form>
-
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : activeSearch
-              ? `${setoresFiltrados.length} ${setoresFiltrados.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${setores.length} ${setores.length === 1 ? 'setor cadastrado' : 'setores cadastrados'}`}
-        </p>
-
-        {feedback.message && (
-          <p className={`feedback feedback--${feedback.type === 'error' ? 'error' : 'info'}`}>
+        {feedback.message ? (
+          <p
+            className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+          >
             {feedback.message}
           </p>
-        )}
+        ) : null}
 
-        {setoresFiltrados.length ? (
-          <div className="animals-grid">
-            {setoresFiltrados.map((setor) => (
-              <SetorCard
-                key={setor.id}
-                setor={setor}
-                onDetalhes={openDetailsModal}
-                onEditar={openEditModal}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="animals-empty">
+        <div className="data-toolbar">
+          <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome, tipo ou criado por"
+            />
             {activeSearch ? (
-              <>
-                <p>Nenhum setor encontrado.</p>
-                <span>Nenhum resultado para "{activeSearch}". Ajuste o termo da busca.</span>
-              </>
-            ) : (
-              <>
-                <p>Nenhum setor cadastrado.</p>
-                <span>Clique no botão + para cadastrar o primeiro setor.</span>
-              </>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                className="toolbar-search__clear"
+                onClick={handleClearSearch}
+                aria-label="Limpar busca"
+              >
+                ✕
+              </button>
+            ) : null}
+          </form>
 
-        {canCreateSetor && (
-          <button type="button" className="fab-add" aria-label="Adicionar setor" onClick={openCreateModal}>
-            +
-          </button>
-        )}
+          <div className="export-wrapper" ref={exportMenuRef}>
+            <button
+              type="button"
+              className="btn-export-csv"
+              onClick={() => setExportMenuOpen((v) => !v)}
+            >
+              Exportar ▾
+            </button>
+            {exportMenuOpen ? (
+              <div className="export-menu">
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarCSV}
+                >
+                  Exportar como CSV
+                </button>
+                <hr className="export-menu__separator" />
+                <button
+                  type="button"
+                  className="export-menu__item"
+                  onClick={handleExportarPDF}
+                >
+                  Exportar como PDF
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {canCreateSetor ? (
+            <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+              + Novo Setor
+            </button>
+          ) : null}
+        </div>
+
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Cap. Máxima</th>
+                <th>Lotes</th>
+                <th>Meta</th>
+                <th>Criado Por</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="table-loading">
+                    Carregando...
+                  </td>
+                </tr>
+              ) : paginatedSetores.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="table-empty">
+                    {activeSearch
+                      ? `Nenhum resultado para "${activeSearch}".`
+                      : 'Nenhum setor cadastrado. Clique em "+ Novo Setor" para começar.'}
+                  </td>
+                </tr>
+              ) : (
+                paginatedSetores.map((setor) => (
+                  <tr key={setor.id}>
+                    <td>{setor.nome}</td>
+                    <td>{setor.tipo || '—'}</td>
+                    <td>{setor.capacidadeMaxima ?? '—'}</td>
+                    <td>{setor.lotes.length > 0 ? setor.lotes.length : '—'}</td>
+                    <td className="td-truncate">{setor.metaTexto || '—'}</td>
+                    <td>{setor.criadoPorNome || '—'}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="btn-row"
+                          onClick={() => openDetailsModal(setor)}
+                        >
+                          Detalhes
+                        </button>
+                        {canEditSetor ? (
+                          <button
+                            type="button"
+                            className="btn-row btn-row--edit"
+                            onClick={() => openEditModal(setor)}
+                          >
+                            Editar
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? ''
+              : `${filteredSetores.length} ${filteredSetores.length === 1 ? 'registro' : 'registros'}`}
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-pages">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo →
+            </button>
+          </div>
+        </footer>
       </section>
 
-      {modal.type === 'form' && (
+      {modal.type === 'form' ? (
         <SetorFormModal
           mode={formMode}
           formData={formData}
@@ -290,9 +408,9 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           onChange={handleFormChange}
           onSubmit={handleSubmitForm}
         />
-      )}
+      ) : null}
 
-      {modal.type === 'details' && modal.setor && (
+      {modal.type === 'details' && modal.setor ? (
         <SetorDetailsModal
           setor={modal.setor}
           onClose={closeModal}
@@ -302,7 +420,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           canEdit={canEditSetor}
           canDelete={canDeleteSetor}
         />
-      )}
+      ) : null}
     </main>
   )
 }

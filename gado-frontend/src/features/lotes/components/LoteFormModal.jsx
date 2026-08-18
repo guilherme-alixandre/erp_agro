@@ -62,7 +62,7 @@ function buildSetorTriggerText(selectedIds, setoresDisponiveis) {
   return `${selectedIds.length} setores selecionados`
 }
 
-function AlocacaoCard({
+function SetorCard({
   mode,
   alocacao,
   setor,
@@ -112,7 +112,11 @@ function AlocacaoCard({
     setIsTransferindo(true)
     setTransferenciaError('')
     try {
-      await onTransferirAnimais(selectedForTransfer, Number(loteDestinoId), Number(setorDestinoId))
+      await onTransferirAnimais(
+        selectedForTransfer,
+        Number(loteDestinoId),
+        Number(setorDestinoId),
+      )
       setSelectedForTransfer([])
       setLoteDestinoId('')
       setSetorDestinoId('')
@@ -131,15 +135,17 @@ function AlocacaoCard({
   }
 
   return (
-    <div className="aloc-card">
-      <div className="aloc-card__header">
-        <strong className="aloc-card__nome">{setor.nome}</strong>
-        <span className={`aloc-card__capacidade${excedido ? ' aloc-card__capacidade--excedido' : ''}`}>
+    <div className="setor-card">
+      <div className="setor-card__header">
+        <strong className="setor-card__nome">{setor.nome}</strong>
+        <span
+          className={`setor-card__capacidade${excedido ? ' setor-card__capacidade--excedido' : ''}`}
+        >
           {ocupacao}/{capacidade} animais
         </span>
         <button
           type="button"
-          className="aloc-card__remover"
+          className="setor-card__remover"
           onClick={onRemove}
           aria-label={`Remover setor ${setor.nome}`}
         >
@@ -147,7 +153,7 @@ function AlocacaoCard({
         </button>
       </div>
 
-      <div className="aloc-card__label">
+      <div className="setor-card__label">
         <span>
           {isEditExisting
             ? canTransfer
@@ -157,11 +163,19 @@ function AlocacaoCard({
         </span>
 
         {isEditExisting && !canTransfer ? (
-          <span className="ssm-trigger ssm-trigger--readonly">{triggerText ?? 'Nenhum animal'}</span>
+          <span className="ssm-trigger ssm-trigger--readonly">
+            {triggerText ?? 'Nenhum animal'}
+          </span>
         ) : (
-          <button type="button" className="ssm-trigger" onClick={() => setAnimalModalOpen(true)}>
+          <button
+            type="button"
+            className="ssm-trigger"
+            onClick={() => setAnimalModalOpen(true)}
+          >
             <span className={triggerText ? '' : 'ssm-trigger__placeholder'}>
-              {isEditExisting ? triggerText ?? 'Nenhum animal neste setor' : triggerText ?? 'Selecionar animais...'}
+              {isEditExisting
+                ? triggerText ?? 'Nenhum animal neste setor'
+                : triggerText ?? 'Selecionar animais...'}
             </span>
             <span className="ssm-trigger__arrow" aria-hidden="true">
               ▼
@@ -171,18 +185,27 @@ function AlocacaoCard({
       </div>
 
       {excedido ? (
-        <p className="aloc-card__aviso">Atenção: capacidade máxima ({capacidade}) excedida.</p>
+        <p className="setor-card__aviso">
+          Atenção: capacidade máxima ({capacidade}) excedida.
+        </p>
       ) : null}
 
       {isEditExisting && canTransfer && selectedForTransfer.length > 0 ? (
-        <div className="aloc-card__transferencia">
-          <p className="aloc-card__transferencia-info">
-            {selectedForTransfer.length} {selectedForTransfer.length === 1 ? 'animal selecionado' : 'animais selecionados'} para transferir
+        <div className="setor-card__transferencia">
+          <p className="setor-card__transferencia-info">
+            {selectedForTransfer.length}{' '}
+            {selectedForTransfer.length === 1
+              ? 'animal selecionado'
+              : 'animais selecionados'}{' '}
+            para transferir
           </p>
 
           <label>
             <span>
-              Lote de destino <span className="required-marker" aria-hidden="true">*</span>
+              Lote de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
             </span>
             <select
               value={loteDestinoId}
@@ -203,9 +226,15 @@ function AlocacaoCard({
 
           <label>
             <span>
-              Setor de destino <span className="required-marker" aria-hidden="true">*</span>
+              Setor de destino{' '}
+              <span className="required-marker" aria-hidden="true">
+                *
+              </span>
             </span>
-            <select value={setorDestinoId} onChange={(e) => setSetorDestinoId(e.target.value)}>
+            <select
+              value={setorDestinoId}
+              onChange={(e) => setSetorDestinoId(e.target.value)}
+            >
               <option value="">Selecione um setor...</option>
               {setoresDisponiveis.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -225,15 +254,25 @@ function AlocacaoCard({
             <p className="feedback feedback--error">{transferenciaError}</p>
           ) : null}
 
-          <div className="aloc-card__transferencia-actions">
-            <button type="button" className="btn-secondary" onClick={handleCancelarTransferencia} disabled={isTransferindo}>
+          <div className="setor-card__transferencia-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCancelarTransferencia}
+              disabled={isTransferindo}
+            >
               Cancelar
             </button>
             <button
               type="button"
               className="btn-primary"
               onClick={handleConfirmarTransferencia}
-              disabled={isTransferindo || !loteDestinoId || !setorDestinoId || mesmoLoteSetor}
+              disabled={
+                isTransferindo ||
+                !loteDestinoId ||
+                !setorDestinoId ||
+                mesmoLoteSetor
+              }
             >
               {isTransferindo ? 'Transferindo...' : 'Confirmar transferência'}
             </button>
@@ -243,7 +282,11 @@ function AlocacaoCard({
 
       {animalModalOpen ? (
         <SearchSelectModal
-          title={isEditExisting ? 'Selecionar animais para transferir' : 'Selecionar animais'}
+          title={
+            isEditExisting
+              ? 'Selecionar animais para transferir'
+              : 'Selecionar animais'
+          }
           items={isEditExisting ? animaisAtuais : animaisDisponiveis}
           selectedIds={isEditExisting ? selectedForTransfer : alocacao.animaisIds}
           onConfirm={(ids) => {
@@ -286,7 +329,11 @@ function LoteFormModal({
 
   const isCreate = mode === 'create'
   const title = isCreate ? 'Cadastrar lote' : 'Editar lote'
-  const submitText = isSaving ? 'Salvando...' : isCreate ? 'Cadastrar' : 'Salvar alterações'
+  const submitText = isSaving
+    ? 'Salvando...'
+    : isCreate
+      ? 'Cadastrar'
+      : 'Salvar alterações'
   const today = todayIso()
 
   const selectedSetorIds = formData.alocacoes.map((a) => a.setorId)
@@ -371,7 +418,13 @@ function LoteFormModal({
 
           <label>
             <span>Data de criação</span>
-            <input type="date" name="dataCriacao" value={formData.dataCriacao} onChange={onChange} max={today} />
+            <input
+              type="date"
+              name="dataCriacao"
+              value={formData.dataCriacao}
+              onChange={onChange}
+              max={today}
+            />
           </label>
 
           <fieldset className="setores-fieldset">
@@ -379,12 +432,17 @@ function LoteFormModal({
               <RequiredLabel>Setores e alocação de animais</RequiredLabel>
             </legend>
             <p className="form-help">
-              Selecione os setores que este lote vai ocupar. Para cada setor, escolha os animais alocados.
+              Selecione os setores que este lote vai ocupar. Para cada setor,
+              escolha os animais alocados.
             </p>
 
             <div className="setores-fieldset__select">
               <span>Selecionar setores</span>
-              <button type="button" className="ssm-trigger" onClick={() => setSetorModalOpen(true)}>
+              <button
+                type="button"
+                className="ssm-trigger"
+                onClick={() => setSetorModalOpen(true)}
+              >
                 <span className={setorTriggerText ? '' : 'ssm-trigger__placeholder'}>
                   {setorTriggerText ?? 'Escolha um ou mais setores...'}
                 </span>
@@ -400,7 +458,7 @@ function LoteFormModal({
                   const setor = setoresDisponiveis.find((s) => s.id === aloc.setorId)
                   if (!setor) return null
                   return (
-                    <AlocacaoCard
+                    <SetorCard
                       key={aloc.setorId}
                       mode={mode}
                       alocacao={aloc}
@@ -420,7 +478,9 @@ function LoteFormModal({
             ) : null}
           </fieldset>
 
-          {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
+          {feedback ? (
+            <p className="feedback feedback--error">{feedback}</p>
+          ) : null}
 
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>

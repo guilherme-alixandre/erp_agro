@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import MetaCard from '../components/MetaCard'
 import MetaFormModal from '../components/MetaFormModal'
 import { listarMetasPorSetor, deletarMeta, exportarMetasCSV, exportarMetasPDF } from '../integration/metaSetorApi'
@@ -15,6 +15,8 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [modal, setModal] = useState({ type: null, meta: null })
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef(null)
 
   const podeGerenciar = currentUser.perfil === 'ADMINISTRADOR' || currentUser.perfil === 'GERENTE'
 
@@ -28,6 +30,27 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
     listarSetores().then(setSetores).catch(() => setSetores([]))
     listarLotes().then(setLotes).catch(() => setLotes([]))
   }, [])
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [exportMenuOpen])
+
+  function handleExportarCSV() {
+    exportarMetasCSV(metas)
+    setExportMenuOpen(false)
+  }
+
+  function handleExportarPDF() {
+    exportarMetasPDF(setorSelecionado)
+    setExportMenuOpen(false)
+  }
 
   const fetchMetas = useCallback(async (setorId) => {
     if (!setorId) {
@@ -76,7 +99,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button type="button" className="menu-item" onClick={() => onNavigate('animais')}>
             Animais
@@ -87,15 +110,17 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item" onClick={() => onNavigate('setores')}>
             Setores
           </button>
-          <button type="button" className="menu-item menu-item--active">
+          <button type="button" className="menu-item menu-item--active" onClick={() => onNavigate('metas')}>
             Metas
           </button>
           <button type="button" className="menu-item" onClick={() => onNavigate('insumos')}>
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item">
+              Financeiro
+            </button>
+          ) : null}
           <button type="button" className="menu-item" onClick={() => onNavigate('perfil')}>
             Perfil
           </button>
@@ -115,16 +140,15 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Metas de Setores</h1>
-          <span>{currentUser.email}</span>
         </header>
 
         {feedback.message ? (
-          <p className={`feedback feedback--${feedback.type === 'error' ? 'error' : 'info'}`}>{feedback.message}</p>
+          <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>{feedback.message}</p>
         ) : null}
 
-        <div className="metas-toolbar">
+        <div className="data-toolbar">
           <div className="metas-setor-filter">
             <label htmlFor="filtro-setor">Setor:</label>
             <select id="filtro-setor" value={setorSelecionado} onChange={(e) => setSetorSelecionado(e.target.value)}>
@@ -137,15 +161,30 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
             </select>
           </div>
 
-          <button type="button" disabled={!setorSelecionado || metas.length === 0} onClick={() => exportarMetasCSV(metas)}>
-            Exportar CSV
-          </button>
-          <button type="button" disabled={!setorSelecionado} onClick={() => exportarMetasPDF(setorSelecionado)}>
-            Exportar PDF
-          </button>
+          <div className="export-wrapper" ref={exportMenuRef}>
+            <button
+              type="button"
+              className="btn-export-csv"
+              disabled={!setorSelecionado || metas.length === 0}
+              onClick={() => setExportMenuOpen((v) => !v)}
+            >
+              Exportar ▾
+            </button>
+            {exportMenuOpen ? (
+              <div className="export-menu">
+                <button type="button" className="export-menu__item" onClick={handleExportarCSV}>
+                  Exportar como CSV
+                </button>
+                <hr className="export-menu__separator" />
+                <button type="button" className="export-menu__item" onClick={handleExportarPDF}>
+                  Exportar como PDF
+                </button>
+              </div>
+            ) : null}
+          </div>
 
           {podeGerenciar ? (
-            <button type="button" className="fab-add-inline" onClick={() => setModal({ type: 'create', meta: null })}>
+            <button type="button" className="btn-new-entity" onClick={() => setModal({ type: 'create', meta: null })}>
               + Nova Meta
             </button>
           ) : null}
@@ -175,13 +214,15 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
           </div>
         ) : null}
 
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : setorSelecionado
-              ? `${metas.length} ${metas.length === 1 ? 'meta cadastrada' : 'metas cadastradas'}`
-              : 'Selecione um setor para ver as metas.'}
-        </p>
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? 'Carregando...'
+              : setorSelecionado
+                ? `${metas.length} ${metas.length === 1 ? 'meta cadastrada' : 'metas cadastradas'}`
+                : 'Selecione um setor para ver as metas.'}
+          </span>
+        </footer>
       </section>
 
       {modal.type === 'create' || modal.type === 'edit' ? (

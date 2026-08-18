@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AnimalCard from '../components/AnimalCard'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
 import {
@@ -32,6 +31,8 @@ const DEFAULT_FORM = {
     vacinas: [],
 }
 
+const ROWS_PER_PAGE = 10
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -63,6 +64,29 @@ function toCardAnimal(animal) {
     }
 }
 
+function exportAnimaisCSV(animais) {
+    const headers = ['Código Brinco', 'Nome', 'Raça', 'Sexo', 'Peso (KG)', 'Nascimento', 'Status']
+    const rows = animais.map((a) => [
+        a.codigoBrinco,
+        a.nome || '',
+        a.raca || '',
+        a.sexo === 'M' ? 'Macho' : 'Fêmea',
+        Number(a.pesoAtual || 0).toFixed(0),
+        a.dataNascimento || '',
+        a.statusAnimal,
+    ])
+    const csvContent = [headers, ...rows]
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'animais.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -71,6 +95,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     // Estado: Busca
     const [search, setSearch] = useState('')
     const [activeSearch, setActiveSearch] = useState('')
+
+    // Estado: Filtros
+    const [filterSexo, setFilterSexo] = useState('')
+    const [filterStatus, setFilterStatus] = useState('')
+    const [dateFrom, setDateFrom] = useState('')
+    const [dateTo, setDateTo] = useState('')
+    const [page, setPage] = useState(0)
 
     // Estado: Carregamento
     const [isLoading, setIsLoading] = useState(false)
@@ -91,6 +122,22 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     const [formData, setFormData] = useState(DEFAULT_FORM)
 
     const cards = useMemo(() => animals.map(toCardAnimal), [animals])
+
+    const filteredCards = useMemo(() => {
+        return cards.filter((a) => {
+            if (filterSexo && a.sexo !== filterSexo) return false
+            if (filterStatus && a.statusAnimal !== filterStatus) return false
+            if (dateFrom && a.dataNascimento && a.dataNascimento < dateFrom) return false
+            if (dateTo && a.dataNascimento && a.dataNascimento > dateTo) return false
+            return true
+        })
+    }, [cards, filterSexo, filterStatus, dateFrom, dateTo])
+
+    const totalPages = Math.max(1, Math.ceil(filteredCards.length / ROWS_PER_PAGE))
+    const paginatedCards = filteredCards.slice(
+        page * ROWS_PER_PAGE,
+        (page + 1) * ROWS_PER_PAGE,
+    )
 
     // ============================================================================
     // Fetch Animals
@@ -118,19 +165,21 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     }, [fetchAnimals])
 
     // ============================================================================
-    // Search Handlers
+    // Search & Filter Handlers
     // ============================================================================
 
     function handleSearchSubmit(event) {
         event.preventDefault()
         const termo = search.trim()
         setActiveSearch(termo)
+        setPage(0)
         fetchAnimals(termo)
     }
 
     function handleClearSearch() {
         setSearch('')
         setActiveSearch('')
+        setPage(0)
         fetchAnimals('')
     }
 
@@ -285,7 +334,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         <main className="animals-layout">
             {/* Sidebar */}
             <aside className="animals-sidebar">
-                <div className="animals-logo">🌿</div>
+                <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
                 <nav>
                     <button type="button" className="menu-item menu-item--active">
                         Animais
@@ -318,9 +367,11 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                     >
                         Insumos
                     </button>
-                    <button type="button" className="menu-item">
-                        Financeiro
-                    </button>
+                    {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+                        <button type="button" className="menu-item">
+                            Financeiro
+                        </button>
+                    ) : null}
                     <button
                         type="button"
                         className="menu-item"
@@ -349,82 +400,210 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
             {/* Content */}
             <section className="animals-content">
-                <header className="animals-header">
+                <header className="page-header">
                     <h1>Animais</h1>
-                    <span>{currentUser.email}</span>
                 </header>
 
-                {/* Search */}
-                <form className="animals-search" onSubmit={handleSearchSubmit}>
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por nome ou código do brinco"
-                    />
-                    <button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Buscando...' : 'Buscar'}
-                    </button>
-                    {activeSearch && (
-                        <button type="button" onClick={handleClearSearch} disabled={isLoading}>
-                            Limpar
-                        </button>
-                    )}
-                </form>
-
-                {/* Count */}
-                <p className="animals-count">
-                    {isLoading
-                        ? 'Carregando...'
-                        : activeSearch
-                            ? `${cards.length} ${cards.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-                            : `${cards.length} ${cards.length === 1 ? 'animal cadastrado' : 'animais cadastrados'}`}
-                </p>
-
                 {/* Feedback */}
-                {feedback.message && (
-                    <p className={`feedback feedback--${feedback.type === 'error' ? 'error' : 'info'}`}>
+                {feedback.message ? (
+                    <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
                         {feedback.message}
                     </p>
-                )}
+                ) : null}
 
-                {/* Grid or Empty State */}
-                {cards.length ? (
-                    <div className="animals-grid">
-                        {cards.map((animal) => (
-                            <AnimalCard
-                                key={animal.codigoBrinco}
-                                animal={animal}
-                                onDetalhes={openDetailsModal}
-                                onEditar={openEditModal}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="animals-empty">
+                {/* Toolbar: busca + filtros + ações */}
+                <div className="data-toolbar">
+                    <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+                        <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar por nome ou código do brinco"
+                        />
                         {activeSearch ? (
-                            <>
-                                <p>Nenhum animal encontrado.</p>
-                                <span>Nenhum resultado para "{activeSearch}". Ajuste o termo da busca.</span>
-                            </>
-                        ) : (
-                            <>
-                                <p>Nenhum animal cadastrado.</p>
-                                <span>Clique no botão + para cadastrar o primeiro animal.</span>
-                            </>
-                        )}
-                    </div>
-                )}
+                            <button
+                                type="button"
+                                className="toolbar-search__clear"
+                                onClick={handleClearSearch}
+                                aria-label="Limpar busca"
+                            >
+                                ✕
+                            </button>
+                        ) : null}
+                    </form>
 
-                {/* FAB Button */}
-                <button
-                    type="button"
-                    className="fab-add"
-                    aria-label="Adicionar animal"
-                    onClick={openCreateModal}
-                >
-                    +
-                </button>
+                    <select
+                        className="toolbar-select"
+                        value={filterSexo}
+                        onChange={(e) => {
+                            setFilterSexo(e.target.value)
+                            setPage(0)
+                        }}
+                    >
+                        <option value="">Todos os Sexos</option>
+                        <option value="M">Macho</option>
+                        <option value="F">Fêmea</option>
+                    </select>
+
+                    <select
+                        className="toolbar-select"
+                        value={filterStatus}
+                        onChange={(e) => {
+                            setFilterStatus(e.target.value)
+                            setPage(0)
+                        }}
+                    >
+                        <option value="">Todos os Status</option>
+                        <option value="ATIVO">Ativo</option>
+                        <option value="OBSERVACAO">Observação</option>
+                        <option value="VENDIDO">Vendido</option>
+                        <option value="OBITO">Obito</option>
+                        <option value="ABATIDO">Abatido</option>
+                    </select>
+
+                    <label className="toolbar-date-label">
+                        <span className="toolbar-date-label__text">Nascimento de</span>
+                        <input
+                            type="date"
+                            className="toolbar-date"
+                            value={dateFrom}
+                            onChange={(e) => {
+                                setDateFrom(e.target.value)
+                                setPage(0)
+                            }}
+                        />
+                    </label>
+
+                    <label className="toolbar-date-label">
+                        <span className="toolbar-date-label__text">Nascimento até</span>
+                        <input
+                            type="date"
+                            className="toolbar-date"
+                            value={dateTo}
+                            onChange={(e) => {
+                                setDateTo(e.target.value)
+                                setPage(0)
+                            }}
+                        />
+                    </label>
+
+                    <button
+                        type="button"
+                        className="btn-export-csv"
+                        onClick={() => exportAnimaisCSV(filteredCards)}
+                    >
+                        Exportar CSV
+                    </button>
+
+                    <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+                        + Novo Animal
+                    </button>
+                </div>
+
+                {/* Tabela */}
+                <div className="data-table-wrapper">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código Brinco</th>
+                                <th>Nome</th>
+                                <th>Raça</th>
+                                <th>Sexo</th>
+                                <th>Peso</th>
+                                <th>Idade</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={8} className="table-loading">
+                                        Carregando...
+                                    </td>
+                                </tr>
+                            ) : paginatedCards.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="table-empty">
+                                        {activeSearch
+                                            ? `Nenhum resultado para "${activeSearch}".`
+                                            : 'Nenhum animal cadastrado. Clique em "+ Novo Animal" para começar.'}
+                                    </td>
+                                </tr>
+                            ) : (
+                                paginatedCards.map((animal) => (
+                                    <tr key={animal.codigoBrinco}>
+                                        <td className="td-mono">{animal.codigoBrinco}</td>
+                                        <td>{animal.nome || '—'}</td>
+                                        <td>{animal.raca || '—'}</td>
+                                        <td>{animal.sexo === 'M' ? 'Macho' : 'Fêmea'}</td>
+                                        <td>{animal.pesoLabel}</td>
+                                        <td>{animal.idadeLabel}</td>
+                                        <td>
+                                            <span
+                                                className={`status-pill ${
+                                                    animal.statusAnimal === 'ATIVO'
+                                                        ? 'status-pill--ativo'
+                                                        : 'status-pill--inativo'
+                                                }`}
+                                            >
+                                                {animal.statusAnimal}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="row-actions">
+                                                <button
+                                                    type="button"
+                                                    className="btn-row"
+                                                    onClick={() => openDetailsModal(animal)}
+                                                >
+                                                    Detalhes
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn-row btn-row--edit"
+                                                    onClick={() => openEditModal(animal)}
+                                                >
+                                                    Editar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                <footer className="data-pagination">
+                    <span className="pagination-info">
+                        {isLoading
+                            ? ''
+                            : `${filteredCards.length} ${filteredCards.length === 1 ? 'registro' : 'registros'}`}
+                    </span>
+                    <div className="pagination-controls">
+                        <button
+                            type="button"
+                            className="pagination-btn"
+                            disabled={page === 0}
+                            onClick={() => setPage((p) => p - 1)}
+                        >
+                            ← Anterior
+                        </button>
+                        <span className="pagination-pages">
+                            Página {page + 1} de {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            className="pagination-btn"
+                            disabled={page >= totalPages - 1}
+                            onClick={() => setPage((p) => p + 1)}
+                        >
+                            Próximo →
+                        </button>
+                    </div>
+                </footer>
             </section>
 
             {/* Modals */}

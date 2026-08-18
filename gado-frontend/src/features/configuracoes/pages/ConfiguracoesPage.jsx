@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import UsuarioCard from '../components/UsuarioCard'
 import UsuarioFormModal from '../components/UsuarioFormModal'
 import UsuarioEditModal from '../components/UsuarioEditModal'
 import {
@@ -18,6 +17,16 @@ const defaultForm = {
   perfil: 'GERENTE',
 }
 
+const PERFIL_LABELS = {
+  ADMINISTRADOR: 'Administrador',
+  GERENTE: 'Gerente',
+  CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
+}
+
+const ROWS_PER_PAGE = 10
+
 function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -31,6 +40,8 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
   const [editFeedback, setEditFeedback] = useState('')
   const [formData, setFormData] = useState(defaultForm)
   const [formFeedback, setFormFeedback] = useState('')
+  const [filterPerfil, setFilterPerfil] = useState('')
+  const [page, setPage] = useState(0)
 
   const fetchUsuarios = useCallback(async () => {
     setIsLoading(true)
@@ -55,22 +66,31 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
   function handleSearchSubmit(event) {
     event.preventDefault()
     setActiveSearch(search.trim())
+    setPage(0)
   }
 
   function handleClearSearch() {
     setSearch('')
     setActiveSearch('')
+    setPage(0)
   }
 
-  const usuariosFiltrados = activeSearch
-    ? usuarios.filter((u) => {
-        const termo = activeSearch.toLowerCase()
-        return (
-          String(u.nome ?? '').toLowerCase().includes(termo) ||
-          String(u.email ?? '').toLowerCase().includes(termo)
-        )
-      })
-    : usuarios
+  const usuariosFiltrados = usuarios.filter((u) => {
+    if (activeSearch) {
+      const termo = activeSearch.toLowerCase()
+      const matchNome = String(u.nome ?? '').toLowerCase().includes(termo)
+      const matchEmail = String(u.email ?? '').toLowerCase().includes(termo)
+      if (!matchNome && !matchEmail) return false
+    }
+    if (filterPerfil && u.perfil !== filterPerfil) return false
+    return true
+  })
+
+  const totalPages = Math.max(1, Math.ceil(usuariosFiltrados.length / ROWS_PER_PAGE))
+  const paginatedUsuarios = usuariosFiltrados.slice(
+    page * ROWS_PER_PAGE,
+    (page + 1) * ROWS_PER_PAGE,
+  )
 
   function openCreateModal() {
     setFormData(defaultForm)
@@ -158,10 +178,18 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
     }
   }
 
+  function perfilPillClass(perfil) {
+    if (perfil === 'ADMINISTRADOR') return 'perfil-pill perfil-pill--admin'
+    if (perfil === 'GERENTE') return 'perfil-pill perfil-pill--gerente'
+    if (perfil === 'CUIDADOR_CHEFE') return 'perfil-pill perfil-pill--cuidador-chefe'
+    if (perfil === 'FINANCEIRO') return 'perfil-pill perfil-pill--financeiro'
+    return 'perfil-pill perfil-pill--cuidador'
+  }
+
   return (
     <main className="animals-layout">
       <aside className="animals-sidebar">
-        <div className="animals-logo">🌿</div>
+        <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
           <button
             type="button"
@@ -222,37 +250,9 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
+        <header className="page-header">
           <h1>Configurações</h1>
-          <span>{currentUser.email}</span>
         </header>
-
-        <h2 style={{ margin: '8px 0 6px' }}>Usuários</h2>
-
-        <form className="animals-search" onSubmit={handleSearchSubmit}>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por nome ou e-mail"
-          />
-          <button type="submit" disabled={isLoading}>
-            Buscar
-          </button>
-          {activeSearch ? (
-            <button type="button" onClick={handleClearSearch}>
-              Limpar
-            </button>
-          ) : null}
-        </form>
-
-        <p className="animals-count">
-          {isLoading
-            ? 'Carregando...'
-            : activeSearch
-              ? `${usuariosFiltrados.length} ${usuariosFiltrados.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-              : `${usuarios.length} ${usuarios.length === 1 ? 'usuário cadastrado' : 'usuários cadastrados'}`}
-        </p>
 
         {feedback.message ? (
           <p
@@ -262,42 +262,150 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
           </p>
         ) : null}
 
-        {usuariosFiltrados.length ? (
-          <div className="animals-grid">
-            {usuariosFiltrados.map((usuario) => (
-              <UsuarioCard
-                key={usuario.email}
-                usuario={usuario}
-                onEditar={openEditModal}
-                onExcluir={handleExcluir}
-                isCurrentUser={usuario.email === currentUser.email}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="animals-empty">
+        <div className="data-toolbar">
+          <form className="toolbar-search" onSubmit={handleSearchSubmit}>
+            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou e-mail"
+            />
             {activeSearch ? (
-              <>
-                <p>Nenhum usuário encontrado.</p>
-                <span>Nenhum resultado para "{activeSearch}".</span>
-              </>
-            ) : (
-              <>
-                <p>Nenhum usuário cadastrado.</p>
-                <span>Clique no botão + para cadastrar um usuário.</span>
-              </>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                className="toolbar-search__clear"
+                onClick={handleClearSearch}
+                aria-label="Limpar busca"
+              >
+                ✕
+              </button>
+            ) : null}
+          </form>
 
-        <button
-          type="button"
-          className="fab-add"
-          aria-label="Cadastrar usuário"
-          onClick={openCreateModal}
-        >
-          +
-        </button>
+          <select
+            className="toolbar-select"
+            value={filterPerfil}
+            onChange={(e) => {
+              setFilterPerfil(e.target.value)
+              setPage(0)
+            }}
+          >
+            <option value="">Todos os Perfis</option>
+            <option value="ADMINISTRADOR">Administrador</option>
+            <option value="GERENTE">Gerente</option>
+            <option value="CUIDADOR">Cuidador</option>
+            <option value="CUIDADOR_CHEFE">Cuidador Chefe</option>
+            <option value="FINANCEIRO">Financeiro</option>
+          </select>
+
+          <button type="button" className="btn-new-entity" onClick={openCreateModal}>
+            + Novo Usuário
+          </button>
+        </div>
+
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Perfil</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="table-loading">
+                    Carregando...
+                  </td>
+                </tr>
+              ) : paginatedUsuarios.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="table-empty">
+                    {activeSearch
+                      ? `Nenhum resultado para "${activeSearch}".`
+                      : 'Nenhum usuário cadastrado. Clique em "+ Novo Usuário" para começar.'}
+                  </td>
+                </tr>
+              ) : (
+                paginatedUsuarios.map((usuario) => {
+                  const isCurrentUser = usuario.email === currentUser.email
+                  return (
+                    <tr key={usuario.email}>
+                      <td>
+                        {usuario.nome}
+                        {isCurrentUser ? (
+                          <span className="current-user-badge"> (você)</span>
+                        ) : null}
+                      </td>
+                      <td className="td-mono">{usuario.email}</td>
+                      <td>
+                        <span className={perfilPillClass(usuario.perfil)}>
+                          {PERFIL_LABELS[usuario.perfil] ?? usuario.perfil}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-row btn-row--edit"
+                            onClick={() => openEditModal(usuario)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-row btn-row--danger"
+                            onClick={() => handleExcluir(usuario)}
+                            disabled={isCurrentUser}
+                            title={
+                              isCurrentUser
+                                ? 'Não é possível excluir sua própria conta'
+                                : undefined
+                            }
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="data-pagination">
+          <span className="pagination-info">
+            {isLoading
+              ? ''
+              : `${usuariosFiltrados.length} ${usuariosFiltrados.length === 1 ? 'registro' : 'registros'}`}
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-pages">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo →
+            </button>
+          </div>
+        </footer>
       </section>
 
       {modalOpen ? (

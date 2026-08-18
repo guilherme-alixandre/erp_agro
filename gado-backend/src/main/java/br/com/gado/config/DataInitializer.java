@@ -34,18 +34,24 @@ public class DataInitializer implements CommandLineRunner {
     private final IAnimal iAnimal;
     private final ILote iLote;
     private final ILoteSetor iLoteSetor;
+    private final IUnidadeMedida iUnidadeMedida;
+    private final IInsumo iInsumo;
 
     public DataInitializer(
             IUsuario iUsuario,
             ISetor iSetor,
             IAnimal iAnimal,
             ILote iLote,
-            ILoteSetor iLoteSetor) {
+            ILoteSetor iLoteSetor,
+            IUnidadeMedida iUnidadeMedida,
+            IInsumo iInsumo) {
         this.iUsuario = iUsuario;
         this.iSetor = iSetor;
         this.iAnimal = iAnimal;
         this.iLote = iLote;
         this.iLoteSetor = iLoteSetor;
+        this.iUnidadeMedida = iUnidadeMedida;
+        this.iInsumo = iInsumo;
     }
 
     @Override
@@ -232,6 +238,37 @@ public class DataInitializer implements CommandLineRunner {
         alocacaoGalpao.setSetor(setorGalpao);
         alocacaoGalpao.setAnimais(List.of(vaca1, vaca2));
         iLoteSetor.save(alocacaoGalpao);
+
+        // ── 6. UNIDADES DE MEDIDA E INSUMO DE EXEMPLO (módulo de Estoque) ────────────
+
+        EUnidadeMedida unidadeSaca = new EUnidadeMedida();
+        unidadeSaca.setUnidade("SACA");
+        unidadeSaca = iUnidadeMedida.save(unidadeSaca);
+
+        EUnidadeMedida unidadeKg = new EUnidadeMedida();
+        unidadeKg.setUnidade("KG");
+        unidadeKg = iUnidadeMedida.save(unidadeKg);
+
+        EUnidadeMedida unidadeLitro = new EUnidadeMedida();
+        unidadeLitro.setUnidade("LITRO");
+        iUnidadeMedida.save(unidadeLitro);
+
+        EUnidadeMedida unidadeDose = new EUnidadeMedida();
+        unidadeDose.setUnidade("DOSE");
+        iUnidadeMedida.save(unidadeDose);
+
+        EInsumo racao = new EInsumo();
+        racao.setNome("Ração Engorda Premium");
+        racao.setTipo(EnTipoInsumo.RACAO);
+        racao.setUnidadeMedidaPrimaria(unidadeSaca);
+        racao.setUnidadeMedidaSecundaria(unidadeKg);
+        racao.setFatorConversao(40.0); // 1 SACA = 40 KG
+        racao.setEstoqueMinimo(10.0);
+        racao.setSaldoAtual(25.0);
+        racao.setPrecoCompraMedio(120.0);
+        racao.setPrecoUltimaCompra(120.0);
+        racao.setPendente(Boolean.FALSE);
+        iInsumo.save(racao);
     }
 
     // Replica o mesmo algoritmo usado em SUsuario para garantir compatibilidade de login

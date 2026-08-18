@@ -1,6 +1,7 @@
 package br.com.gado.repositories;
 
 import br.com.gado.entities.EInsumo;
+import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnTipoInsumo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,13 @@ public interface IInsumo extends JpaRepository<EInsumo, Long> {
 
     List<EInsumo> findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(
             EnTipoInsumo tipo, String nome);
+
+    // ── Estoque (Insumos que não são catálogo de vacina) ────────────────
+
+    Optional<EInsumo> findByIdAndStatus(Long id, EnStatus status);
+
+    List<EInsumo> findByStatusAndTipoNotOrderByNomeAsc(EnStatus status, EnTipoInsumo tipoExcluido);
+
+    List<EInsumo> findByStatusAndTipoNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
+            EnStatus status, EnTipoInsumo tipoExcluido, String nome);
 }

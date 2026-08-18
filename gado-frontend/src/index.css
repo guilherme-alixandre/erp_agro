@@ -22,6 +22,10 @@ body,
   margin: 0;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: #f3f4f6;
 }
@@ -250,18 +254,6 @@ input {
 .ssm-trigger:hover {
   border-color: #4f7f2f;
   background: #f9fdf6;
-}
-
-.ssm-trigger--readonly {
-  display: flex;
-  align-items: center;
-  border: 1px solid #d0d0d0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: #f7f7f7;
-  color: #555;
-  font-size: 1rem;
-  min-height: 42px;
 }
 
 .ssm-trigger--error {

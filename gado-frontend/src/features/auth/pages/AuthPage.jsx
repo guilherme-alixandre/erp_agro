@@ -12,6 +12,7 @@ function AuthPage({ onLogin, sessionFeedback }) {
   const [loginForm, setLoginForm] = useState(defaultLoginForm)
   const [isLogando, setIsLogando] = useState(false)
   const [loginFeedback, setLoginFeedback] = useState({ type: '', message: '' })
+  const [showLoginSenha, setShowLoginSenha] = useState(false)
 
   function handleLoginChange(event) {
     const { name, value } = event.target
@@ -41,8 +42,8 @@ function AuthPage({ onLogin, sessionFeedback }) {
     <main className="auth-layout">
       <article className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo">🌿</span>
-          <h1>ERP Agro</h1>
+          <span className="auth-logo"><img src="/logo.png" alt="GADO" /></span>
+          <h1>GADO-WebApp</h1>
         </div>
 
         <h2>Entrar</h2>
@@ -50,7 +51,9 @@ function AuthPage({ onLogin, sessionFeedback }) {
 
         <form className="animal-form" onSubmit={handleLoginSubmit}>
           <label>
-            <span>E-mail</span>
+            <span>
+              E-mail <span className="required-marker" aria-hidden="true">*</span>
+            </span>
             <input
               type="email"
               name="email"
@@ -61,14 +64,26 @@ function AuthPage({ onLogin, sessionFeedback }) {
           </label>
 
           <label>
-            <span>Senha</span>
-            <input
-              type="password"
-              name="senha"
-              value={loginForm.senha}
-              onChange={handleLoginChange}
-              required
-            />
+            <span>
+              Senha <span className="required-marker" aria-hidden="true">*</span>
+            </span>
+            <div className="password-field">
+              <input
+                type={showLoginSenha ? 'text' : 'password'}
+                name="senha"
+                value={loginForm.senha}
+                onChange={handleLoginChange}
+                required
+              />
+              <button
+                type="button"
+                className="password-field__toggle"
+                onClick={() => setShowLoginSenha((v) => !v)}
+                aria-label={showLoginSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showLoginSenha ? 'Ocultar' : 'Exibir'}
+              </button>
+            </div>
           </label>
 
           {loginFeedback.message ? (

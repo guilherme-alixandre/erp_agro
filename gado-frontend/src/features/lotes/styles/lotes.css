@@ -1,55 +1,91 @@
-/* ── LoteCard ─────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   lotes.css — Módulo de Lotes
+   Herda o layout base (animals-layout, sidebar, modais, botões, data-table)
+   de animais.css. Define apenas o que é específico deste módulo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── LoteCard (não utilizado pela página atual, mantido para reuso futuro) ── */
 
 .lote-card {
-  display: grid;
-  gap: 8px;
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  background: #f4f4f4;
+  padding: 10px 12px;
 }
 
-.lote-card__header {
+.lote-card__top {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 }
 
 .lote-card__codigo {
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   color: #244011;
 }
 
 .lote-card__status {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .lote-card__status--ativo {
-  background: #e3f3d8;
-  color: #244011;
-  border: 1px solid #b7dc9a;
+  background: #dff5cc;
+  color: #2a5a0e;
 }
 
 .lote-card__status--inativo {
-  background: #f0f0f0;
-  color: #6a6a6a;
-  border: 1px solid #d0d0d0;
+  background: #f9e8e8;
+  color: #8e2222;
 }
 
 .lote-card__cor {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
+  margin-top: 6px;
 }
 
-.lote-card__info,
+.lote-card__cor strong {
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.lote-card__info {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  color: #8a8a8a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
 .lote-card__criado {
-  margin: 0;
-  color: #5a5a5a;
-  font-size: 0.9rem;
+  margin: 6px 0 10px;
+  color: #8a8a8a;
+  font-size: 1.1rem;
+}
+
+.lote-card__criado strong {
+  color: #333;
+}
+
+.lote-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.lote-card__actions button {
+  border: 0;
+  border-radius: 8px;
+  min-width: 96px;
+  padding: 8px 10px;
+  font-size: 1.35rem;
+  background: #d3d3d3;
 }
 
 /* ── Formulário de Lote ───────────────────────────────────────────── */
@@ -187,6 +223,95 @@
   margin-top: 2px;
 }
 
+.ssm-trigger--readonly {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f7f7f7;
+  color: #555;
+  font-size: 1rem;
+  min-height: 42px;
+}
+
+/* ── MultiSelectDropdown ──────────────────────────────────────────── */
+
+.multiselect {
+  position: relative;
+}
+
+.multiselect__trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.multiselect__placeholder {
+  color: #999;
+}
+
+.multiselect__arrow {
+  color: #777;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.multiselect__list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.multiselect__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.multiselect__item:hover {
+  background: #eef5e7;
+}
+
+.multiselect__item input[type='checkbox'] {
+  accent-color: #4f7f2f;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.multiselect__empty {
+  padding: 8px 10px;
+  color: #6a6a6a;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
 /* ── Detalhes — Alocações por Setor ──────────────────────────────── */
 
 .lote-alocacoes {
@@ -236,27 +361,6 @@
   font-size: 0.9rem;
 }
 
-.lotes-export {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 10px;
-}
-
-.lotes-export button {
-  border: 1px solid #cfcfcf;
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #244011;
-  cursor: pointer;
-}
-
-.lotes-export button:hover {
-  background: #f0f6ea;
-}
-
 /* ── Responsividade ───────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
@@ -270,5 +374,10 @@
 
   .aloc-card__transferencia-actions {
     flex-wrap: wrap;
+  }
+
+  .lote-card__actions button {
+    flex: 1;
+    min-width: 0;
   }
 }
