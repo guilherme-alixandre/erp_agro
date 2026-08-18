@@ -1,12 +1,10 @@
 package br.com.gado.services;
 
-import br.com.gado.dto.InsumoDto;
 import br.com.gado.dto.insumoDto.EntradaEstoqueDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueCadastroDto;
 import br.com.gado.dto.insumoDto.InsumoEstoquePutDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueRespostaDto;
-import br.com.gado.dto.insumoDto.VacinaCadastroDto;
-import br.com.gado.dto.insumoDto.VacinaPutDto;
+import br.com.gado.entities.EGrupoProduto;
 import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.EMovimentacaoEstoque;
 import br.com.gado.entities.EParceiro;
@@ -14,8 +12,8 @@ import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
-import br.com.gado.enums.EnTipoInsumo;
 import br.com.gado.enums.EnTipoMovimentacaoEstoque;
+import br.com.gado.repositories.IGrupoProduto;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.IMovimentacaoEstoque;
 import br.com.gado.repositories.IParceiro;
@@ -23,8 +21,8 @@ import br.com.gado.repositories.IUnidadeMedida;
 import br.com.gado.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,8 +38,14 @@ public class SInsumo {
     private static final Set<EnPerfilUsuario> PERFIS_GESTAO_ESTOQUE = Set.of(
             EnPerfilUsuario.ADMINISTRADOR, EnPerfilUsuario.GERENTE, EnPerfilUsuario.CUIDADOR_CHEFE);
 
+    /** Tentativas de regerar o código sequencial em caso de corrida entre requisições concorrentes. */
+    private static final int TENTATIVAS_MAXIMAS_CODIGO = 5;
+
     @Autowired
     private IInsumo insumoInterface;
+
+    @Autowired
+    private IGrupoProduto grupoProdutoInterface;
 
     @Autowired
     private IParceiro parceiroInterface;
@@ -54,122 +58,6 @@ public class SInsumo {
 
     @Autowired
     private IMovimentacaoEstoque movimentacaoEstoqueInterface;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    public List<InsumoDto> listarVacinas(String busca) {
-        String termo = busca == null ? "" : busca.trim();
-        List<EInsumo> vacinas = termo.isBlank()
-                ? insumoInterface.findByTipoOrderByNomeAsc(EnTipoInsumo.VACINA)
-                : insumoInterface.findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(EnTipoInsumo.VACINA, termo);
-
-        return vacinas.stream()
-                .map(vacina -> modelMapper.map(vacina, InsumoDto.class))
-                .toList();
-    }
-
-    @Transactional
-    public InsumoDto criarVacina(VacinaCadastroDto dto) {
-        if (dto == null || dto.getNome() == null || dto.getNome().isBlank()) {
-            throw new IllegalArgumentException("Informe o nome da vacina.");
-        }
-
-        String nome = dto.getNome().trim();
-        if (insumoInterface.findFirstByTipoAndNomeIgnoreCase(EnTipoInsumo.VACINA, nome).isPresent()) {
-            throw new IllegalArgumentException("Vacina já cadastrada.");
-        }
-
-        EInsumo vacina = new EInsumo();
-        vacina.setNome(nome);
-        vacina.setTipo(EnTipoInsumo.VACINA);
-        vacina.setPendente(dto.getPendente() != null ? dto.getPendente() : Boolean.FALSE);
-
-        EInsumo salva = insumoInterface.save(vacina);
-        return modelMapper.map(salva, InsumoDto.class);
-    }
-
-    @Transactional
-    public InsumoDto atualizarVacina(Long id, VacinaPutDto dto) {
-        EInsumo vacina = insumoInterface.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Vacina não encontrada."));
-
-        if (vacina.getTipo() != EnTipoInsumo.VACINA) {
-            throw new IllegalArgumentException("Insumo informado não é uma vacina.");
-        }
-
-        if (dto == null) {
-            throw new IllegalArgumentException("Dados de atualização ausentes.");
-        }
-
-        if (dto.getNome() != null) {
-            String nome = dto.getNome().trim();
-            if (nome.isBlank()) {
-                throw new IllegalArgumentException("Informe o nome da vacina.");
-            }
-            vacina.setNome(nome);
-        }
-
-        if (dto.getPendente() != null) {
-            vacina.setPendente(dto.getPendente());
-        }
-
-        EInsumo salva = insumoInterface.save(vacina);
-        return modelMapper.map(salva, InsumoDto.class);
-    }
-
-    @Transactional
-    public String deletarVacina(Long id) {
-        EInsumo vacina = insumoInterface.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Vacina não encontrada."));
-
-        if (vacina.getTipo() != EnTipoInsumo.VACINA) {
-            throw new IllegalArgumentException("Insumo informado não é uma vacina.");
-        }
-
-        insumoInterface.deleteById(id);
-        return "Vacina deletada com sucesso";
-    }
-
-    public InsumoDto buscaPorId(Long id) {
-        EInsumo insumo = insumoInterface.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado"));
-        return modelMapper.map(insumo, InsumoDto.class);
-    }
-
-    @Transactional
-    public InsumoDto cadastraInsumo(InsumoDto dto) {
-        EInsumo insumo = modelMapper.map(dto, EInsumo.class);
-
-        EParceiro parceiro = parceiroInterface.findById(dto.getParceiro_id())
-                .orElseThrow(() -> new EntityNotFoundException("Id do fornecedor não encontrado"));
-
-        insumo.setParceiro(parceiro);
-
-        EInsumo insumoSalvo = insumoInterface.save(insumo);
-        return modelMapper.map(insumoSalvo, InsumoDto.class);
-    }
-
-    @Transactional
-    public String deletaInsumo(Long id) {
-        if (insumoInterface.findById(id).isEmpty()) {
-            return "nenhum insumo com esse id foi encontrado";
-        }
-
-        insumoInterface.deleteById(id);
-        return "insumo deletado com sucesso";
-    }
-
-    @Transactional
-    public InsumoDto alteraInsumo(Long id, InsumoDto dto) {
-        EInsumo insumo = insumoInterface.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("nenhum insumo encontrado com esse id"));
-
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-        modelMapper.map(dto, insumo);
-        EInsumo insumoAtualizado = insumoInterface.save(insumo);
-        return modelMapper.map(insumoAtualizado, InsumoDto.class);
-    }
 
     // ── Permissões (Módulo de Estoque) ──────────────────────────────────
 
@@ -196,9 +84,8 @@ public class SInsumo {
     public List<InsumoEstoqueRespostaDto> listarEstoque(String busca) {
         String termo = busca == null ? "" : busca.trim();
         List<EInsumo> insumos = termo.isBlank()
-                ? insumoInterface.findByStatusAndTipoNotOrderByNomeAsc(EnStatus.A, EnTipoInsumo.VACINA)
-                : insumoInterface.findByStatusAndTipoNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
-                        EnStatus.A, EnTipoInsumo.VACINA, termo);
+                ? insumoInterface.findByStatusOrderByNomeAsc(EnStatus.A)
+                : insumoInterface.findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus.A, termo);
 
         return insumos.stream().map(this::toEstoqueRespostaDto).collect(Collectors.toList());
     }
@@ -229,9 +116,13 @@ public class SInsumo {
             }
         }
 
+        EGrupoProduto grupo = grupoProdutoInterface.findById(dto.getGrupoProdutoId())
+                .orElseThrow(() -> new IllegalArgumentException("Grupo de produto não encontrado."));
+
         EInsumo insumo = new EInsumo();
         insumo.setNome(dto.getNome().trim());
         insumo.setTipo(dto.getTipo());
+        insumo.setGrupoProduto(grupo);
         insumo.setUnidadeMedidaPrimaria(unidadePrimaria);
         insumo.setUnidadeMedidaSecundaria(unidadeSecundaria);
         insumo.setFatorConversao(dto.getFatorConversao());
@@ -243,7 +134,7 @@ public class SInsumo {
             insumo.setParceiro(resolveParceiro(dto.getParceiroId()));
         }
 
-        return toEstoqueRespostaDto(insumoInterface.save(insumo));
+        return toEstoqueRespostaDto(salvarComCodigoSequencial(insumo, grupo));
     }
 
     @Transactional
@@ -329,6 +220,72 @@ public class SInsumo {
         return toEstoqueRespostaDto(insumoSalvo);
     }
 
+    // ── Catálogo de Produtos: código sequencial ─────────────────────────
+
+    /**
+     * Calcula o próximo código de 8 dígitos do grupo: busca o maior codigoProduto já
+     * emitido na faixa do grupo (via findFirstByCodigoProdutoBetweenOrderByCodigoProdutoDesc),
+     * extrai os 6 dígitos sequenciais, incrementa e reformata com zeros à esquerda.
+     * Sem produto anterior no grupo, começa em 1 (ex: "01000001").
+     */
+    private String gerarProximoCodigoProduto(EGrupoProduto grupo) {
+        String prefixo = grupo.getCodigoPrefixo();
+        String codigoInicio = prefixo + "000000";
+        String codigoFim = prefixo + "999999";
+
+        int proximoSequencial = insumoInterface
+                .findFirstByCodigoProdutoBetweenOrderByCodigoProdutoDesc(codigoInicio, codigoFim)
+                .map(ultimo -> Integer.parseInt(ultimo.getCodigoProduto().substring(2)) + 1)
+                .orElse(1);
+
+        if (proximoSequencial > 999_999) {
+            throw new IllegalStateException(
+                    "Grupo de produto \"" + grupo.getNome() + "\" atingiu o limite de 999999 produtos.");
+        }
+
+        return prefixo + String.format("%06d", proximoSequencial);
+    }
+
+    /**
+     * Gera o código sequencial e grava o insumo. Como EAbstract usa GenerationType.IDENTITY,
+     * o INSERT (e a violação da constraint única de codigo_produto, se houver) acontece já
+     * no saveAndFlush(), permitindo recalcular o próximo sequencial e tentar de novo em caso
+     * de corrida entre duas requisições concorrentes gerando código no mesmo grupo.
+     */
+    private EInsumo salvarComCodigoSequencial(EInsumo insumo, EGrupoProduto grupo) {
+        for (int tentativa = 1; tentativa <= TENTATIVAS_MAXIMAS_CODIGO; tentativa++) {
+            insumo.setCodigoProduto(gerarProximoCodigoProduto(grupo));
+            try {
+                return insumoInterface.saveAndFlush(insumo);
+            } catch (DataIntegrityViolationException e) {
+                if (tentativa == TENTATIVAS_MAXIMAS_CODIGO) {
+                    throw new IllegalStateException(
+                            "Não foi possível gerar um código único para o produto após "
+                                    + TENTATIVAS_MAXIMAS_CODIGO + " tentativas.", e);
+                }
+            }
+        }
+        throw new IllegalStateException("Falha inesperada ao gerar o código do produto.");
+    }
+
+    /**
+     * PLACEHOLDER — importação de entrada de NF-e (XML). Implementação futura fará:
+     * 1. Parse do XML da NF-e (itens em det/prod).
+     * 2. Para cada item, tentar localizar um EInsumo existente cujo codigoProduto já
+     *    esteja mapeado ao código do produto do fornecedor (cProd) na nota — provavelmente
+     *    via uma tabela de "de-para" entre cProd/EAN e o codigoProduto interno.
+     * 3. Se encontrado: chamar registrarEntradaEstoque(...) para dar baixa da entrada
+     *    no saldo, preço médio, numeroNf e chaveAcessoNf.
+     * 4. Se não encontrado: resolver o EGrupoProduto do item, gerar um novo codigoProduto
+     *    via gerarProximoCodigoProduto(...) e criar o EInsumo antes de registrar a entrada.
+     * 5. Regra especial para o grupo "Animais": nunca reaproveitar um EInsumo existente —
+     *    cada animal importado da NF-e deve gerar um novo registro único (nunca soma de
+     *    saldo), pois é uma unidade individual e não um item de estoque fungível.
+     */
+    public void processarEntradaNfe(String xml) {
+        // Implementação futura.
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────
 
     private EUnidadeMedida resolveUnidade(Long id, String mensagemErro) {
@@ -350,6 +307,13 @@ public class SInsumo {
         dto.setId(insumo.getId());
         dto.setNome(insumo.getNome());
         dto.setTipo(insumo.getTipo());
+        dto.setCodigoProduto(insumo.getCodigoProduto());
+
+        if (insumo.getGrupoProduto() != null) {
+            dto.setGrupoProdutoId(insumo.getGrupoProduto().getId());
+            dto.setGrupoProdutoNome(insumo.getGrupoProduto().getNome());
+        }
+
         dto.setSaldoAtual(insumo.getSaldoAtual());
         dto.setEstoqueMinimo(insumo.getEstoqueMinimo());
         dto.setAbaixoDoEstoqueMinimo(

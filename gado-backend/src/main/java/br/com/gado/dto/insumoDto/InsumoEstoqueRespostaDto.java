@@ -9,6 +9,10 @@ public class InsumoEstoqueRespostaDto {
     private String nome;
     private EnTipoInsumo tipo;
 
+    private Long grupoProdutoId;
+    private String grupoProdutoNome;
+    private String codigoProduto;
+
     private Double saldoAtual;
     private Double estoqueMinimo;
     private Boolean abaixoDoEstoqueMinimo;

@@ -26,6 +26,20 @@ public class EInsumo extends EAbstract{
 
     private Boolean pendente;
 
+    // ── Catálogo de Produtos ─────────────────────────────────────────────
+
+    /** Grupo ao qual o produto pertence — define o prefixo do codigoProduto gerado. */
+    @ManyToOne
+    @JoinColumn(name = "grupo_produto_id")
+    private EGrupoProduto grupoProduto;
+
+    /**
+     * Código do catálogo: [2 dígitos do grupo] + [6 dígitos sequenciais], ex: "01000001".
+     * Gerado automaticamente por SInsumo a partir do grupoProduto — nunca editável depois de criado.
+     */
+    @Column(name = "codigo_produto", unique = true, length = 8)
+    private String codigoProduto;
+
     // ── Unidades de medida e conversão ──────────────────────────────────
 
     /** Unidade em que o saldo/estoque é controlado (ex: SACA). */

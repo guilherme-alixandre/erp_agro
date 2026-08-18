@@ -16,6 +16,9 @@ public class InsumoEstoqueCadastroDto {
     @NotNull(message = "O tipo do insumo é obrigatório.")
     private EnTipoInsumo tipo;
 
+    @NotNull(message = "O grupo de produto é obrigatório.")
+    private Long grupoProdutoId;
+
     @NotNull(message = "A unidade de medida primária é obrigatória.")
     private Long unidadeMedidaPrimariaId;
 

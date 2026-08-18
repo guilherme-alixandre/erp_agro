@@ -33,17 +33,10 @@
   cursor: not-allowed;
 }
 
-.vacina-card {
-  display: grid;
-  gap: 10px;
-}
-
-.vacina-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 1.2rem;
+.codigo-produto {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .vacina-badge {
@@ -59,10 +52,6 @@
   background: #fff1c2;
   color: #8a5a00;
   border: 1px solid #f3d774;
-}
-
-.vacina-modal-actions {
-  flex-wrap: wrap;
 }
 
 .insumos-placeholder {

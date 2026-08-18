@@ -2,7 +2,6 @@ package br.com.gado.repositories;
 
 import br.com.gado.entities.EInsumo;
 import br.com.gado.enums.EnStatus;
-import br.com.gado.enums.EnTipoInsumo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,19 +12,21 @@ import java.util.Optional;
 public interface IInsumo extends JpaRepository<EInsumo, Long> {
     Optional<EInsumo> findFirstByNomeIgnoreCase(String nome);
 
-    Optional<EInsumo> findFirstByTipoAndNomeIgnoreCase(EnTipoInsumo tipo, String nome);
-
-    List<EInsumo> findByTipoOrderByNomeAsc(EnTipoInsumo tipo);
-
-    List<EInsumo> findByTipoAndNomeContainingIgnoreCaseOrderByNomeAsc(
-            EnTipoInsumo tipo, String nome);
-
-    // ── Estoque (Insumos que não são catálogo de vacina) ────────────────
+    // ── Estoque (Catálogo geral de Insumos) ──────────────────────────────
 
     Optional<EInsumo> findByIdAndStatus(Long id, EnStatus status);
 
-    List<EInsumo> findByStatusAndTipoNotOrderByNomeAsc(EnStatus status, EnTipoInsumo tipoExcluido);
+    List<EInsumo> findByStatusOrderByNomeAsc(EnStatus status);
 
-    List<EInsumo> findByStatusAndTipoNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
-            EnStatus status, EnTipoInsumo tipoExcluido, String nome);
+    List<EInsumo> findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus status, String nome);
+
+    // ── Catálogo de Produtos: geração de código sequencial ───────────────
+
+    /**
+     * Maior codigoProduto já emitido dentro da faixa do grupo (ex: entre "01000000" e "01999999").
+     * O intervalo fechado (BETWEEN) permite ao Postgres resolver a consulta com um range scan
+     * no índice único de codigo_produto — ORDER BY DESC + LIMIT 1 encontra o maior valor da faixa
+     * sem varrer a tabela inteira e sem depender de LIKE/collation para casar o prefixo.
+     */
+    Optional<EInsumo> findFirstByCodigoProdutoBetweenOrderByCodigoProdutoDesc(String codigoInicio, String codigoFim);
 }

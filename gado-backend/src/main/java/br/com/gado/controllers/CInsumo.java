@@ -1,12 +1,9 @@
 package br.com.gado.controllers;
 
-import br.com.gado.dto.InsumoDto;
 import br.com.gado.dto.insumoDto.EntradaEstoqueDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueCadastroDto;
 import br.com.gado.dto.insumoDto.InsumoEstoquePutDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueRespostaDto;
-import br.com.gado.dto.insumoDto.VacinaCadastroDto;
-import br.com.gado.dto.insumoDto.VacinaPutDto;
 import br.com.gado.services.SInsumo;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,46 +18,6 @@ public class CInsumo {
 
     @Autowired
     private SInsumo insumoService;
-
-    @GetMapping("/vacinas")
-    public List<InsumoDto> getVacinas(@RequestParam(required = false) String busca) {
-        return insumoService.listarVacinas(busca);
-    }
-
-    @PostMapping("/vacinas")
-    public InsumoDto postVacina(@RequestBody VacinaCadastroDto dto) {
-        return insumoService.criarVacina(dto);
-    }
-
-    @PutMapping("/vacinas/{id}")
-    public InsumoDto putVacina(@PathVariable Long id, @RequestBody VacinaPutDto dto) {
-        return insumoService.atualizarVacina(id, dto);
-    }
-
-    @DeleteMapping("/vacinas/{id}")
-    public String deleteVacina(@PathVariable Long id) {
-        return insumoService.deletarVacina(id);
-    }
-
-    @GetMapping("/{id}")
-    public InsumoDto getInsumo(@PathVariable Long id) {
-        return insumoService.buscaPorId(id);
-    }
-
-    @PostMapping("/")
-    public InsumoDto postInsumo(@RequestBody InsumoDto dto) {
-        return insumoService.cadastraInsumo(dto);
-    }
-
-    @DeleteMapping("/{id}")
-    public String deleteInsumo(@PathVariable Long id) {
-        return insumoService.deletaInsumo(id);
-    }
-
-    @PutMapping("/{id}")
-    public InsumoDto putInsumo(@PathVariable Long id, @RequestBody InsumoDto dto) {
-        return insumoService.alteraInsumo(id, dto);
-    }
 
     // ── Estoque (Módulo de Insumos) ──────────────────────────────────────
 

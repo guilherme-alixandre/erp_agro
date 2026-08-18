@@ -1,35 +1,38 @@
 import { useCallback, useEffect, useState } from 'react'
-import VacinaCard from '../components/VacinaCard'
-import VacinaFormModal from '../components/VacinaFormModal'
+import GrupoProdutoFormModal from '../components/GrupoProdutoFormModal'
 import InsumoEstoqueFormModal from '../components/InsumoEstoqueFormModal'
 import EntradaEstoqueModal from '../components/EntradaEstoqueModal'
 import AlimentarLoteTab from '../components/AlimentarLoteTab'
 import {
-  atualizarVacina,
-  cadastrarVacina,
-  confirmarVacina,
-  deletarVacina,
-  listarVacinas,
   listarEstoque,
   cadastrarInsumoEstoque,
   atualizarInsumoEstoque,
   registrarEntradaEstoque,
 } from '../integration/insumoApi'
 import { listarUnidadesMedida } from '../integration/unidadeMedidaApi'
+import {
+  atualizarGrupoProduto,
+  cadastrarGrupoProduto,
+  deletarGrupoProduto,
+  listarGruposProduto,
+} from '../integration/grupoProdutoApi'
 import '../../animais/styles/animais.css'
 import '../styles/insumos.css'
 
 const PERFIS_GESTAO_ESTOQUE = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 
-const defaultVacinaForm = {
+const defaultGrupoForm = {
   id: null,
   nome: '',
-  pendente: false,
+  codigoPrefixo: '',
 }
 
 const defaultEstoqueForm = {
   nome: '',
   tipo: 'RACAO',
+  grupoProdutoId: '',
+  grupoProdutoNome: '',
+  codigoProduto: '',
   unidadeMedidaPrimariaId: '',
   unidadeMedidaPrimariaSigla: '',
   unidadeMedidaSecundariaId: '',
@@ -48,149 +51,105 @@ const defaultEntradaForm = {
 }
 
 function InsumosPage({ currentUser, onNavigate, onLogout }) {
-  const [activeTab, setActiveTab] = useState('vacinas')
+  const [activeTab, setActiveTab] = useState('estoque')
   const canGerenciarEstoque = PERFIS_GESTAO_ESTOQUE.includes(currentUser?.perfil)
 
-  // ── Vacinas (existente) ────────────────────────────────────────────
-  const [search, setSearch] = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [feedback, setFeedback] = useState({ type: '', message: '' })
-  const [vacinas, setVacinas] = useState([])
-  const [modal, setModal] = useState({ open: false })
-  const [formMode, setFormMode] = useState('create')
-  const [formData, setFormData] = useState(defaultVacinaForm)
-  const [formFeedback, setFormFeedback] = useState('')
+  // ── Grupos de Produto ────────────────────────────────────────────────
 
-  const fetchVacinas = useCallback(async (termo) => {
-    setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+  const [isLoadingGrupos, setIsLoadingGrupos] = useState(false)
+  const [gruposFeedback, setGruposFeedback] = useState({ type: '', message: '' })
+  const [grupos, setGrupos] = useState([])
+  const [grupoModal, setGrupoModal] = useState({ open: false, grupo: null })
+  const [grupoFormMode, setGrupoFormMode] = useState('create')
+  const [grupoFormData, setGrupoFormData] = useState(defaultGrupoForm)
+  const [grupoFormFeedback, setGrupoFormFeedback] = useState('')
+  const [isSavingGrupo, setIsSavingGrupo] = useState(false)
+
+  const fetchGrupos = useCallback(async () => {
+    setIsLoadingGrupos(true)
+    setGruposFeedback({ type: '', message: '' })
     try {
-      const list = await listarVacinas(termo)
-      setVacinas(list)
+      const list = await listarGruposProduto('')
+      setGrupos(list)
     } catch (error) {
-      setFeedback({
+      setGruposFeedback({
         type: 'error',
-        message: error.message || 'Falha ao carregar vacinas.',
+        message: error.message || 'Falha ao carregar os grupos de produto.',
       })
     } finally {
-      setIsLoading(false)
+      setIsLoadingGrupos(false)
     }
   }, [])
 
-  useEffect(() => {
-    fetchVacinas('')
-  }, [fetchVacinas])
-
-  function handleSearchSubmit(event) {
-    event.preventDefault()
-    const termo = search.trim()
-    setActiveSearch(termo)
-    fetchVacinas(termo)
+  function closeGrupoModal() {
+    setGrupoModal({ open: false, grupo: null })
+    setGrupoFormData(defaultGrupoForm)
+    setGrupoFormFeedback('')
   }
 
-  function handleClearSearch() {
-    setSearch('')
-    setActiveSearch('')
-    fetchVacinas('')
-  }
-
-  function closeModal() {
-    setModal({ open: false })
-    setFormData(defaultVacinaForm)
-    setFormFeedback('')
-  }
-
-  function handleFormChange(event) {
+  function handleGrupoFormChange(event) {
     const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
+    setGrupoFormData((current) => ({ ...current, [name]: value }))
   }
 
-  function openCreateModal() {
-    setFormMode('create')
-    setFormData(defaultVacinaForm)
-    setFormFeedback('')
-    setModal({ open: true })
+  function openCreateGrupoModal() {
+    setGrupoFormMode('create')
+    setGrupoFormData(defaultGrupoForm)
+    setGrupoFormFeedback('')
+    setGrupoModal({ open: true, grupo: null })
   }
 
-  function openEditModal(vacina) {
-    setFormMode('edit')
-    setFormFeedback('')
-    setFormData({
-      id: vacina.id,
-      nome: vacina.nome,
-      pendente: vacina.pendente === true,
+  function openEditGrupoModal(grupo) {
+    setGrupoFormMode('edit')
+    setGrupoFormFeedback('')
+    setGrupoFormData({
+      id: grupo.id,
+      nome: grupo.nome,
+      codigoPrefixo: grupo.codigoPrefixo,
     })
-    setModal({ open: true })
+    setGrupoModal({ open: true, grupo })
   }
 
-  async function handleSubmitForm(event) {
+  async function handleSubmitGrupoForm(event) {
     event.preventDefault()
-    setIsSaving(true)
-    setFormFeedback('')
-    setFeedback({ type: '', message: '' })
-
+    setIsSavingGrupo(true)
+    setGrupoFormFeedback('')
+    setGruposFeedback({ type: '', message: '' })
     try {
-      if (formMode === 'create') {
-        await cadastrarVacina({ nome: formData.nome, pendente: false })
-        setFeedback({ type: 'info', message: 'Vacina cadastrada com sucesso.' })
+      if (grupoFormMode === 'create') {
+        await cadastrarGrupoProduto(grupoFormData)
+        setGruposFeedback({ type: 'info', message: 'Grupo cadastrado com sucesso.' })
       } else {
-        await atualizarVacina(formData.id, { nome: formData.nome })
-        setFeedback({ type: 'info', message: 'Vacina atualizada com sucesso.' })
+        await atualizarGrupoProduto(grupoFormData.id, grupoFormData)
+        setGruposFeedback({ type: 'info', message: 'Grupo atualizado com sucesso.' })
       }
-      closeModal()
-      await fetchVacinas(activeSearch)
+      closeGrupoModal()
+      await fetchGrupos()
     } catch (error) {
-      setFormFeedback(error.message || 'Falha ao salvar vacina.')
+      setGrupoFormFeedback(error.message || 'Falha ao salvar o grupo.')
     } finally {
-      setIsSaving(false)
+      setIsSavingGrupo(false)
     }
   }
 
-  async function handleConfirmar() {
-    if (!formData.id) return
-    setIsSaving(true)
-    setFormFeedback('')
+  async function handleDeletarGrupo(grupo) {
+    const confirmar = window.confirm(`Deseja inativar o grupo "${grupo.nome}"?`)
+    if (!confirmar) return
+
+    setGruposFeedback({ type: '', message: '' })
     try {
-      await confirmarVacina(formData.id)
-      setFeedback({
-        type: 'info',
-        message: 'Vacina confirmada com sucesso.',
+      await deletarGrupoProduto(grupo.id)
+      setGruposFeedback({ type: 'info', message: 'Grupo inativado com sucesso.' })
+      await fetchGrupos()
+    } catch (error) {
+      setGruposFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao inativar o grupo.',
       })
-      closeModal()
-      await fetchVacinas(activeSearch)
-    } catch (error) {
-      setFormFeedback(error.message || 'Falha ao confirmar vacina.')
-    } finally {
-      setIsSaving(false)
     }
   }
 
-  async function handleDelete() {
-    if (!formData.id) return
-    const confirmDelete = window.confirm(
-      `Deseja excluir a vacina "${formData.nome}"?`,
-    )
-    if (!confirmDelete) return
-
-    setIsDeleting(true)
-    setFormFeedback('')
-    setFeedback({ type: '', message: '' })
-    try {
-      await deletarVacina(formData.id)
-      setFeedback({ type: 'info', message: 'Vacina excluída com sucesso.' })
-      closeModal()
-      await fetchVacinas(activeSearch)
-    } catch (error) {
-      setFormFeedback(error.message || 'Falha ao excluir vacina.')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  // ── Estoque (novo) ────────────────────────────────────────────────
+  // ── Estoque (Catálogo geral de Insumos) ──────────────────────────────
 
   const [estoqueSearch, setEstoqueSearch] = useState('')
   const [estoqueActiveSearch, setEstoqueActiveSearch] = useState('')
@@ -225,10 +184,11 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchEstoque('')
+    fetchGrupos()
     listarUnidadesMedida()
       .then(setUnidades)
       .catch(() => setUnidades([]))
-  }, [fetchEstoque])
+  }, [fetchEstoque, fetchGrupos])
 
   function handleEstoqueSearchSubmit(event) {
     event.preventDefault()
@@ -274,6 +234,9 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     setEstoqueFormData({
       nome: insumo.nome,
       tipo: insumo.tipo,
+      grupoProdutoId: insumo.grupoProdutoId ?? '',
+      grupoProdutoNome: insumo.grupoProdutoNome,
+      codigoProduto: insumo.codigoProduto,
       unidadeMedidaPrimariaId: insumo.unidadeMedidaPrimariaId ?? '',
       unidadeMedidaPrimariaSigla: insumo.unidadeMedidaPrimariaSigla,
       unidadeMedidaSecundariaId: insumo.unidadeMedidaSecundariaId ?? '',
@@ -299,15 +262,15 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     try {
       if (estoqueFormMode === 'create') {
         await cadastrarInsumoEstoque(currentUser.email, estoqueFormData)
-        setEstoqueFeedback({ type: 'info', message: 'Insumo cadastrado com sucesso.' })
+        setEstoqueFeedback({ type: 'info', message: 'Produto cadastrado com sucesso.' })
       } else {
         await atualizarInsumoEstoque(estoqueModal.insumo.id, currentUser.email, estoqueFormData)
-        setEstoqueFeedback({ type: 'info', message: 'Insumo atualizado com sucesso.' })
+        setEstoqueFeedback({ type: 'info', message: 'Produto atualizado com sucesso.' })
       }
       closeEstoqueModal()
       await fetchEstoque(estoqueActiveSearch)
     } catch (error) {
-      setEstoqueFormFeedback(error.message || 'Falha ao salvar o insumo.')
+      setEstoqueFormFeedback(error.message || 'Falha ao salvar o produto.')
     } finally {
       setIsSavingEstoque(false)
     }
@@ -404,17 +367,17 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         <div className="insumos-tabs">
           <button
             type="button"
-            className={`insumos-tab ${activeTab === 'vacinas' ? 'insumos-tab--active' : ''}`}
-            onClick={() => setActiveTab('vacinas')}
-          >
-            Vacinas
-          </button>
-          <button
-            type="button"
             className={`insumos-tab ${activeTab === 'estoque' ? 'insumos-tab--active' : ''}`}
             onClick={() => setActiveTab('estoque')}
           >
-            Estoque
+            Catálogo de Produtos
+          </button>
+          <button
+            type="button"
+            className={`insumos-tab ${activeTab === 'grupos' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('grupos')}
+          >
+            Grupos de Produto
           </button>
           <button
             type="button"
@@ -424,84 +387,6 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
             Alimentar Lote
           </button>
         </div>
-
-        {activeTab === 'vacinas' ? (
-          <>
-            <form className="animals-search" onSubmit={handleSearchSubmit}>
-              <input
-                type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar vacina por nome"
-              />
-              <button type="submit" disabled={isLoading}>
-                {isLoading ? 'Buscando...' : 'Buscar'}
-              </button>
-              {activeSearch ? (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  disabled={isLoading}
-                >
-                  Limpar
-                </button>
-              ) : null}
-            </form>
-
-            <p className="animals-count">
-              {isLoading
-                ? 'Carregando...'
-                : activeSearch
-                  ? `${vacinas.length} ${vacinas.length === 1 ? 'resultado' : 'resultados'} para "${activeSearch}"`
-                  : `${vacinas.length} ${vacinas.length === 1 ? 'vacina cadastrada' : 'vacinas cadastradas'}`}
-            </p>
-
-            {feedback.message ? (
-              <p
-                className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
-              >
-                {feedback.message}
-              </p>
-            ) : null}
-
-            {vacinas.length ? (
-              <div className="animals-grid">
-                {vacinas.map((vacina) => (
-                  <VacinaCard
-                    key={vacina.id}
-                    vacina={vacina}
-                    onEditar={openEditModal}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="animals-empty">
-                {activeSearch ? (
-                  <>
-                    <p>Nenhuma vacina encontrada.</p>
-                    <span>
-                      Nenhum resultado para "{activeSearch}". Ajuste a busca.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <p>Nenhuma vacina cadastrada.</p>
-                    <span>Clique no botão + para cadastrar a primeira vacina.</span>
-                  </>
-                )}
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="fab-add"
-              aria-label="Adicionar vacina"
-              onClick={openCreateModal}
-            >
-              +
-            </button>
-          </>
-        ) : null}
 
         {activeTab === 'estoque' ? (
           <>
@@ -520,7 +405,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   type="text"
                   value={estoqueSearch}
                   onChange={(e) => setEstoqueSearch(e.target.value)}
-                  placeholder="Buscar insumo por nome"
+                  placeholder="Buscar produto por nome"
                 />
                 {estoqueActiveSearch ? (
                   <button
@@ -536,7 +421,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
               {canGerenciarEstoque ? (
                 <button type="button" className="btn-new-entity" onClick={openCreateEstoqueModal}>
-                  + Novo Insumo
+                  + Novo Produto
                 </button>
               ) : null}
             </div>
@@ -545,7 +430,9 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th>Código</th>
                     <th>Nome</th>
+                    <th>Grupo</th>
                     <th>Tipo</th>
                     <th>Saldo</th>
                     <th>Estoque Mínimo</th>
@@ -556,21 +443,22 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                 <tbody>
                   {isLoadingEstoque ? (
                     <tr>
-                      <td colSpan={6} className="table-loading">Carregando...</td>
+                      <td colSpan={8} className="table-loading">Carregando...</td>
                     </tr>
                   ) : insumosEstoque.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="table-empty">
+                      <td colSpan={8} className="table-empty">
                         {estoqueActiveSearch
                           ? `Nenhum resultado para "${estoqueActiveSearch}".`
                           : canGerenciarEstoque
-                            ? 'Nenhum insumo cadastrado. Clique em "+ Novo Insumo" para começar.'
-                            : 'Nenhum insumo cadastrado.'}
+                            ? 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'
+                            : 'Nenhum produto cadastrado.'}
                       </td>
                     </tr>
                   ) : (
                     insumosEstoque.map((insumo) => (
                       <tr key={insumo.id}>
+                        <td className="codigo-produto">{insumo.codigoProduto || '—'}</td>
                         <td>
                           {insumo.nome}
                           {insumo.abaixoDoEstoqueMinimo ? (
@@ -579,6 +467,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                             </span>
                           ) : null}
                         </td>
+                        <td>{insumo.grupoProdutoNome || '—'}</td>
                         <td>{insumo.tipo}</td>
                         <td>
                           {insumo.saldoAtual} {insumo.unidadeMedidaPrimariaSigla}
@@ -626,31 +515,101 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           </>
         ) : null}
 
+        {activeTab === 'grupos' ? (
+          <>
+            {gruposFeedback.message ? (
+              <p
+                className={`feedback ${gruposFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+              >
+                {gruposFeedback.message}
+              </p>
+            ) : null}
+
+            <div className="data-toolbar">
+              <p className="animals-count">
+                {isLoadingGrupos
+                  ? 'Carregando...'
+                  : `${grupos.length} ${grupos.length === 1 ? 'grupo cadastrado' : 'grupos cadastrados'}`}
+              </p>
+
+              {canGerenciarEstoque ? (
+                <button type="button" className="btn-new-entity" onClick={openCreateGrupoModal}>
+                  + Novo Grupo
+                </button>
+              ) : null}
+            </div>
+
+            <div className="data-table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Prefixo</th>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingGrupos ? (
+                    <tr>
+                      <td colSpan={3} className="table-loading">Carregando...</td>
+                    </tr>
+                  ) : grupos.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="table-empty">
+                        {canGerenciarEstoque
+                          ? 'Nenhum grupo cadastrado. Clique em "+ Novo Grupo" para começar.'
+                          : 'Nenhum grupo cadastrado.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    grupos.map((grupo) => (
+                      <tr key={grupo.id}>
+                        <td className="codigo-produto">{grupo.codigoPrefixo}</td>
+                        <td>{grupo.nome}</td>
+                        <td>
+                          <div className="row-actions">
+                            {canGerenciarEstoque ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn-row btn-row--edit"
+                                  onClick={() => openEditGrupoModal(grupo)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-row btn-row--danger"
+                                  onClick={() => handleDeletarGrupo(grupo)}
+                                >
+                                  Inativar
+                                </button>
+                              </>
+                            ) : (
+                              <span>—</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : null}
+
         {activeTab === 'alimentar' ? (
           <AlimentarLoteTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
         ) : null}
       </section>
-
-      {modal.open ? (
-        <VacinaFormModal
-          mode={formMode}
-          formData={formData}
-          isSaving={isSaving}
-          isDeleting={isDeleting}
-          feedback={formFeedback}
-          onClose={closeModal}
-          onChange={handleFormChange}
-          onSubmit={handleSubmitForm}
-          onConfirmar={handleConfirmar}
-          onDelete={handleDelete}
-        />
-      ) : null}
 
       {estoqueModal.type === 'form' ? (
         <InsumoEstoqueFormModal
           mode={estoqueFormMode}
           formData={estoqueFormData}
           unidades={unidades}
+          grupos={grupos}
           isSaving={isSavingEstoque}
           feedback={estoqueFormFeedback}
           onClose={closeEstoqueModal}
@@ -668,6 +627,18 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           onClose={closeEstoqueModal}
           onChange={handleEntradaFormChange}
           onSubmit={handleSubmitEntrada}
+        />
+      ) : null}
+
+      {grupoModal.open ? (
+        <GrupoProdutoFormModal
+          mode={grupoFormMode}
+          formData={grupoFormData}
+          isSaving={isSavingGrupo}
+          feedback={grupoFormFeedback}
+          onClose={closeGrupoModal}
+          onChange={handleGrupoFormChange}
+          onSubmit={handleSubmitGrupoForm}
         />
       ) : null}
     </main>

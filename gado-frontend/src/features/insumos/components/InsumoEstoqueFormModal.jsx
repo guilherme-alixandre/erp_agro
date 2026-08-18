@@ -1,7 +1,8 @@
-const TIPO_OPTIONS = ['RACAO', 'MEDICAMENTO', 'OUTROS']
+const TIPO_OPTIONS = ['RACAO', 'VACINA', 'MEDICAMENTO', 'OUTROS']
 
 const TIPO_LABELS = {
   RACAO: 'Ração',
+  VACINA: 'Vacina',
   MEDICAMENTO: 'Medicamento',
   OUTROS: 'Outros',
 }
@@ -10,6 +11,7 @@ function InsumoEstoqueFormModal({
   mode,
   formData,
   unidades,
+  grupos,
   isSaving,
   feedback,
   onClose,
@@ -17,7 +19,7 @@ function InsumoEstoqueFormModal({
   onSubmit,
 }) {
   const isCreate = mode === 'create'
-  const title = isCreate ? 'Cadastrar insumo' : 'Editar insumo'
+  const title = isCreate ? 'Cadastrar produto' : 'Editar produto'
   const submitText = isSaving ? 'Salvando...' : isCreate ? 'Cadastrar' : 'Salvar alterações'
   const temUnidadeSecundaria = Boolean(formData.unidadeMedidaSecundariaId)
 
@@ -32,6 +34,18 @@ function InsumoEstoqueFormModal({
         </div>
 
         <form className="animal-form" onSubmit={onSubmit}>
+          {!isCreate ? (
+            <label>
+              <span>Código do produto</span>
+              <input
+                type="text"
+                value={formData.codigoProduto}
+                disabled
+                className="perfil-disabled-input codigo-produto"
+              />
+            </label>
+          ) : null}
+
           <label>
             <span>
               Nome <span className="required-marker" aria-hidden="true">*</span>
@@ -45,6 +59,33 @@ function InsumoEstoqueFormModal({
               required
             />
           </label>
+
+          {isCreate ? (
+            <label>
+              <span>
+                Grupo de produto{' '}
+                <span className="required-marker" aria-hidden="true">*</span>
+              </span>
+              <select name="grupoProdutoId" value={formData.grupoProdutoId} onChange={onChange} required>
+                <option value="">Selecione...</option>
+                {grupos.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.codigoPrefixo} — {g.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label>
+              <span>Grupo de produto</span>
+              <input
+                type="text"
+                value={formData.grupoProdutoNome}
+                disabled
+                className="perfil-disabled-input"
+              />
+            </label>
+          )}
 
           {isCreate ? (
             <label>

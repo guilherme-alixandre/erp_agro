@@ -9,19 +9,14 @@ function usuarioHeaders(email) {
   return emailLimpo ? { 'X-Usuario-Email': emailLimpo } : {}
 }
 
-function normalizeVacina(raw) {
-  return {
-    id: raw?.id ?? null,
-    nome: raw?.nome ?? '',
-    pendente: raw?.pendente === true,
-  }
-}
-
 function normalizeInsumoEstoque(raw) {
   return {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     tipo: raw?.tipo ?? '',
+    codigoProduto: raw?.codigoProduto ?? '',
+    grupoProdutoId: raw?.grupoProdutoId ?? null,
+    grupoProdutoNome: raw?.grupoProdutoNome ?? '',
     saldoAtual: raw?.saldoAtual ?? 0,
     estoqueMinimo: raw?.estoqueMinimo ?? null,
     abaixoDoEstoqueMinimo: raw?.abaixoDoEstoqueMinimo === true,
@@ -39,62 +34,7 @@ function normalizeInsumoEstoque(raw) {
   }
 }
 
-async function listarVacinas(termo) {
-  const limpo = sanitizeText(termo)
-  const query = limpo ? `?busca=${encodeURIComponent(limpo)}` : ''
-  const payload = await request(`/insumos/vacinas${query}`)
-  if (!Array.isArray(payload)) {
-    throw new Error('Resposta inesperada ao listar vacinas.')
-  }
-  return payload.map(normalizeVacina)
-}
-
-async function cadastrarVacina({ nome, pendente = false }) {
-  const nomeLimpo = sanitizeText(nome)
-  if (!nomeLimpo) {
-    throw new Error('Informe o nome da vacina.')
-  }
-  const payload = await request('/insumos/vacinas', {
-    method: 'POST',
-    body: JSON.stringify({ nome: nomeLimpo, pendente }),
-  })
-  return normalizeVacina(payload)
-}
-
-async function atualizarVacina(id, { nome, pendente }) {
-  if (!id) {
-    throw new Error('Vacina sem identificador.')
-  }
-  const body = {}
-  if (typeof nome === 'string') {
-    const nomeLimpo = sanitizeText(nome)
-    if (!nomeLimpo) {
-      throw new Error('Informe o nome da vacina.')
-    }
-    body.nome = nomeLimpo
-  }
-  if (typeof pendente === 'boolean') {
-    body.pendente = pendente
-  }
-  const payload = await request(`/insumos/vacinas/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(body),
-  })
-  return normalizeVacina(payload)
-}
-
-function confirmarVacina(id) {
-  return atualizarVacina(id, { pendente: false })
-}
-
-function deletarVacina(id) {
-  if (!id) {
-    throw new Error('Vacina sem identificador.')
-  }
-  return request(`/insumos/vacinas/${id}`, { method: 'DELETE' })
-}
-
-// ── Estoque ────────────────────────────────────────────────────────────
+// ── Catálogo geral de Insumos (Estoque) ──────────────────────────────────
 
 async function listarEstoque(termo) {
   const limpo = sanitizeText(termo)
@@ -110,6 +50,7 @@ async function cadastrarInsumoEstoque(email, formData) {
   const body = {
     nome: sanitizeText(formData.nome),
     tipo: formData.tipo,
+    grupoProdutoId: formData.grupoProdutoId ? Number(formData.grupoProdutoId) : null,
     unidadeMedidaPrimariaId: Number(formData.unidadeMedidaPrimariaId),
     unidadeMedidaSecundariaId: formData.unidadeMedidaSecundariaId
       ? Number(formData.unidadeMedidaSecundariaId)
@@ -160,14 +101,19 @@ async function registrarEntradaEstoque(id, email, formData) {
   return normalizeInsumoEstoque(payload)
 }
 
+/**
+ * Vacinas agora são apenas insumos do catálogo geral com tipo === 'VACINA'
+ * (grupo "Vacinas"). Usado pelo VacinaSelect no cadastro de Animais.
+ */
+async function listarVacinasDisponiveis(termo) {
+  const lista = await listarEstoque(termo)
+  return lista.filter((item) => item.tipo === 'VACINA')
+}
+
 export {
-  atualizarVacina,
-  cadastrarVacina,
-  confirmarVacina,
-  deletarVacina,
-  listarVacinas,
   listarEstoque,
   cadastrarInsumoEstoque,
   atualizarInsumoEstoque,
   registrarEntradaEstoque,
+  listarVacinasDisponiveis,
 }

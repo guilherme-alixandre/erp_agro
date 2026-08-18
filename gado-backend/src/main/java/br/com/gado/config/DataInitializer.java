@@ -36,6 +36,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ILoteSetor iLoteSetor;
     private final IUnidadeMedida iUnidadeMedida;
     private final IInsumo iInsumo;
+    private final IGrupoProduto iGrupoProduto;
 
     public DataInitializer(
             IUsuario iUsuario,
@@ -44,7 +45,8 @@ public class DataInitializer implements CommandLineRunner {
             ILote iLote,
             ILoteSetor iLoteSetor,
             IUnidadeMedida iUnidadeMedida,
-            IInsumo iInsumo) {
+            IInsumo iInsumo,
+            IGrupoProduto iGrupoProduto) {
         this.iUsuario = iUsuario;
         this.iSetor = iSetor;
         this.iAnimal = iAnimal;
@@ -52,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
         this.iLoteSetor = iLoteSetor;
         this.iUnidadeMedida = iUnidadeMedida;
         this.iInsumo = iInsumo;
+        this.iGrupoProduto = iGrupoProduto;
     }
 
     @Override
@@ -239,7 +242,44 @@ public class DataInitializer implements CommandLineRunner {
         alocacaoGalpao.setAnimais(List.of(vaca1, vaca2));
         iLoteSetor.save(alocacaoGalpao);
 
-        // ── 6. UNIDADES DE MEDIDA E INSUMO DE EXEMPLO (módulo de Estoque) ────────────
+        // ── 6. GRUPOS DE PRODUTO (Catálogo de Insumos) ───────────────────────────────
+
+        EGrupoProduto grupoAnimais = new EGrupoProduto();
+        grupoAnimais.setNome("Animais");
+        grupoAnimais.setCodigoPrefixo("01");
+        iGrupoProduto.save(grupoAnimais);
+
+        EGrupoProduto grupoVacinas = new EGrupoProduto();
+        grupoVacinas.setNome("Vacinas");
+        grupoVacinas.setCodigoPrefixo("02");
+        iGrupoProduto.save(grupoVacinas);
+
+        EGrupoProduto grupoRacao = new EGrupoProduto();
+        grupoRacao.setNome("Ração");
+        grupoRacao.setCodigoPrefixo("03");
+        grupoRacao = iGrupoProduto.save(grupoRacao);
+
+        EGrupoProduto grupoOrigemAnimal = new EGrupoProduto();
+        grupoOrigemAnimal.setNome("Origem Animal (Leite, etc)");
+        grupoOrigemAnimal.setCodigoPrefixo("04");
+        iGrupoProduto.save(grupoOrigemAnimal);
+
+        EGrupoProduto grupoManutencao = new EGrupoProduto();
+        grupoManutencao.setNome("Manutenção");
+        grupoManutencao.setCodigoPrefixo("05");
+        iGrupoProduto.save(grupoManutencao);
+
+        EGrupoProduto grupoPlantacoes = new EGrupoProduto();
+        grupoPlantacoes.setNome("Plantações");
+        grupoPlantacoes.setCodigoPrefixo("06");
+        iGrupoProduto.save(grupoPlantacoes);
+
+        EGrupoProduto grupoInsumosGerais = new EGrupoProduto();
+        grupoInsumosGerais.setNome("Insumos Gerais");
+        grupoInsumosGerais.setCodigoPrefixo("07");
+        iGrupoProduto.save(grupoInsumosGerais);
+
+        // ── 7. UNIDADES DE MEDIDA E INSUMO DE EXEMPLO (módulo de Estoque) ────────────
 
         EUnidadeMedida unidadeSaca = new EUnidadeMedida();
         unidadeSaca.setUnidade("SACA");
@@ -260,6 +300,8 @@ public class DataInitializer implements CommandLineRunner {
         EInsumo racao = new EInsumo();
         racao.setNome("Ração Engorda Premium");
         racao.setTipo(EnTipoInsumo.RACAO);
+        racao.setGrupoProduto(grupoRacao);
+        racao.setCodigoProduto(grupoRacao.getCodigoPrefixo() + "000001");
         racao.setUnidadeMedidaPrimaria(unidadeSaca);
         racao.setUnidadeMedidaSecundaria(unidadeKg);
         racao.setFatorConversao(40.0); // 1 SACA = 40 KG

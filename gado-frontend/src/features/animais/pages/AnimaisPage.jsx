@@ -9,7 +9,7 @@ import {
     getBackendMessage,
     isBackendErrorMessage,
 } from '../integration/animalApi.js'
-import { listarVacinas } from '../../insumos/integration/insumoApi.js'
+import { listarVacinasDisponiveis } from '../../insumos/integration/insumoApi.js'
 import '../styles/animais.css'
 
 // ============================================================================
@@ -250,7 +250,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     async function carregarVacinasDisponiveis() {
         try {
-            const lista = await listarVacinas('')
+            const lista = await listarVacinasDisponiveis('')
             setVacinasDisponiveis(lista)
         } catch {
             setVacinasDisponiveis([])
