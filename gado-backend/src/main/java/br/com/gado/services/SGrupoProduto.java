@@ -51,6 +51,7 @@ public class SGrupoProduto {
         EGrupoProduto grupo = new EGrupoProduto();
         grupo.setNome(nome);
         grupo.setCodigoPrefixo(prefixo);
+        grupo.setNaturezaFinanceira(dto.getNaturezaFinanceira());
 
         return toRespostaDto(grupoProdutoInterface.save(grupo));
     }
@@ -83,6 +84,10 @@ public class SGrupoProduto {
             grupo.setCodigoPrefixo(prefixo);
         }
 
+        if (dto.getNaturezaFinanceira() != null) {
+            grupo.setNaturezaFinanceira(dto.getNaturezaFinanceira());
+        }
+
         return toRespostaDto(grupoProdutoInterface.save(grupo));
     }
 
@@ -101,6 +106,7 @@ public class SGrupoProduto {
         dto.setId(grupo.getId());
         dto.setNome(grupo.getNome());
         dto.setCodigoPrefixo(grupo.getCodigoPrefixo());
+        dto.setNaturezaFinanceira(grupo.getNaturezaFinanceira());
         return dto;
     }
 }

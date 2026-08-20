@@ -9,6 +9,7 @@ function normalizeGrupoProduto(raw) {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     codigoPrefixo: raw?.codigoPrefixo ?? '',
+    naturezaFinanceira: raw?.naturezaFinanceira ?? '',
   }
 }
 
@@ -21,7 +22,12 @@ function toPayload(formData) {
     throw new Error('O prefixo deve conter exatamente 2 dígitos numéricos.')
   }
 
-  return { nome, codigoPrefixo }
+  const naturezaFinanceira = sanitize(formData.naturezaFinanceira)
+  if (!['CUSTO', 'GASTO'].includes(naturezaFinanceira)) {
+    throw new Error('Selecione a natureza financeira do grupo (Custo ou Gasto).')
+  }
+
+  return { nome, codigoPrefixo, naturezaFinanceira }
 }
 
 async function listarGruposProduto(termo) {

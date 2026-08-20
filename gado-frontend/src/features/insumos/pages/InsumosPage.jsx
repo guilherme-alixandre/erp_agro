@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import GrupoProdutoFormModal from '../components/GrupoProdutoFormModal'
 import InsumoEstoqueFormModal from '../components/InsumoEstoqueFormModal'
 import EntradaEstoqueModal from '../components/EntradaEstoqueModal'
-import AlimentarLoteTab from '../components/AlimentarLoteTab'
+import AlimentarSetoresTab from '../components/AlimentarSetoresTab'
+import ConsumoEstoqueTab from '../components/ConsumoEstoqueTab'
 import {
   listarEstoque,
   cadastrarInsumoEstoque,
@@ -25,6 +26,7 @@ const defaultGrupoForm = {
   id: null,
   nome: '',
   codigoPrefixo: '',
+  naturezaFinanceira: '',
 }
 
 const defaultEstoqueForm = {
@@ -106,6 +108,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       id: grupo.id,
       nome: grupo.nome,
       codigoPrefixo: grupo.codigoPrefixo,
+      naturezaFinanceira: grupo.naturezaFinanceira,
     })
     setGrupoModal({ open: true, grupo })
   }
@@ -384,7 +387,14 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
             className={`insumos-tab ${activeTab === 'alimentar' ? 'insumos-tab--active' : ''}`}
             onClick={() => setActiveTab('alimentar')}
           >
-            Alimentar Lote
+            Alimentar Setores
+          </button>
+          <button
+            type="button"
+            className={`insumos-tab ${activeTab === 'consumo' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('consumo')}
+          >
+            Consumo de Estoque
           </button>
         </div>
 
@@ -545,17 +555,18 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   <tr>
                     <th>Prefixo</th>
                     <th>Nome</th>
+                    <th>Natureza</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoadingGrupos ? (
                     <tr>
-                      <td colSpan={3} className="table-loading">Carregando...</td>
+                      <td colSpan={4} className="table-loading">Carregando...</td>
                     </tr>
                   ) : grupos.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="table-empty">
+                      <td colSpan={4} className="table-empty">
                         {canGerenciarEstoque
                           ? 'Nenhum grupo cadastrado. Clique em "+ Novo Grupo" para começar.'
                           : 'Nenhum grupo cadastrado.'}
@@ -566,6 +577,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                       <tr key={grupo.id}>
                         <td className="codigo-produto">{grupo.codigoPrefixo}</td>
                         <td>{grupo.nome}</td>
+                        <td>{grupo.naturezaFinanceira === 'CUSTO' ? 'Custo' : 'Gasto'}</td>
                         <td>
                           <div className="row-actions">
                             {canGerenciarEstoque ? (
@@ -600,7 +612,11 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         ) : null}
 
         {activeTab === 'alimentar' ? (
-          <AlimentarLoteTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
+          <AlimentarSetoresTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
+        ) : null}
+
+        {activeTab === 'consumo' ? (
+          <ConsumoEstoqueTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
         ) : null}
       </section>
 

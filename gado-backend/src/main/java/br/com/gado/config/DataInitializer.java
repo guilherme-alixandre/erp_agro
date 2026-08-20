@@ -247,36 +247,43 @@ public class DataInitializer implements CommandLineRunner {
         EGrupoProduto grupoAnimais = new EGrupoProduto();
         grupoAnimais.setNome("Animais");
         grupoAnimais.setCodigoPrefixo("01");
+        grupoAnimais.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         iGrupoProduto.save(grupoAnimais);
 
         EGrupoProduto grupoVacinas = new EGrupoProduto();
         grupoVacinas.setNome("Vacinas");
         grupoVacinas.setCodigoPrefixo("02");
+        grupoVacinas.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         iGrupoProduto.save(grupoVacinas);
 
         EGrupoProduto grupoRacao = new EGrupoProduto();
         grupoRacao.setNome("Ração");
         grupoRacao.setCodigoPrefixo("03");
+        grupoRacao.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         grupoRacao = iGrupoProduto.save(grupoRacao);
 
         EGrupoProduto grupoOrigemAnimal = new EGrupoProduto();
         grupoOrigemAnimal.setNome("Origem Animal (Leite, etc)");
         grupoOrigemAnimal.setCodigoPrefixo("04");
+        grupoOrigemAnimal.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         iGrupoProduto.save(grupoOrigemAnimal);
 
         EGrupoProduto grupoManutencao = new EGrupoProduto();
         grupoManutencao.setNome("Manutenção");
         grupoManutencao.setCodigoPrefixo("05");
+        grupoManutencao.setNaturezaFinanceira(EnNaturezaFinanceira.GASTO);
         iGrupoProduto.save(grupoManutencao);
 
         EGrupoProduto grupoPlantacoes = new EGrupoProduto();
         grupoPlantacoes.setNome("Plantações");
         grupoPlantacoes.setCodigoPrefixo("06");
+        grupoPlantacoes.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         iGrupoProduto.save(grupoPlantacoes);
 
         EGrupoProduto grupoInsumosGerais = new EGrupoProduto();
         grupoInsumosGerais.setNome("Insumos Gerais");
         grupoInsumosGerais.setCodigoPrefixo("07");
+        grupoInsumosGerais.setNaturezaFinanceira(EnNaturezaFinanceira.GASTO);
         iGrupoProduto.save(grupoInsumosGerais);
 
         // ── 7. UNIDADES DE MEDIDA E INSUMO DE EXEMPLO (módulo de Estoque) ────────────

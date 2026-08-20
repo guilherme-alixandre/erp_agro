@@ -70,9 +70,9 @@
   margin-left: 8px;
 }
 
-/* ── Alimentar Lote ───────────────────────────────────────────────────── */
+/* ── Alimentar Setores / Consumo de Estoque (layout de formulário + histórico) ─ */
 
-.alimentar-lote {
+.insumos-split-layout {
   margin-top: 18px;
   display: grid;
   gap: 20px;
@@ -80,29 +80,75 @@
   align-items: start;
 }
 
-.alimentar-lote__form-card {
+.insumos-split-layout__form-card {
   background: #fff;
   border: 1px solid #cfcfcf;
   border-radius: 12px;
   padding: 16px;
 }
 
-.alimentar-lote__form-card h2 {
+.insumos-split-layout__form-card h2 {
   margin: 0;
 }
 
-.alimentar-lote__resultado {
+.insumos-split-layout__resultado {
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid #e0e0e0;
 }
 
-.alimentar-lote__historico h3 {
+.insumos-split-layout__historico h3 {
   margin: 0 0 10px;
 }
 
 @media (max-width: 1100px) {
-  .alimentar-lote {
+  .insumos-split-layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Consumo de Estoque ───────────────────────────────────────────────── */
+
+.consumo-estoque__itens {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.consumo-estoque__item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.consumo-estoque__item-row label {
+  margin: 0;
+}
+
+.consumo-estoque__remove-item {
+  height: 38px;
+  padding: 0 10px;
+}
+
+.consumo-estoque__add-item {
+  align-self: flex-start;
+}
+
+.consumo-estoque__status--ativo {
+  color: #1a7f37;
+  font-weight: 600;
+}
+
+.consumo-estoque__status--cancelado {
+  color: #b42318;
+  font-weight: 600;
+}
+
+.consumo-estoque__cancelamento-motivo {
+  display: block;
+  font-size: 0.85em;
+  color: #6a6a6a;
+  margin-top: 2px;
 }

@@ -17,7 +17,7 @@ function formatarData(iso) {
   return data.toLocaleString('pt-BR')
 }
 
-function AlimentarLoteTab({ currentUser, insumosEstoque }) {
+function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   const [setores, setSetores] = useState([])
   const [form, setForm] = useState(defaultForm)
   const [isSaving, setIsSaving] = useState(false)
@@ -91,9 +91,9 @@ function AlimentarLoteTab({ currentUser, insumosEstoque }) {
   }
 
   return (
-    <div className="alimentar-lote">
-      <div className="alimentar-lote__form-card">
-        <h2>Alimentar Lote</h2>
+    <div className="insumos-split-layout">
+      <div className="insumos-split-layout__form-card">
+        <h2>Alimentar Setores</h2>
         <p className="perfil-subtitle">
           Registra o consumo de um insumo em um Setor, dá baixa automática no estoque e
           calcula o rateio entre os animais alocados naquele setor.
@@ -185,7 +185,7 @@ function AlimentarLoteTab({ currentUser, insumosEstoque }) {
         </form>
 
         {resultado ? (
-          <dl className="details-grid alimentar-lote__resultado">
+          <dl className="details-grid insumos-split-layout__resultado">
             <div>
               <dt>Baixa no estoque</dt>
               <dd>
@@ -214,7 +214,7 @@ function AlimentarLoteTab({ currentUser, insumosEstoque }) {
         ) : null}
       </div>
 
-      <div className="alimentar-lote__historico">
+      <div className="insumos-split-layout__historico">
         <h3>Histórico do setor</h3>
         <div className="data-table-wrapper">
           <table className="data-table">
@@ -267,4 +267,4 @@ function AlimentarLoteTab({ currentUser, insumosEstoque }) {
   )
 }
 
-export default AlimentarLoteTab
+export default AlimentarSetoresTab

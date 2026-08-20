@@ -64,6 +64,28 @@ function GrupoProdutoFormModal({
             Trocar o prefixo de um grupo já em uso não reescreve os códigos já emitidos.
           </p>
 
+          <label>
+            <RequiredLabel>Natureza financeira</RequiredLabel>
+            <select
+              name="naturezaFinanceira"
+              value={formData.naturezaFinanceira}
+              onChange={onChange}
+              required
+            >
+              <option value="" disabled>
+                Selecione...
+              </option>
+              <option value="CUSTO">Custo</option>
+              <option value="GASTO">Gasto</option>
+            </select>
+          </label>
+          <p className="form-help">
+            <strong>Custo</strong> é todo gasto que gera retorno financeiro em produtos
+            vendidos (ex.: ração, vacinas — entram no preço do que é vendido).{' '}
+            <strong>Gasto</strong> não gera retorno direto (ex.: manutenção, insumos gerais —
+            são despesas da operação).
+          </p>
+
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 
           <div className="modal-actions">
