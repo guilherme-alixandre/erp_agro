@@ -118,18 +118,82 @@
 
 .consumo-estoque__item-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 3fr) minmax(0, 1fr);
+  gap: 10px;
   align-items: end;
+}
+
+.consumo-estoque__item-row > * {
+  min-width: 0;
 }
 
 .consumo-estoque__item-row label {
   margin: 0;
 }
 
-.consumo-estoque__remove-item {
-  height: 38px;
-  padding: 0 10px;
+.consumo-estoque__item-row select,
+.consumo-estoque__item-row input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 40px;
+}
+
+.consumo-estoque__quantidade-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.consumo-estoque__quantidade-group input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.consumo-estoque__unidade-inline {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 72px;
+}
+
+.consumo-estoque__unidade-sufixo {
+  flex: 0 0 auto;
+  color: #707070;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-icon {
+  height: 40px;
+  width: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #d8d8d8;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-icon--danger {
+  background: #fdecea;
+  color: #b42318;
+  border-color: #f3c6c1;
+}
+
+.btn-icon--danger:hover:not(:disabled) {
+  background: #fbdcd8;
 }
 
 .consumo-estoque__add-item {

@@ -148,7 +148,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
               const insumoSelecionado = insumoPorId(item.insumoId)
               return (
                 <div className="consumo-estoque__item-row" key={index}>
-                  <label>
+                  <label className="consumo-estoque__item-produto">
                     <span>
                       Produto <span className="required-marker" aria-hidden="true">*</span>
                     </span>
@@ -162,50 +162,56 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
                     </select>
                   </label>
 
-                  <label>
+                  <label className="consumo-estoque__item-quantidade">
                     <span>
                       Quantidade <span className="required-marker" aria-hidden="true">*</span>
                     </span>
-                    <input
-                      type="number"
-                      name="quantidade"
-                      value={item.quantidade}
-                      onChange={(e) => handleItemChange(index, e)}
-                      min="0.01"
-                      step="0.01"
-                      required
-                    />
-                  </label>
-
-                  {insumoSelecionado?.unidadeMedidaSecundariaId ? (
-                    <label>
-                      <span>Unidade</span>
-                      <select
-                        name="unidadeMedidaId"
-                        value={item.unidadeMedidaId}
+                    <div className="consumo-estoque__quantidade-group">
+                      <input
+                        type="number"
+                        name="quantidade"
+                        value={item.quantidade}
                         onChange={(e) => handleItemChange(index, e)}
-                      >
-                        <option value={insumoSelecionado.unidadeMedidaPrimariaId}>
+                        min="0.01"
+                        step="0.01"
+                        required
+                      />
+                      {insumoSelecionado?.unidadeMedidaSecundariaId ? (
+                        <select
+                          name="unidadeMedidaId"
+                          className="consumo-estoque__unidade-inline"
+                          value={item.unidadeMedidaId}
+                          onChange={(e) => handleItemChange(index, e)}
+                        >
+                          <option value={insumoSelecionado.unidadeMedidaPrimariaId}>
+                            {insumoSelecionado.unidadeMedidaPrimariaSigla}
+                          </option>
+                          <option value={insumoSelecionado.unidadeMedidaSecundariaId}>
+                            {insumoSelecionado.unidadeMedidaSecundariaSigla}
+                          </option>
+                        </select>
+                      ) : insumoSelecionado ? (
+                        <span className="consumo-estoque__unidade-sufixo">
                           {insumoSelecionado.unidadeMedidaPrimariaSigla}
-                        </option>
-                        <option value={insumoSelecionado.unidadeMedidaSecundariaId}>
-                          {insumoSelecionado.unidadeMedidaSecundariaSigla}
-                        </option>
-                      </select>
-                    </label>
-                  ) : (
-                    <p className="form-help">
-                      {insumoSelecionado ? `Unidade: ${insumoSelecionado.unidadeMedidaPrimariaSigla}` : ''}
-                    </p>
-                  )}
+                        </span>
+                      ) : null}
+                    </div>
+                  </label>
 
                   <button
                     type="button"
-                    className="btn-row btn-row--danger consumo-estoque__remove-item"
+                    className="btn-icon btn-icon--danger consumo-estoque__remove-item"
                     onClick={() => removeItem(index)}
                     disabled={form.itens.length === 1}
+                    aria-label="Remover produto"
+                    title="Remover produto"
                   >
-                    Remover
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M9 3a1 1 0 0 0-1 1v1H4a1 1 0 1 0 0 2h1v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7h1a1 1 0 1 0 0-2h-4V4a1 1 0 0 0-1-1H9zm1 2h4v0h-4v0zM7 7h10v13H7V7zm3 2a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0v-7a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0v-7a1 1 0 0 0-1-1z"
+                      />
+                    </svg>
                   </button>
                 </div>
               )
