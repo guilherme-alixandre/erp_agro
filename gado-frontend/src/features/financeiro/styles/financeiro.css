@@ -1,0 +1,136 @@
+/* ── Modal largo (edição de NF-e, vincular itens, cadastro de funcionário) ─ */
+
+.modal-card--wide {
+  width: min(920px, 100%);
+}
+
+/* ── Status de aprovação ──────────────────────────────────────────────── */
+
+.financeiro-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.financeiro-status--aprovado {
+  background: #d9f2df;
+  color: #1a7f37;
+  border: 1px solid #9fd8b1;
+}
+
+.financeiro-status--pendente {
+  background: #fff1c2;
+  color: #8a5a00;
+  border: 1px solid #f3d774;
+}
+
+.financeiro-status--recusado {
+  background: #fbdad6;
+  color: #b42318;
+  border: 1px solid #f0a99f;
+}
+
+.financeiro-item-feedback {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+
+/* ── Edição segura de NF-e (dupla validação por senha) ─────────────────── */
+
+.financeiro-senha-gate__aviso {
+  background: #fff1c2;
+  border: 1px solid #f3d774;
+  color: #6a4a00;
+}
+
+.financeiro-senha-gate__ok {
+  background: #d9f2df;
+  border: 1px solid #9fd8b1;
+  color: #1a7f37;
+}
+
+.financeiro-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+}
+
+.financeiro-edit-grid label {
+  margin: 0;
+}
+
+.financeiro-edit-itens-title {
+  margin: 18px 0 8px;
+}
+
+/* ── Funcionários / pagamentos ────────────────────────────────────────── */
+
+.financeiro-subsection {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.financeiro-subsection h3 {
+  margin: 0;
+}
+
+.financeiro-bloco-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Dashboard ────────────────────────────────────────────────────────── */
+
+.financeiro-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.financeiro-kpi-card {
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.financeiro-kpi-card__label {
+  font-size: 0.85rem;
+  color: #6a6a6a;
+  font-weight: 600;
+}
+
+.financeiro-kpi-card__value {
+  font-size: 1.5rem;
+  color: #244011;
+}
+
+.financeiro-kpi-card__value--positivo {
+  color: #1a7f37;
+}
+
+.financeiro-kpi-card__value--negativo {
+  color: #b42318;
+}
+
+.financeiro-chart-card {
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.financeiro-chart-card h3 {
+  margin: 0 0 12px;
+}

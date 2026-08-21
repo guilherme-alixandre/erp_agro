@@ -117,7 +117,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
             Insumos
           </button>
           {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
-            <button type="button" className="menu-item">
+            <button type="button" className="menu-item" onClick={() => onNavigate('financeiro')}>
               Financeiro
             </button>
           ) : null}

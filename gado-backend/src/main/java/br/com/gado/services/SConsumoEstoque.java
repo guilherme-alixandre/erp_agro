@@ -47,6 +47,9 @@ public class SConsumoEstoque {
     @Autowired
     private IUsuario usuarioInterface;
 
+    @Autowired
+    private SLancamentoFinanceiro lancamentoFinanceiroService;
+
     // ── Permissões ───────────────────────────────────────────────────────
 
     /** Qualquer usuário ativo pode registrar consumo do próprio estoque. */
@@ -121,6 +124,11 @@ public class SConsumoEstoque {
 
         consumo.setItens(itens);
         EConsumoEstoque salvo = consumoEstoqueInterface.save(consumo);
+
+        // Contabilização de Saída de Estoque (regra 4 do módulo financeiro): cada item baixado
+        // vira uma Saída Financeira Virtual, usada no cálculo do custo de produção mensal.
+        lancamentoFinanceiroService.contabilizarConsumoEstoque(salvo);
+
         return toRespostaDto(salvo);
     }
 
@@ -150,6 +158,11 @@ public class SConsumoEstoque {
         consumo.setCanceladoEm(LocalDateTime.now());
 
         EConsumoEstoque salvo = consumoEstoqueInterface.save(consumo);
+
+        // Reverte a(s) Saída(s) Financeira(s) Virtual(is) geradas no registro — do contrário o
+        // custo cancelado continuaria contando no DRE.
+        lancamentoFinanceiroService.estornarSaidaConsumoEstoque(salvo);
+
         return toRespostaDto(salvo);
     }
 

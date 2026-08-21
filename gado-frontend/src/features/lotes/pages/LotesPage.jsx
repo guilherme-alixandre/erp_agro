@@ -318,9 +318,11 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
           >
             Insumos
           </button>
-          <button type="button" className="menu-item">
-            Financeiro
-          </button>
+          {!['CUIDADOR', 'CUIDADOR_CHEFE'].includes(currentUser?.perfil) ? (
+            <button type="button" className="menu-item" onClick={() => onNavigate('financeiro')}>
+              Financeiro
+            </button>
+          ) : null}
           <button
             type="button"
             className="menu-item"

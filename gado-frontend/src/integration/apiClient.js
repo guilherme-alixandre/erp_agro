@@ -64,12 +64,16 @@ function extractBackendMessage(payload) {
 async function request(path, options = {}) {
     let response
 
+    // Upload de arquivo (ex: importação de XML de NF-e): body é FormData, então o
+    // Content-Type (com o boundary do multipart) precisa ser definido pelo próprio browser.
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+
     try {
         response = await fetch(`${API_BASE_URL}${path}`, {
             ...options,
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json',
+                ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
                 ...(options.headers ?? {}),
             },
         })

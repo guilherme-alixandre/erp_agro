@@ -3,6 +3,7 @@ import AnimalPage from './features/animais/pages/AnimaisPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
 import AuthPage from './features/auth/pages/AuthPage'
 import InsumosPage from './features/insumos/pages/InsumosPage'
+import FinanceiroPage from './features/financeiro/pages/FinanceiroPage'
 import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import SetoresPage from './features/setores/pages/SetoresPage'
 import LotesPage from './features/lotes/pages/LotesPage'
@@ -72,6 +73,16 @@ function App() {
   if (activePage === 'insumos') {
     return (
       <InsumosPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'financeiro' && ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO'].includes(currentUser.perfil)) {
+    return (
+      <FinanceiroPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
