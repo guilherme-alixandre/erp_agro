@@ -45,13 +45,44 @@ async function registrarConsumo(email, formData) {
   return normalizeConsumo(payload)
 }
 
-async function listarConsumoPorSetor(setorId) {
+async function listarConsumoPorSetor(setorId, dataInicio, dataFim) {
   if (!setorId) return []
-  const payload = await request(`/consumos-insumo?setorId=${encodeURIComponent(setorId)}`)
+  const params = new URLSearchParams({ setorId: String(setorId) })
+  if (dataInicio) params.set('dataInicio', dataInicio)
+  if (dataFim) params.set('dataFim', dataFim)
+  const payload = await request(`/consumos-insumo?${params.toString()}`)
   if (!Array.isArray(payload)) {
     throw new Error('Resposta inesperada ao listar o histórico de consumo.')
   }
   return payload.map(normalizeConsumo)
 }
 
-export { registrarConsumo, listarConsumoPorSetor }
+async function editarConsumo(id, email, formData) {
+  const body = {
+    quantidade: Number(formData.quantidade),
+    unidadeMedidaId: formData.unidadeMedidaId ? Number(formData.unidadeMedidaId) : null,
+    dataConsumo: formData.dataConsumo || null,
+  }
+  const payload = await request(`/consumos-insumo/${id}`, {
+    method: 'PUT',
+    headers: usuarioHeaders(email),
+    body: JSON.stringify(body),
+  })
+  return normalizeConsumo(payload)
+}
+
+async function resumoPorSetorEPeriodo(setorId, dataInicio, dataFim) {
+  const params = new URLSearchParams({ setorId: String(setorId), dataInicio, dataFim })
+  const payload = await request(`/consumos-insumo/resumo?${params.toString()}`)
+  if (!Array.isArray(payload)) {
+    throw new Error('Resposta inesperada ao gerar o resumo.')
+  }
+  return payload.map((item) => ({
+    insumoId: item?.insumoId ?? null,
+    insumoNome: item?.insumoNome ?? '',
+    quantidadeTotal: item?.quantidadeTotal ?? 0,
+    unidadeSigla: item?.unidadeSigla ?? '',
+  }))
+}
+
+export { registrarConsumo, listarConsumoPorSetor, editarConsumo, resumoPorSetorEPeriodo }

@@ -20,6 +20,12 @@ public class ReciboSimplesCadastroDto {
 
     private Long fornecedorId;
 
+    @NotNull(message = "Selecione o produto correspondente a este recibo (crie um novo produto se necessário).")
+    private Long produtoId;
+
+    @NotNull(message = "Informe a quantidade do produto recebida.")
+    private BigDecimal quantidade;
+
     @NotNull(message = "Informe o valor total do recibo.")
     private BigDecimal valorTotal;
 

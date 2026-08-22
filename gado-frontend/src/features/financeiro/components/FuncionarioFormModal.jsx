@@ -1,9 +1,19 @@
-function FuncionarioFormModal({ formData, isSaving, feedback, onClose, onChange, onSubmit }) {
+const CARGOS = [
+  { value: 'GERENTE', label: 'Gerente' },
+  { value: 'CUIDADOR', label: 'Cuidador' },
+  { value: 'CUIDADOR_CHEFE', label: 'Cuidador Chefe' },
+  { value: 'ADMINISTRADOR', label: 'Administrador' },
+  { value: 'FINANCEIRO', label: 'Financeiro' },
+]
+
+function FuncionarioFormModal({ mode = 'create', formData, isSaving, feedback, onClose, onChange, onSubmit }) {
+  const isEdit = mode === 'edit'
+
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
-          <h2>Cadastrar funcionário</h2>
+          <h2>{isEdit ? 'Editar funcionário' : 'Cadastrar funcionário'}</h2>
           <button type="button" className="modal-close" onClick={onClose}>
             ✕
           </button>
@@ -22,22 +32,49 @@ function FuncionarioFormModal({ formData, isSaving, feedback, onClose, onChange,
               <span>
                 CPF <span className="required-marker" aria-hidden="true">*</span>
               </span>
-              <input type="text" name="cpf" value={formData.cpf} onChange={onChange} placeholder="000.000.000-00" required />
+              <input
+                type="text"
+                name="cpf"
+                value={formData.cpf}
+                onChange={onChange}
+                placeholder="000.000.000-00"
+                required
+                disabled={isEdit}
+              />
             </label>
 
             <label>
               <span>
                 Cargo <span className="required-marker" aria-hidden="true">*</span>
               </span>
-              <input type="text" name="cargo" value={formData.cargo} onChange={onChange} required />
+              <select name="cargo" value={formData.cargo} onChange={onChange} required>
+                <option value="" disabled>Selecione...</option>
+                {CARGOS.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </label>
 
             <label>
               <span>
                 Data de admissão <span className="required-marker" aria-hidden="true">*</span>
               </span>
-              <input type="date" name="dataAdmissao" value={formData.dataAdmissao} onChange={onChange} required />
+              <input
+                type="date"
+                name="dataAdmissao"
+                value={formData.dataAdmissao}
+                onChange={onChange}
+                required
+                disabled={isEdit}
+              />
             </label>
+
+            {isEdit ? (
+              <label>
+                <span>Data de demissão</span>
+                <input type="date" name="dataDemissao" value={formData.dataDemissao ?? ''} onChange={onChange} />
+              </label>
+            ) : null}
 
             <label>
               <span>
@@ -74,17 +111,6 @@ function FuncionarioFormModal({ formData, isSaving, feedback, onClose, onChange,
               <span>Plano de saúde (R$)</span>
               <input type="number" name="valorPlanoSaude" value={formData.valorPlanoSaude} onChange={onChange} min="0" step="0.01" />
             </label>
-
-            <label>
-              <span>
-                Natureza financeira <span className="required-marker" aria-hidden="true">*</span>
-              </span>
-              <select name="naturezaFinanceira" value={formData.naturezaFinanceira} onChange={onChange} required>
-                <option value="" disabled>Selecione...</option>
-                <option value="CUSTO">Custo (ligado à produção, ex.: cuidador)</option>
-                <option value="GASTO">Gasto (administrativo, ex.: financeiro)</option>
-              </select>
-            </label>
           </div>
 
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
@@ -94,7 +120,7 @@ function FuncionarioFormModal({ formData, isSaving, feedback, onClose, onChange,
               Cancelar
             </button>
             <button type="submit" className="btn-primary" disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Cadastrar'}
+              {isSaving ? 'Salvando...' : isEdit ? 'Salvar alterações' : 'Cadastrar'}
             </button>
           </div>
         </form>

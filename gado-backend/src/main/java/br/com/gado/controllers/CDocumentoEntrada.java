@@ -96,4 +96,11 @@ public class CDocumentoEntrada {
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
         return documentoEntradaService.vincularProduto(idItem, dto, emailUsuario);
     }
+
+    @DeleteMapping("/{id}")
+    public String excluirDocumento(
+            @PathVariable Long id,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+        return documentoEntradaService.excluirDocumento(id, emailUsuario);
+    }
 }

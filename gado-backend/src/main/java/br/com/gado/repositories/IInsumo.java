@@ -20,6 +20,10 @@ public interface IInsumo extends JpaRepository<EInsumo, Long> {
 
     List<EInsumo> findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus status, String nome);
 
+    List<EInsumo> findAllByOrderByNomeAsc();
+
+    List<EInsumo> findByNomeContainingIgnoreCaseOrderByNomeAsc(String nome);
+
     // ── Catálogo de Produtos: geração de código sequencial ───────────────
 
     /**

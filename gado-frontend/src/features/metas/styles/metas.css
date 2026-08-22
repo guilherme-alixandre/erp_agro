@@ -128,6 +128,10 @@
   background: linear-gradient(90deg, #3b82f6, #2563eb);
 }
 
+.meta-progress__bar-fill--vendido {
+  background: linear-gradient(90deg, #a855f7, #7e22ce);
+}
+
 /* ── Grid de stats ────────────────────────────────────────────────── */
 
 .meta-stats {
@@ -346,13 +350,6 @@
   background: #fff;
   box-sizing: border-box;
   transition: border-color 0.15s;
-}
-
-.meta-form input:focus,
-.meta-form select:focus {
-  outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
 .meta-form input.field-error,

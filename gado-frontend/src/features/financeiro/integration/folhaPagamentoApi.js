@@ -41,8 +41,13 @@ function normalizePagamento(raw) {
     descontoOutros: raw?.descontoOutros ?? 0,
     encargoFgts: raw?.encargoFgts ?? 0,
     valorBeneficios: raw?.valorBeneficios ?? 0,
+    valorBonus: raw?.valorBonus ?? 0,
     valorLiquido: raw?.valorLiquido ?? 0,
     naturezaFinanceiraSnapshot: raw?.naturezaFinanceiraSnapshot ?? '',
+    estornado: raw?.estornado === true,
+    motivoEstorno: raw?.motivoEstorno ?? '',
+    estornadoPorEmail: raw?.estornadoPorEmail ?? '',
+    estornadoEm: raw?.estornadoEm ?? null,
   }
 }
 
@@ -66,10 +71,29 @@ async function cadastrarFuncionario(email, formData) {
     valorValeTransporte: formData.valorValeTransporte !== '' ? Number(formData.valorValeTransporte) : null,
     valorValeAlimentacao: formData.valorValeAlimentacao !== '' ? Number(formData.valorValeAlimentacao) : null,
     valorPlanoSaude: formData.valorPlanoSaude !== '' ? Number(formData.valorPlanoSaude) : null,
-    naturezaFinanceira: formData.naturezaFinanceira,
   }
   const payload = await request('/folha-pagamento/funcionarios', {
     method: 'POST',
+    headers: usuarioHeaders(email),
+    body: JSON.stringify(body),
+  })
+  return normalizeFuncionario(payload)
+}
+
+async function atualizarFuncionario(id, email, formData) {
+  const body = {
+    nomeCompleto: sanitizeText(formData.nomeCompleto) || undefined,
+    cargo: sanitizeText(formData.cargo) || undefined,
+    dataDemissao: formData.dataDemissao || undefined,
+    salarioBase: formData.salarioBase !== '' ? Number(formData.salarioBase) : undefined,
+    percentualInss: formData.percentualInss !== '' ? Number(formData.percentualInss) : undefined,
+    percentualFgts: formData.percentualFgts !== '' ? Number(formData.percentualFgts) : undefined,
+    valorValeTransporte: formData.valorValeTransporte !== '' ? Number(formData.valorValeTransporte) : undefined,
+    valorValeAlimentacao: formData.valorValeAlimentacao !== '' ? Number(formData.valorValeAlimentacao) : undefined,
+    valorPlanoSaude: formData.valorPlanoSaude !== '' ? Number(formData.valorPlanoSaude) : undefined,
+  }
+  const payload = await request(`/folha-pagamento/funcionarios/${id}`, {
+    method: 'PUT',
     headers: usuarioHeaders(email),
     body: JSON.stringify(body),
   })
@@ -93,6 +117,7 @@ async function lancarPagamento(email, formData) {
     mesReferencia: Number(formData.mesReferencia),
     dataPagamento: formData.dataPagamento || null,
     descontoOutros: formData.descontoOutros !== '' ? Number(formData.descontoOutros) : null,
+    valorBonus: formData.valorBonus !== '' ? Number(formData.valorBonus) : null,
   }
   const payload = await request('/folha-pagamento/pagamentos', {
     method: 'POST',
@@ -102,9 +127,20 @@ async function lancarPagamento(email, formData) {
   return normalizePagamento(payload)
 }
 
+async function estornarPagamento(id, email, motivoEstorno) {
+  const payload = await request(`/folha-pagamento/pagamentos/${id}/estornar`, {
+    method: 'POST',
+    headers: usuarioHeaders(email),
+    body: JSON.stringify({ motivoEstorno }),
+  })
+  return normalizePagamento(payload)
+}
+
 export {
   listarFuncionarios,
   cadastrarFuncionario,
+  atualizarFuncionario,
   listarPagamentosPorBloco,
   lancarPagamento,
+  estornarPagamento,
 }

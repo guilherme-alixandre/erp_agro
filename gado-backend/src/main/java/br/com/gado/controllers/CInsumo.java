@@ -22,8 +22,10 @@ public class CInsumo {
     // ── Estoque (Módulo de Insumos) ──────────────────────────────────────
 
     @GetMapping("/estoque")
-    public List<InsumoEstoqueRespostaDto> getEstoque(@RequestParam(required = false) String busca) {
-        return insumoService.listarEstoque(busca);
+    public List<InsumoEstoqueRespostaDto> getEstoque(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) String status) {
+        return insumoService.listarEstoque(busca, status);
     }
 
     @GetMapping("/estoque/{id}")
@@ -52,5 +54,19 @@ public class CInsumo {
             @PathVariable Long id,
             @Valid @RequestBody EntradaEstoqueDto dto) {
         return insumoService.registrarEntradaEstoque(id, dto, emailUsuario);
+    }
+
+    @DeleteMapping("/estoque/{id}")
+    public String deleteInsumoEstoque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long id) {
+        return insumoService.inativarInsumo(id, emailUsuario);
+    }
+
+    @PutMapping("/estoque/{id}/reativar")
+    public String reativarInsumoEstoque(
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
+            @PathVariable Long id) {
+        return insumoService.reativarInsumo(id, emailUsuario);
     }
 }

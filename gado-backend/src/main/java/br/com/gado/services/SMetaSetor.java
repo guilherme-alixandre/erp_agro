@@ -11,6 +11,7 @@ import br.com.gado.entities.EMetaSetor;
 import br.com.gado.entities.ELote;
 import br.com.gado.entities.ESetor;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.entities.EVendaMetaLote;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnTipoMeta;
@@ -19,6 +20,7 @@ import br.com.gado.repositories.IMedicaoMeta;
 import br.com.gado.repositories.IMetaSetor;
 import br.com.gado.repositories.ISetor;
 import br.com.gado.repositories.IUsuario;
+import br.com.gado.repositories.IVendaMetaLote;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,9 @@ public class SMetaSetor {
 
     @Autowired
     private IUsuario usuarioInterface;
+
+    @Autowired
+    private IVendaMetaLote vendaMetaLoteInterface;
 
     // ── Validação de acesso ───────────────────────────────────────────────
 
@@ -286,6 +291,17 @@ public class SMetaSetor {
         dto.setPercentualProgresso(arredondar(percentual));
         dto.setValorRealizado(arredondar(totalRealizado * meta.getPrecoMedio()));
         dto.setValorEsperado(arredondar(meta.getQuantidadeEsperada() * meta.getPrecoMedio()));
+
+        if (meta.getTipoMeta() == EnTipoMeta.LEITE) {
+            double totalVendido = vendaMetaLoteInterface.findByMetaSetor_Id(meta.getId()).stream()
+                    .mapToDouble(EVendaMetaLote::getLitrosVendidos)
+                    .sum();
+            double percentualVendido = meta.getQuantidadeEsperada() > 0
+                    ? (totalVendido / meta.getQuantidadeEsperada()) * 100.0
+                    : 0.0;
+            dto.setQuantidadeVendida(arredondar(totalVendido));
+            dto.setPercentualVendido(arredondar(percentualVendido));
+        }
 
         Map<String, String> nomesPorEmail = new HashMap<>();
         Map<String, EnPerfilUsuario> perfisPorEmail = new HashMap<>();

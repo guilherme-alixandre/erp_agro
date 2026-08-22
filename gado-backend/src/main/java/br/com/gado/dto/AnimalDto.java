@@ -2,6 +2,7 @@ package br.com.gado.dto;
 
 import br.com.gado.enums.EnSexoAnimal;
 import br.com.gado.enums.EnStatusAnimal;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,6 +18,8 @@ public class AnimalDto extends AbstractDTO {
     private String nome;
     private String cor;
     private LocalDateTime dataNascimento;
+
+    @DecimalMin(value = "30.0", message = "O peso mínimo para cadastro é 30kg.")
     private Double pesoAtual;
     private String raca;
     private Double alturaCernelha;

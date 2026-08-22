@@ -87,9 +87,15 @@ function SetorCard({
   const isEditExisting = mode === 'edit' && alocacao.animaisAtuais !== undefined
   const animaisAtuais = alocacao.animaisAtuais ?? []
 
-  const ocupacao = isEditExisting ? animaisAtuais.length : alocacao.animaisIds.length
+  // Ocupação real do setor: soma de animais alocados em OUTROS lotes (setor.lotes,
+  // agregado vindo do backend) + os animais selecionados/atuais deste lote neste setor.
+  const ocupadoPorOutrosLotes = (setor.lotes ?? [])
+    .filter((l) => l.loteId !== loteAtualId)
+    .reduce((sum, l) => sum + (l.quantidadeAnimais || 0), 0)
+  const selecionadosNesteSetor = isEditExisting ? animaisAtuais.length : alocacao.animaisIds.length
+  const ocupacao = ocupadoPorOutrosLotes + selecionadosNesteSetor
   const capacidade = setor.capacidadeMaxima
-  const excedido = !isEditExisting && capacidade > 0 && ocupacao > capacidade
+  const excedido = capacidade > 0 && ocupacao > capacidade
 
   const disabledAnimalIds = animaisDisponiveis
     .filter((a) => BLOCKED_STATUSES.has(a.statusAnimal))

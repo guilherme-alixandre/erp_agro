@@ -177,8 +177,18 @@ function exportarLotesPDF() {
   window.open(`${API_BASE_URL}/lotes/pdf`, '_blank')
 }
 
+async function buscarCustoRacaoLote(loteId) {
+  const payload = await request(`/lotes/${loteId}/custo-racao`)
+  return {
+    loteId: payload?.loteId ?? loteId,
+    custoTotalAcumulado: payload?.custoTotalAcumulado ?? 0,
+    custoPorAnimal: payload?.custoPorAnimal ?? 0,
+  }
+}
+
 export {
   atualizarLote,
+  buscarCustoRacaoLote,
   cadastrarLote,
   deletarLote,
   exportarLotesCSV,

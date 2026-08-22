@@ -1,6 +1,8 @@
 package br.com.gado.controllers;
 
+import br.com.gado.dto.folhaPagamentoDto.EstornoPagamentoDto;
 import br.com.gado.dto.folhaPagamentoDto.FuncionarioCadastroDto;
+import br.com.gado.dto.folhaPagamentoDto.FuncionarioPutDto;
 import br.com.gado.dto.folhaPagamentoDto.FuncionarioRespostaDto;
 import br.com.gado.dto.folhaPagamentoDto.PagamentoFuncionarioCadastroDto;
 import br.com.gado.dto.folhaPagamentoDto.PagamentoFuncionarioRespostaDto;
@@ -35,6 +37,14 @@ public class CFolhaPagamento {
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
+    @PutMapping("/funcionarios/{id}")
+    public FuncionarioRespostaDto atualizarFuncionario(
+            @PathVariable Long id,
+            @Valid @RequestBody FuncionarioPutDto dto,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+        return folhaPagamentoService.atualizarFuncionario(id, dto, emailUsuario);
+    }
+
     @GetMapping("/pagamentos")
     public List<PagamentoFuncionarioRespostaDto> listarPagamentosPorBloco(
             @RequestParam int ano,
@@ -49,5 +59,13 @@ public class CFolhaPagamento {
             @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
         PagamentoFuncionarioRespostaDto criado = folhaPagamentoService.lancarPagamento(dto, emailUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    @PostMapping("/pagamentos/{id}/estornar")
+    public PagamentoFuncionarioRespostaDto estornarPagamento(
+            @PathVariable Long id,
+            @Valid @RequestBody EstornoPagamentoDto dto,
+            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+        return folhaPagamentoService.estornarPagamento(id, dto, emailUsuario);
     }
 }

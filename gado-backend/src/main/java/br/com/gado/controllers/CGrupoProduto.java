@@ -19,8 +19,10 @@ public class CGrupoProduto {
     private SGrupoProduto grupoProdutoService;
 
     @GetMapping
-    public List<GrupoProdutoRespostaDto> getGrupos(@RequestParam(required = false) String busca) {
-        return grupoProdutoService.listar(busca);
+    public List<GrupoProdutoRespostaDto> getGrupos(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) String status) {
+        return grupoProdutoService.listar(busca, status);
     }
 
     @GetMapping("/{id}")
@@ -41,5 +43,10 @@ public class CGrupoProduto {
     @DeleteMapping("/{id}")
     public String deleteGrupo(@PathVariable Long id) {
         return grupoProdutoService.inativar(id);
+    }
+
+    @PutMapping("/{id}/reativar")
+    public String reativarGrupo(@PathVariable Long id) {
+        return grupoProdutoService.reativar(id);
     }
 }

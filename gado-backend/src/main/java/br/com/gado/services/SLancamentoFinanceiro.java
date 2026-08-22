@@ -142,9 +142,12 @@ public class SLancamentoFinanceiro {
     void registrarSaidaFolhaPagamento(EPagamentoFuncionario pagamento) {
         BigDecimal beneficios = pagamento.getValorBeneficios() != null
                 ? pagamento.getValorBeneficios() : BigDecimal.ZERO;
+        BigDecimal bonus = pagamento.getValorBonus() != null
+                ? pagamento.getValorBonus() : BigDecimal.ZERO;
         BigDecimal custoTotal = pagamento.getValorBruto()
                 .add(pagamento.getEncargoFgts())
-                .add(beneficios);
+                .add(beneficios)
+                .add(bonus);
 
         String descricao = String.format("Folha de pagamento %02d/%d - %s",
                 pagamento.getMesReferencia(), pagamento.getAnoReferencia(),
@@ -156,6 +159,38 @@ public class SLancamentoFinanceiro {
                 pagamento.getFuncionario().getUsuario() != null
                         ? pagamento.getFuncionario().getUsuario().getEmail() : "sistema",
                 false);
+    }
+
+    /**
+     * Reverte a Saída Financeira gerada para um item de documento de entrada. Chamado por
+     * SDocumentoEntrada.excluirDocumento ao excluir/estornar um documento já aprovado.
+     */
+    @Transactional
+    void estornarSaidaItemDocumento(EDocumentoEntradaItem item) {
+        lancamentoInterface.findByOrigemAndOrigemId(EnOrigemLancamentoFinanceiro.DOCUMENTO_ENTRADA, item.getId())
+                .ifPresent(lancamentoInterface::delete);
+    }
+
+    /**
+     * Reverte a Saída Financeira gerada para um pagamento de folha. Chamado por
+     * SFolhaPagamento.estornarPagamento — sem isso, estornar um pagamento manteria o
+     * custo lançado no DRE mesmo o dinheiro não tendo mais efeito (pagamento cancelado).
+     */
+    @Transactional
+    void estornarSaidaFolhaPagamento(EPagamentoFuncionario pagamento) {
+        lancamentoInterface.findByOrigemAndOrigemId(EnOrigemLancamentoFinanceiro.FOLHA_PAGAMENTO, pagamento.getId())
+                .ifPresent(lancamentoInterface::delete);
+    }
+
+    /**
+     * Receita de uma venda (leite ou animal/abate). Chamado por SDocumentoSaida após persistir
+     * o EDocumentoSaida — origemId é o id do documento (um lançamento por venda, não por item).
+     */
+    @Transactional
+    void registrarEntradaVenda(Long documentoSaidaId, String descricao, BigDecimal valor,
+                                LocalDate dataCompetencia, String emailResponsavel) {
+        registrar(EnTipoMovimentoFinanceiro.ENTRADA, null, EnOrigemLancamentoFinanceiro.VENDA,
+                documentoSaidaId, descricao, valor, dataCompetencia, emailResponsavel, false);
     }
 
     /**
@@ -213,16 +248,24 @@ public class SLancamentoFinanceiro {
     /**
      * "Resumo Mensal" (DRE) do Bloco Ano/Mês informado: Total de Entradas, Total de Saídas
      * quebrado em Custo x Despesa, e Lucro Líquido (Entradas - Saídas).
+     *
+     * Despesa mensal é calculada pelo que entrou (compras via NF/recibo, origem
+     * DOCUMENTO_ENTRADA) + folha de pagamento — NÃO pelo que foi consumido do estoque depois
+     * (CONSUMO_ESTOQUE), que é excluído aqui para não contar a mesma mercadoria duas vezes
+     * (uma na compra, outra no consumo). O custo do que foi consumido continua disponível como
+     * informação em Lotes/Animais (ver SLote/SAnimal), só não soma de novo no DRE.
      */
     @Transactional
     public ResumoMensalDto gerarResumoMensal(int ano, int mes, String emailUsuario) {
         resolveUsuarioModulo(emailUsuario);
 
         BigDecimal totalEntradas = lancamentoInterface.somarPorBloco(ano, mes, EnTipoMovimentoFinanceiro.ENTRADA, null);
-        BigDecimal totalSaidasCusto = lancamentoInterface.somarPorBloco(
-                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.CUSTO);
-        BigDecimal totalSaidasDespesa = lancamentoInterface.somarPorBloco(
-                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.GASTO);
+        BigDecimal totalSaidasCusto = lancamentoInterface.somarPorBlocoExcluindoOrigem(
+                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.CUSTO,
+                EnOrigemLancamentoFinanceiro.CONSUMO_ESTOQUE);
+        BigDecimal totalSaidasDespesa = lancamentoInterface.somarPorBlocoExcluindoOrigem(
+                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.GASTO,
+                EnOrigemLancamentoFinanceiro.CONSUMO_ESTOQUE);
         BigDecimal totalSaidas = totalSaidasCusto.add(totalSaidasDespesa);
         BigDecimal lucroLiquido = totalEntradas.subtract(totalSaidas);
 

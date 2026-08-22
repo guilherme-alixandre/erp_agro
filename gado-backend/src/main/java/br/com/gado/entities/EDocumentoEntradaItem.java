@@ -56,6 +56,10 @@ public class EDocumentoEntradaItem extends EAbstract {
     @Column(nullable = false)
     private Boolean vinculado = false;
 
+    /** Marca se a entrada de estoque/custo médio deste item já foi aplicada (evita dupla contagem). */
+    @Column(name = "entrada_estoque_aplicada", nullable = false)
+    private Boolean entradaEstoqueAplicada = false;
+
     @Column(name = "vinculado_por_email")
     private String vinculadoPorEmail;
 

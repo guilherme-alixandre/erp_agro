@@ -20,14 +20,36 @@ public class SGrupoProduto {
     @Autowired
     private IGrupoProduto grupoProdutoInterface;
 
+    /**
+     * Lista grupos de produto (ativos e inativos, para permitir reativação).
+     * @param status opcional: "A" (apenas ativos), "I" (apenas inativos), nulo/vazio = todos.
+     */
     @Transactional
-    public List<GrupoProdutoRespostaDto> listar(String busca) {
+    public List<GrupoProdutoRespostaDto> listar(String busca, String status) {
         String termo = busca == null ? "" : busca.trim();
-        List<EGrupoProduto> grupos = termo.isBlank()
-                ? grupoProdutoInterface.findByStatusOrderByNomeAsc(EnStatus.A)
-                : grupoProdutoInterface.findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus.A, termo);
+        EnStatus filtroStatus = parseStatus(status);
+
+        List<EGrupoProduto> grupos;
+        if (filtroStatus != null) {
+            grupos = termo.isBlank()
+                    ? grupoProdutoInterface.findByStatusOrderByNomeAsc(filtroStatus)
+                    : grupoProdutoInterface.findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(filtroStatus, termo);
+        } else {
+            grupos = termo.isBlank()
+                    ? grupoProdutoInterface.findAllByOrderByNomeAsc()
+                    : grupoProdutoInterface.findByNomeContainingIgnoreCaseOrderByNomeAsc(termo);
+        }
 
         return grupos.stream().map(this::toRespostaDto).collect(Collectors.toList());
+    }
+
+    private EnStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return EnStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Status inválido. Use 'A' (ativo) ou 'I' (inativo).");
+        }
     }
 
     public GrupoProdutoRespostaDto buscarPorId(Long id) {
@@ -101,12 +123,22 @@ public class SGrupoProduto {
         return "Grupo de produto inativado com sucesso";
     }
 
+    @Transactional
+    public String reativar(Long id) {
+        EGrupoProduto grupo = grupoProdutoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Grupo de produto não encontrado."));
+        grupo.setStatus(EnStatus.A);
+        grupoProdutoInterface.save(grupo);
+        return "Grupo de produto reativado com sucesso";
+    }
+
     private GrupoProdutoRespostaDto toRespostaDto(EGrupoProduto grupo) {
         GrupoProdutoRespostaDto dto = new GrupoProdutoRespostaDto();
         dto.setId(grupo.getId());
         dto.setNome(grupo.getNome());
         dto.setCodigoPrefixo(grupo.getCodigoPrefixo());
         dto.setNaturezaFinanceira(grupo.getNaturezaFinanceira());
+        dto.setStatus(grupo.getStatus());
         return dto;
     }
 }

@@ -27,4 +27,18 @@ public interface ILancamentoFinanceiro extends JpaRepository<ELancamentoFinancei
     BigDecimal somarPorBloco(@Param("ano") int ano, @Param("mes") int mes,
                               @Param("tipo") EnTipoMovimentoFinanceiro tipo,
                               @Param("natureza") EnNaturezaFinanceira natureza);
+
+    /**
+     * Mesma soma de somarPorBloco, mas excluindo uma origem específica — usado por
+     * gerarResumoMensal para excluir CONSUMO_ESTOQUE das despesas mensais (a compra via
+     * DOCUMENTO_ENTRADA já é a despesa do mês; contar o consumo depois seria dobrar o custo).
+     */
+    @Query("select coalesce(sum(l.valor), 0) from ELancamentoFinanceiro l "
+            + "where l.anoCompetencia = :ano and l.mesCompetencia = :mes and l.tipoMovimento = :tipo "
+            + "and (:natureza is null or l.naturezaFinanceira = :natureza) "
+            + "and (:origemExcluida is null or l.origem <> :origemExcluida)")
+    BigDecimal somarPorBlocoExcluindoOrigem(@Param("ano") int ano, @Param("mes") int mes,
+                              @Param("tipo") EnTipoMovimentoFinanceiro tipo,
+                              @Param("natureza") EnNaturezaFinanceira natureza,
+                              @Param("origemExcluida") EnOrigemLancamentoFinanceiro origemExcluida);
 }

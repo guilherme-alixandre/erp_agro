@@ -37,6 +37,8 @@ function normalizeMeta(raw) {
     status,
     quantidadeRealizada: raw?.quantidadeRealizada ?? 0,
     percentualProgresso: raw?.percentualProgresso ?? 0,
+    quantidadeVendida: raw?.quantidadeVendida ?? null,
+    percentualVendido: raw?.percentualVendido ?? null,
     valorRealizado: raw?.valorRealizado ?? 0,
     valorEsperado: raw?.valorEsperado ?? 0,
     medicoes: Array.isArray(raw?.medicoes) ? raw.medicoes.map(normalizeMedicao) : [],

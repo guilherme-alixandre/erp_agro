@@ -1,12 +1,15 @@
 package br.com.gado.services;
 
+import br.com.gado.dto.folhaPagamentoDto.EstornoPagamentoDto;
 import br.com.gado.dto.folhaPagamentoDto.FuncionarioCadastroDto;
+import br.com.gado.dto.folhaPagamentoDto.FuncionarioPutDto;
 import br.com.gado.dto.folhaPagamentoDto.FuncionarioRespostaDto;
 import br.com.gado.dto.folhaPagamentoDto.PagamentoFuncionarioCadastroDto;
 import br.com.gado.dto.folhaPagamentoDto.PagamentoFuncionarioRespostaDto;
 import br.com.gado.entities.EFuncionario;
 import br.com.gado.entities.EPagamentoFuncionario;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.enums.EnNaturezaFinanceira;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusDespesa;
@@ -21,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -90,7 +95,7 @@ public class SFolhaPagamento {
         EFuncionario funcionario = new EFuncionario();
         funcionario.setNomeCompleto(dto.getNomeCompleto().trim());
         funcionario.setCpf(dto.getCpf().trim());
-        funcionario.setCargo(dto.getCargo().trim());
+        funcionario.setCargo(validaCargo(dto.getCargo()));
         funcionario.setDataAdmissao(dto.getDataAdmissao());
         funcionario.setSalarioBase(dto.getSalarioBase());
         funcionario.setPercentualInss(dto.getPercentualInss());
@@ -98,9 +103,46 @@ public class SFolhaPagamento {
         funcionario.setValorValeTransporte(dto.getValorValeTransporte());
         funcionario.setValorValeAlimentacao(dto.getValorValeAlimentacao());
         funcionario.setValorPlanoSaude(dto.getValorPlanoSaude());
-        funcionario.setNaturezaFinanceira(dto.getNaturezaFinanceira());
+        // Um funcionário é sempre um custo — não há mais escolha de natureza financeira no cadastro.
+        funcionario.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
 
         return toFuncionarioRespostaDto(funcionarioInterface.save(funcionario));
+    }
+
+    @Transactional
+    public FuncionarioRespostaDto atualizarFuncionario(Long id, FuncionarioPutDto dto, String emailUsuarioLogado) {
+        resolveUsuarioGerencial(emailUsuarioLogado);
+
+        EFuncionario funcionario = funcionarioInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Funcionário não encontrado."));
+
+        if (dto.getNomeCompleto() != null && !dto.getNomeCompleto().isBlank()) {
+            funcionario.setNomeCompleto(dto.getNomeCompleto().trim());
+        }
+        if (dto.getCargo() != null) {
+            funcionario.setCargo(validaCargo(dto.getCargo()));
+        }
+        if (dto.getDataDemissao() != null) funcionario.setDataDemissao(dto.getDataDemissao());
+        if (dto.getSalarioBase() != null) funcionario.setSalarioBase(dto.getSalarioBase());
+        if (dto.getPercentualInss() != null) funcionario.setPercentualInss(dto.getPercentualInss());
+        if (dto.getPercentualFgts() != null) funcionario.setPercentualFgts(dto.getPercentualFgts());
+        if (dto.getValorValeTransporte() != null) funcionario.setValorValeTransporte(dto.getValorValeTransporte());
+        if (dto.getValorValeAlimentacao() != null) funcionario.setValorValeAlimentacao(dto.getValorValeAlimentacao());
+        if (dto.getValorPlanoSaude() != null) funcionario.setValorPlanoSaude(dto.getValorPlanoSaude());
+
+        return toFuncionarioRespostaDto(funcionarioInterface.save(funcionario));
+    }
+
+    private String validaCargo(String cargo) {
+        if (cargo == null || cargo.isBlank()) {
+            throw new IllegalArgumentException("O cargo é obrigatório.");
+        }
+        String cargoLimpo = cargo.trim().toUpperCase();
+        boolean valido = Arrays.stream(EnPerfilUsuario.values()).anyMatch(p -> p.name().equals(cargoLimpo));
+        if (!valido) {
+            throw new IllegalArgumentException("Cargo inválido. Selecione um dos cargos disponíveis no sistema.");
+        }
+        return cargoLimpo;
     }
 
     @Transactional
@@ -141,7 +183,8 @@ public class SFolhaPagamento {
                 .divide(CEM, 2, RoundingMode.HALF_UP);
         BigDecimal valorBeneficios = somaNaoNulos(
                 funcionario.getValorValeTransporte(), funcionario.getValorValeAlimentacao(), funcionario.getValorPlanoSaude());
-        BigDecimal valorLiquido = valorBruto.subtract(descontoInss).subtract(descontoOutros);
+        BigDecimal valorBonus = dto.getValorBonus() != null ? dto.getValorBonus() : BigDecimal.ZERO;
+        BigDecimal valorLiquido = valorBruto.subtract(descontoInss).subtract(descontoOutros).add(valorBonus);
 
         EPagamentoFuncionario pagamento = new EPagamentoFuncionario();
         pagamento.setFuncionario(funcionario);
@@ -155,8 +198,10 @@ public class SFolhaPagamento {
         pagamento.setDescontoOutros(descontoOutros);
         pagamento.setEncargoFgts(encargoFgts);
         pagamento.setValorBeneficios(valorBeneficios);
+        pagamento.setValorBonus(valorBonus);
         pagamento.setValorLiquido(valorLiquido);
         pagamento.setNaturezaFinanceiraSnapshot(funcionario.getNaturezaFinanceira());
+        pagamento.setEstornado(false);
 
         EPagamentoFuncionario salvo = pagamentoInterface.save(pagamento);
 
@@ -165,6 +210,30 @@ public class SFolhaPagamento {
         }
 
         return toPagamentoRespostaDto(salvo);
+    }
+
+    /** Reverte um pagamento já lançado: estorna o lançamento financeiro correspondente. */
+    @Transactional
+    public PagamentoFuncionarioRespostaDto estornarPagamento(Long id, EstornoPagamentoDto dto, String emailUsuarioLogado) {
+        resolveUsuarioGerencial(emailUsuarioLogado);
+
+        EPagamentoFuncionario pagamento = pagamentoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado."));
+
+        if (Boolean.TRUE.equals(pagamento.getEstornado())) {
+            throw new IllegalArgumentException("Este pagamento já foi estornado.");
+        }
+
+        if (pagamento.getStatusPagamento() == EnStatusDespesa.PAGO) {
+            lancamentoFinanceiroService.estornarSaidaFolhaPagamento(pagamento);
+        }
+
+        pagamento.setEstornado(true);
+        pagamento.setMotivoEstorno(dto.getMotivoEstorno().trim());
+        pagamento.setEstornadoPorEmail(emailUsuarioLogado.trim());
+        pagamento.setEstornadoEm(LocalDateTime.now());
+
+        return toPagamentoRespostaDto(pagamentoInterface.save(pagamento));
     }
 
     @Transactional
@@ -218,8 +287,13 @@ public class SFolhaPagamento {
         dto.setDescontoOutros(pagamento.getDescontoOutros());
         dto.setEncargoFgts(pagamento.getEncargoFgts());
         dto.setValorBeneficios(pagamento.getValorBeneficios());
+        dto.setValorBonus(pagamento.getValorBonus());
         dto.setValorLiquido(pagamento.getValorLiquido());
         dto.setNaturezaFinanceiraSnapshot(pagamento.getNaturezaFinanceiraSnapshot());
+        dto.setEstornado(pagamento.getEstornado());
+        dto.setMotivoEstorno(pagamento.getMotivoEstorno());
+        dto.setEstornadoPorEmail(pagamento.getEstornadoPorEmail());
+        dto.setEstornadoEm(pagamento.getEstornadoEm());
         return dto;
     }
 }

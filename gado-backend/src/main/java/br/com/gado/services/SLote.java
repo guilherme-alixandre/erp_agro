@@ -1,5 +1,6 @@
 package br.com.gado.services;
 
+import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
 import br.com.gado.dto.loteDto.LotePutDto;
@@ -7,6 +8,7 @@ import br.com.gado.dto.loteDto.LoteSetorCadastroDto;
 import br.com.gado.dto.loteDto.LoteSetorRespostaDto;
 import br.com.gado.dto.loteDto.TransferenciaAnimalDto;
 import br.com.gado.entities.EAnimal;
+import br.com.gado.entities.EConsumoInsumo;
 import br.com.gado.entities.ELote;
 import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
@@ -15,6 +17,7 @@ import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAnimal;
 import br.com.gado.repositories.IAnimal;
+import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.ILote;
 import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.ISetor;
@@ -25,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +57,9 @@ public class SLote {
 
     @Autowired
     private IUsuario usuarioInterface;
+
+    @Autowired
+    private IConsumoInsumo consumoInsumoInterface;
 
     // ── Controle de acesso ───────────────────────────────────────────────
 
@@ -297,6 +305,8 @@ public class SLote {
     // ── Lógica de alocação ────────────────────────────────────────────────
 
     private void aplicarAlocacoes(ELote lote, List<LoteSetorCadastroDto> alocacoesDto, Set<Long> animaisJaNesteLote) {
+        Set<Long> animaisJaProcessadosNestaChamada = new java.util.HashSet<>();
+
         for (LoteSetorCadastroDto alocDto : alocacoesDto) {
             ESetor setor = setorInterface.findByIdAndStatus(alocDto.getSetorId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException(
@@ -322,6 +332,13 @@ public class SLote {
                         throw new IllegalArgumentException(
                                 "O animal " + animal.getCodigoBrinco() + " já está alocado ao lote " + loteConflito
                                         + ". Desvincule-o antes de adicioná-lo a outro lote.");
+                    }
+
+                    if (!animaisJaProcessadosNestaChamada.add(animal.getId())) {
+                        throw new IllegalArgumentException(
+                                "O animal " + animal.getCodigoBrinco()
+                                        + " foi informado em mais de um setor deste lote na mesma operação."
+                                        + " Um animal só pode estar em um setor do lote por vez.");
                     }
 
                     if (!animaisJaNesteLote.contains(animal.getId()) && isStatusBloqueado(animal.getStatusAnimal())) {
@@ -356,6 +373,41 @@ public class SLote {
         return status == EnStatusAnimal.VENDIDO
                 || status == EnStatusAnimal.OBITO
                 || status == EnStatusAnimal.ABATIDO;
+    }
+
+    // ── Custo de ração acumulado (informativo, ver CustoRacaoLoteDto) ─────
+
+    public CustoRacaoLoteDto calcularCustoRacaoAcumulado(Long loteId) {
+        ELote lote = loteInterface.findByIdAndStatus(loteId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum lote ativo encontrado para o ID: " + loteId));
+
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_Id(lote.getId());
+        BigDecimal custoTotal = BigDecimal.ZERO;
+
+        for (ELoteSetor alocacao : alocacoes) {
+            int animaisDoLoteNoSetor = alocacao.getAnimais().size();
+            if (animaisDoLoteNoSetor == 0) continue;
+
+            List<EConsumoInsumo> consumos = consumoInsumoInterface
+                    .findBySetor_IdAndStatusOrderByDataConsumoDesc(alocacao.getSetor().getId(), EnStatus.A);
+
+            for (EConsumoInsumo consumo : consumos) {
+                if (consumo.getConsumoPorAnimal() == null) continue;
+                Double precoMedio = consumo.getInsumo().getPrecoCompraMedio();
+                if (precoMedio == null) continue;
+
+                double quantidadeDoLote = consumo.getConsumoPorAnimal() * animaisDoLoteNoSetor;
+                custoTotal = custoTotal.add(BigDecimal.valueOf(quantidadeDoLote * precoMedio));
+            }
+        }
+
+        int totalAnimaisLote = alocacoes.stream().mapToInt(a -> a.getAnimais().size()).sum();
+        custoTotal = custoTotal.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal custoPorAnimal = totalAnimaisLote > 0
+                ? custoTotal.divide(BigDecimal.valueOf(totalAnimaisLote), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new CustoRacaoLoteDto(loteId, custoTotal, custoPorAnimal);
     }
 
     // ── Mapeamento para resposta ──────────────────────────────────────────

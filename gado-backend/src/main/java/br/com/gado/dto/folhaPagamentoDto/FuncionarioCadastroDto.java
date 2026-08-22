@@ -1,6 +1,5 @@
 package br.com.gado.dto.folhaPagamentoDto;
 
-import br.com.gado.enums.EnNaturezaFinanceira;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -35,9 +34,6 @@ public class FuncionarioCadastroDto {
     private BigDecimal valorValeTransporte;
     private BigDecimal valorValeAlimentacao;
     private BigDecimal valorPlanoSaude;
-
-    @NotNull(message = "Classifique o funcionário como CUSTO (produção) ou GASTO (administrativo).")
-    private EnNaturezaFinanceira naturezaFinanceira;
 
     /** Opcional — só quando o funcionário também é um usuário com login no sistema. */
     private Long usuarioId;

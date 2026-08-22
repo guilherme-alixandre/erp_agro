@@ -98,7 +98,15 @@
 }
 
 .insumos-split-layout__historico h3 {
-  margin: 0 0 10px;
+  margin: 0;
+}
+
+.insumos-historico__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 @media (max-width: 1100px) {

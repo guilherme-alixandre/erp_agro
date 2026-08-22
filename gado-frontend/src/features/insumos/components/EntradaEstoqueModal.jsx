@@ -60,9 +60,6 @@ function EntradaEstoqueModal({ insumo, formData, isSaving, feedback, onClose, on
 
           <fieldset className="senha-fieldset">
             <legend>Nota fiscal (opcional)</legend>
-            <p className="form-help">
-              Base para a futura importação automática de XML de NF-e.
-            </p>
 
             <label>
               <span>Número da NF</span>

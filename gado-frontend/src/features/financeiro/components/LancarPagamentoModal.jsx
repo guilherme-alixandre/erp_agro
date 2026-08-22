@@ -51,7 +51,13 @@ function LancarPagamentoModal({ funcionario, formData, isSaving, feedback, onClo
             <span>Descontos extras do mês (R$)</span>
             <input type="number" name="descontoOutros" value={formData.descontoOutros} onChange={onChange} min="0" step="0.01" />
           </label>
-          <p className="form-help">Faltas, adiantamentos etc. — além do INSS já calculado automaticamente.</p>
+
+          <label>
+            <span>Bônus do mês (R$)</span>
+            <input type="number" name="valorBonus" value={formData.valorBonus} onChange={onChange} min="0" step="0.01" />
+          </label>
+
+          <p className="form-help">Descontos já calculados automaticamente.</p>
 
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 

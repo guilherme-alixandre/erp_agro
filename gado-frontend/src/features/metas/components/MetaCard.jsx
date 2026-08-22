@@ -38,6 +38,9 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
   const barClass =
     pctReal >= 100 ? 'meta-progress__bar-fill--over' : pctReal >= 70 ? '' : 'meta-progress__bar-fill--warning'
 
+  const temVendido = meta.tipoMeta === 'LEITE' && meta.quantidadeVendida != null
+  const pctVendido = Math.min(meta.percentualVendido ?? 0, 100)
+
   const tipoGadoLabel = meta.tipoGado ? TIPOS_GADO.find((t) => t.value === meta.tipoGado)?.label ?? meta.tipoGado : null
   const unidade = unidadeMeta(meta.tipoMeta)
 
@@ -99,6 +102,27 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
               aria-valuemax={100}
             />
           </div>
+
+          {temVendido ? (
+            <>
+              <div className="meta-progress__header">
+                <span className="meta-progress__label">
+                  {formatarNumero(meta.quantidadeVendida)} {unidade} vendidos
+                </span>
+                <span className="meta-progress__pct">{formatarNumero(pctVendido, 1)}%</span>
+              </div>
+              <div className="meta-progress__bar-track">
+                <div
+                  className="meta-progress__bar-fill meta-progress__bar-fill--vendido"
+                  style={{ width: `${pctVendido}%` }}
+                  role="progressbar"
+                  aria-valuenow={pctVendido}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+            </>
+          ) : null}
         </div>
 
         <div className="meta-stats">
@@ -120,6 +144,14 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
             <div className="meta-stat__label">Medições</div>
             <div className="meta-stat__value">{meta.medicoes.length}</div>
           </div>
+          {temVendido ? (
+            <div className="meta-stat">
+              <div className="meta-stat__label">Vendido</div>
+              <div className="meta-stat__value">
+                {formatarNumero(meta.quantidadeVendida)} {unidade}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="meta-medicoes">

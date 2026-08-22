@@ -38,26 +38,48 @@ function normalizeConsumo(raw) {
   }
 }
 
-async function listarConsumoEstoque() {
-  const payload = await request('/consumo-estoque')
+async function listarConsumoEstoque(dataInicio, dataFim) {
+  const params = new URLSearchParams()
+  if (dataInicio) params.set('dataInicio', dataInicio)
+  if (dataFim) params.set('dataFim', dataFim)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const payload = await request(`/consumo-estoque${query}`)
   if (!Array.isArray(payload)) {
     throw new Error('Resposta inesperada ao listar o histórico de consumo de estoque.')
   }
   return payload.map(normalizeConsumo)
 }
 
+function toItensPayload(itens) {
+  return (itens ?? []).map((item) => ({
+    insumoId: Number(item.insumoId),
+    quantidade: Number(item.quantidade),
+    unidadeMedidaId: item.unidadeMedidaId ? Number(item.unidadeMedidaId) : null,
+  }))
+}
+
 async function registrarConsumoEstoque(email, formData) {
   const body = {
     motivo: formData.motivo,
     dataConsumo: formData.dataConsumo || null,
-    itens: (formData.itens ?? []).map((item) => ({
-      insumoId: Number(item.insumoId),
-      quantidade: Number(item.quantidade),
-      unidadeMedidaId: item.unidadeMedidaId ? Number(item.unidadeMedidaId) : null,
-    })),
+    itens: toItensPayload(formData.itens),
   }
   const payload = await request('/consumo-estoque', {
     method: 'POST',
+    headers: usuarioHeaders(email),
+    body: JSON.stringify(body),
+  })
+  return normalizeConsumo(payload)
+}
+
+async function editarConsumoEstoque(id, email, formData) {
+  const body = {
+    motivo: formData.motivo,
+    dataConsumo: formData.dataConsumo || null,
+    itens: toItensPayload(formData.itens),
+  }
+  const payload = await request(`/consumo-estoque/${id}`, {
+    method: 'PUT',
     headers: usuarioHeaders(email),
     body: JSON.stringify(body),
   })
@@ -73,4 +95,24 @@ async function cancelarConsumoEstoque(id, email, motivoCancelamento) {
   return normalizeConsumo(payload)
 }
 
-export { listarConsumoEstoque, registrarConsumoEstoque, cancelarConsumoEstoque }
+async function resumoConsumoEstoquePorPeriodo(dataInicio, dataFim) {
+  const params = new URLSearchParams({ dataInicio, dataFim })
+  const payload = await request(`/consumo-estoque/resumo?${params.toString()}`)
+  if (!Array.isArray(payload)) {
+    throw new Error('Resposta inesperada ao gerar o resumo.')
+  }
+  return payload.map((item) => ({
+    insumoId: item?.insumoId ?? null,
+    insumoNome: item?.insumoNome ?? '',
+    quantidadeTotal: item?.quantidadeTotal ?? 0,
+    unidadeSigla: item?.unidadeSigla ?? '',
+  }))
+}
+
+export {
+  listarConsumoEstoque,
+  registrarConsumoEstoque,
+  editarConsumoEstoque,
+  cancelarConsumoEstoque,
+  resumoConsumoEstoquePorPeriodo,
+}

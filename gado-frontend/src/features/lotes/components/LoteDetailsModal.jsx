@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { buscarCustoRacaoLote } from '../integration/loteApi'
+
 function formatDate(value) {
   if (!value) return '-'
   if (typeof value === 'string' && value.includes('-')) {
@@ -11,6 +14,22 @@ function formatDate(value) {
 }
 
 function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
+  const [custoRacao, setCustoRacao] = useState(null)
+
+  useEffect(() => {
+    let cancelado = false
+    buscarCustoRacaoLote(lote.id)
+      .then((dados) => {
+        if (!cancelado) setCustoRacao(dados)
+      })
+      .catch(() => {
+        if (!cancelado) setCustoRacao(null)
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [lote.id])
+
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card modal-card--wide">
@@ -50,6 +69,18 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
             <dt>Total de animais</dt>
             <dd>{lote.totalAnimais}</dd>
           </div>
+          {custoRacao ? (
+            <>
+              <div>
+                <dt>Custo de ração acumulado</dt>
+                <dd>R$ {Number(custoRacao.custoTotalAcumulado ?? 0).toFixed(2)}</dd>
+              </div>
+              <div>
+                <dt>Custo de ração por animal</dt>
+                <dd>R$ {Number(custoRacao.custoPorAnimal ?? 0).toFixed(2)}</dd>
+              </div>
+            </>
+          ) : null}
           <div>
             <dt>Criado por</dt>
             <dd>{lote.criadoPorNome || lote.criadoPorEmail || '-'}</dd>

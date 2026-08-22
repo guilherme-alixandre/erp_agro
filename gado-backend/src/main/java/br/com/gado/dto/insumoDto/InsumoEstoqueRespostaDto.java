@@ -1,5 +1,6 @@
 package br.com.gado.dto.insumoDto;
 
+import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnTipoInsumo;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ public class InsumoEstoqueRespostaDto {
     private Long id;
     private String nome;
     private EnTipoInsumo tipo;
+    private EnStatus status;
 
     private Long grupoProdutoId;
     private String grupoProdutoNome;

@@ -46,10 +46,12 @@ function validateBirthDate(dataNascimento) {
     }
 }
 
+const PESO_MINIMO_KG = 30
+
 function validatePeso(pesoAtual) {
     const peso = Number(String(pesoAtual ?? '').replace(',', '.'))
-    if (!Number.isFinite(peso) || peso < 0) {
-        throw new Error('Informe um peso válido (número ≥ zero).')
+    if (!Number.isFinite(peso) || peso < PESO_MINIMO_KG) {
+        throw new Error(`Informe um peso válido (mínimo de ${PESO_MINIMO_KG}kg).`)
     }
     return peso
 }

@@ -2,8 +2,10 @@ package br.com.gado.services;
 
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueCadastroDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueCancelamentoDto;
+import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueEdicaoDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueItemCadastroDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueItemRespostaDto;
+import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueResumoItemDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueRespostaDto;
 import br.com.gado.entities.EConsumoEstoque;
 import br.com.gado.entities.EConsumoEstoqueItem;
@@ -20,9 +22,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -77,11 +82,30 @@ public class SConsumoEstoque {
         throw new IllegalArgumentException("Você só pode cancelar movimentações que você mesmo criou.");
     }
 
+    /** Autor do lançamento, Gerente ou Administrador podem editar. */
+    private void validaPermissaoEdicao(EUsuario usuario, EConsumoEstoque consumo) {
+        if (usuario.getPerfil() == EnPerfilUsuario.ADMINISTRADOR || usuario.getPerfil() == EnPerfilUsuario.GERENTE) {
+            return;
+        }
+        if (consumo.getCriadoPorEmail() != null
+                && consumo.getCriadoPorEmail().trim().equalsIgnoreCase(usuario.getEmail().trim())) {
+            return;
+        }
+        throw new IllegalArgumentException("Você só pode editar movimentações que você mesmo criou.");
+    }
+
+    private void validaDataNaoFutura(LocalDateTime dataConsumo) {
+        if (dataConsumo != null && dataConsumo.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("A data de consumo não pode ser no futuro.");
+        }
+    }
+
     // ── Consumo de Estoque ───────────────────────────────────────────────
 
     @Transactional
     public ConsumoEstoqueRespostaDto registrarConsumo(ConsumoEstoqueCadastroDto dto, String emailUsuario) {
         resolveUsuarioObrigatorio(emailUsuario);
+        validaDataNaoFutura(dto.getDataConsumo());
 
         EConsumoEstoque consumo = new EConsumoEstoque();
         consumo.setMotivo(dto.getMotivo().trim());
@@ -166,12 +190,109 @@ public class SConsumoEstoque {
         return toRespostaDto(salvo);
     }
 
+    /** Autor, Gerente ou Administrador podem editar; reverte a baixa/lançamento antigos e reaplica os novos. */
     @Transactional
-    public List<ConsumoEstoqueRespostaDto> listarTodos() {
-        return consumoEstoqueInterface.findAllByOrderByDataConsumoDesc()
-                .stream()
+    public ConsumoEstoqueRespostaDto editarConsumo(Long id, ConsumoEstoqueEdicaoDto dto, String emailUsuario) {
+        EUsuario usuario = resolveUsuarioObrigatorio(emailUsuario);
+
+        EConsumoEstoque consumo = consumoEstoqueInterface.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Movimentação não encontrada."));
+
+        if (Boolean.TRUE.equals(consumo.getCancelado())) {
+            throw new IllegalArgumentException("Não é possível editar uma movimentação já cancelada.");
+        }
+
+        validaPermissaoEdicao(usuario, consumo);
+        validaDataNaoFutura(dto.getDataConsumo());
+
+        // Estorna a baixa de estoque e o lançamento financeiro dos itens antigos antes de recalcular.
+        for (EConsumoEstoqueItem item : consumo.getItens()) {
+            EInsumo insumo = item.getInsumo();
+            double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
+            insumo.setSaldoAtual(saldoAtual + item.getQuantidadeBaixaUnidadePrimaria());
+            insumoInterface.save(insumo);
+        }
+        lancamentoFinanceiroService.estornarSaidaConsumoEstoque(consumo);
+
+        List<EConsumoEstoqueItem> novosItens = new ArrayList<>();
+        for (ConsumoEstoqueItemCadastroDto itemDto : dto.getItens()) {
+            EInsumo insumo = insumoInterface.findByIdAndStatus(itemDto.getInsumoId(), EnStatus.A)
+                    .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou inativo."));
+
+            if (insumo.getUnidadeMedidaPrimaria() == null) {
+                throw new IllegalArgumentException(String.format(
+                        "O produto \"%s\" não possui unidade de medida cadastrada e não pode ter consumo registrado.",
+                        insumo.getNome()));
+            }
+
+            EUnidadeMedida unidadeRegistro = resolveUnidadeRegistro(insumo, itemDto.getUnidadeMedidaId());
+            double quantidadeBaixa = converterParaUnidadePrimaria(insumo, unidadeRegistro, itemDto.getQuantidade());
+
+            double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
+            if (saldoAtual < quantidadeBaixa) {
+                throw new IllegalArgumentException(String.format(
+                        "Estoque insuficiente para o produto \"%s\". Saldo disponível: %.2f %s.",
+                        insumo.getNome(), saldoAtual, insumo.getUnidadeMedidaPrimaria().getUnidade()));
+            }
+
+            insumo.setSaldoAtual(saldoAtual - quantidadeBaixa);
+            insumoInterface.save(insumo);
+
+            EConsumoEstoqueItem item = new EConsumoEstoqueItem();
+            item.setConsumoEstoque(consumo);
+            item.setInsumo(insumo);
+            item.setQuantidadeRegistrada(itemDto.getQuantidade());
+            item.setUnidadeRegistro(unidadeRegistro);
+            item.setQuantidadeBaixaUnidadePrimaria(quantidadeBaixa);
+            novosItens.add(item);
+        }
+
+        consumo.setMotivo(dto.getMotivo().trim());
+        consumo.setDataConsumo(dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now());
+        consumo.getItens().clear();
+        consumo.getItens().addAll(novosItens);
+
+        EConsumoEstoque salvo = consumoEstoqueInterface.save(consumo);
+        lancamentoFinanceiroService.contabilizarConsumoEstoque(salvo);
+
+        return toRespostaDto(salvo);
+    }
+
+    @Transactional
+    public List<ConsumoEstoqueRespostaDto> listarTodos(LocalDate dataInicio, LocalDate dataFim) {
+        List<EConsumoEstoque> lista = (dataInicio != null && dataFim != null)
+                ? consumoEstoqueInterface.findByDataConsumoBetweenOrderByDataConsumoDesc(
+                        dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59))
+                : consumoEstoqueInterface.findAllByOrderByDataConsumoDesc();
+
+        return lista.stream()
                 .map(this::toRespostaDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ConsumoEstoqueResumoItemDto> resumoPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        List<EConsumoEstoque> lista = consumoEstoqueInterface.findByDataConsumoBetweenOrderByDataConsumoDesc(
+                dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59));
+
+        Map<Long, ConsumoEstoqueResumoItemDto> resumoPorInsumo = new LinkedHashMap<>();
+        for (EConsumoEstoque consumo : lista) {
+            if (Boolean.TRUE.equals(consumo.getCancelado())) continue;
+            for (EConsumoEstoqueItem item : consumo.getItens()) {
+                ConsumoEstoqueResumoItemDto acumulado = resumoPorInsumo.computeIfAbsent(item.getInsumo().getId(), k -> {
+                    ConsumoEstoqueResumoItemDto novo = new ConsumoEstoqueResumoItemDto();
+                    novo.setInsumoId(item.getInsumo().getId());
+                    novo.setInsumoNome(item.getInsumo().getNome());
+                    novo.setQuantidadeTotal(0.0);
+                    if (item.getInsumo().getUnidadeMedidaPrimaria() != null) {
+                        novo.setUnidadeSigla(item.getInsumo().getUnidadeMedidaPrimaria().getUnidade());
+                    }
+                    return novo;
+                });
+                acumulado.setQuantidadeTotal(acumulado.getQuantidadeTotal() + item.getQuantidadeBaixaUnidadePrimaria());
+            }
+        }
+        return new ArrayList<>(resumoPorInsumo.values());
     }
 
     // ── Helpers de conversão ────────────────────────────────────────────

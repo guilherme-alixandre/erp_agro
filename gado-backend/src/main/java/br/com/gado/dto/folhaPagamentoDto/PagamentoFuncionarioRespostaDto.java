@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class PagamentoFuncionarioRespostaDto {
@@ -21,6 +22,11 @@ public class PagamentoFuncionarioRespostaDto {
     private BigDecimal descontoOutros;
     private BigDecimal encargoFgts;
     private BigDecimal valorBeneficios;
+    private BigDecimal valorBonus;
     private BigDecimal valorLiquido;
     private EnNaturezaFinanceira naturezaFinanceiraSnapshot;
+    private Boolean estornado;
+    private String motivoEstorno;
+    private String estornadoPorEmail;
+    private LocalDateTime estornadoEm;
 }

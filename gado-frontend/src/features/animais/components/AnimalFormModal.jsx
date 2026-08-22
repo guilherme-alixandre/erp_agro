@@ -101,7 +101,7 @@ function AnimalFormModal({
             <RequiredLabel>Peso atual (kg)</RequiredLabel>
             <input
               type="number"
-              min="0"
+              min="30"
               max="1500"
               step="0.01"
               name="pesoAtual"

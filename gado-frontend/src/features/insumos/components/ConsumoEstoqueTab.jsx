@@ -1,19 +1,39 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   cancelarConsumoEstoque,
+  editarConsumoEstoque,
   listarConsumoEstoque,
   registrarConsumoEstoque,
+  resumoConsumoEstoquePorPeriodo,
 } from '../integration/consumoEstoqueApi'
 import CancelarConsumoEstoqueModal from './CancelarConsumoEstoqueModal'
+import EditarConsumoEstoqueModal from './EditarConsumoEstoqueModal'
 
 const defaultItem = { insumoId: '', quantidade: '', unidadeMedidaId: '' }
 const defaultForm = { motivo: '', dataConsumo: '', itens: [{ ...defaultItem }] }
+
+const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
 
 function formatarData(iso) {
   if (!iso) return '—'
   const data = new Date(iso)
   if (Number.isNaN(data.getTime())) return iso
   return data.toLocaleString('pt-BR')
+}
+
+function agoraDatetimeLocal() {
+  const now = new Date()
+  now.setSeconds(0, 0)
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  return now.toISOString().slice(0, 16)
+}
+
+function hojeIso() {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
@@ -23,11 +43,25 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
 
   const [historico, setHistorico] = useState([])
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false)
+  const [filtroDataInicio, setFiltroDataInicio] = useState('')
+  const [filtroDataFim, setFiltroDataFim] = useState('')
 
   const [consumoParaCancelar, setConsumoParaCancelar] = useState(null)
   const [justificativa, setJustificativa] = useState('')
   const [isCancelando, setIsCancelando] = useState(false)
   const [cancelamentoFeedback, setCancelamentoFeedback] = useState('')
+
+  const [editando, setEditando] = useState(null)
+  const [editForm, setEditForm] = useState(null)
+  const [editFeedback, setEditFeedback] = useState('')
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+
+  const [resumoAberto, setResumoAberto] = useState(false)
+  const [resumo, setResumo] = useState([])
+  const [isLoadingResumo, setIsLoadingResumo] = useState(false)
+  const [resumoFeedback, setResumoFeedback] = useState('')
+
+  const maxDataConsumo = agoraDatetimeLocal()
 
   const podeCancelar = useCallback(
     (consumo) =>
@@ -39,10 +73,23 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
     [currentUser],
   )
 
-  const fetchHistorico = useCallback(async () => {
+  const podeEditar = useCallback(
+    (consumo) => {
+      if (consumo.cancelado) return false
+      if (PERFIS_EDICAO_LIVRE.includes(currentUser?.perfil)) return true
+      return (
+        currentUser?.email &&
+        consumo.criadoPorEmail &&
+        currentUser.email.trim().toLowerCase() === consumo.criadoPorEmail.trim().toLowerCase()
+      )
+    },
+    [currentUser],
+  )
+
+  const fetchHistorico = useCallback(async (dataInicio, dataFim) => {
     setIsLoadingHistorico(true)
     try {
-      const lista = await listarConsumoEstoque()
+      const lista = await listarConsumoEstoque(dataInicio, dataFim)
       setHistorico(lista)
     } catch {
       setHistorico([])
@@ -52,8 +99,8 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
   }, [])
 
   useEffect(() => {
-    fetchHistorico()
-  }, [fetchHistorico])
+    fetchHistorico(filtroDataInicio, filtroDataFim)
+  }, [filtroDataInicio, filtroDataFim, fetchHistorico])
 
   function handleFormChange(event) {
     const { name, value } = event.target
@@ -98,7 +145,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
       await registrarConsumoEstoque(currentUser.email, form)
       setFeedback({ type: 'info', message: 'Saída de estoque registrada com sucesso.' })
       setForm(defaultForm)
-      await fetchHistorico()
+      await fetchHistorico(filtroDataInicio, filtroDataFim)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao registrar a saída de estoque.' })
     } finally {
@@ -125,11 +172,92 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
     try {
       await cancelarConsumoEstoque(consumoParaCancelar.id, currentUser.email, justificativa)
       fecharCancelamento()
-      await fetchHistorico()
+      await fetchHistorico(filtroDataInicio, filtroDataFim)
     } catch (error) {
       setCancelamentoFeedback(error.message || 'Falha ao cancelar a movimentação.')
     } finally {
       setIsCancelando(false)
+    }
+  }
+
+  function abrirEdicao(consumo) {
+    setEditando(consumo)
+    setEditFeedback('')
+    setEditForm({
+      motivo: consumo.motivo,
+      dataConsumo: consumo.dataConsumo ? consumo.dataConsumo.slice(0, 16) : '',
+      maxDataConsumo,
+      itens: consumo.itens.map((item) => ({
+        insumoId: item.insumoId,
+        quantidade: item.quantidadeRegistrada,
+        unidadeMedidaId: '',
+      })),
+    })
+  }
+
+  function fecharEdicao() {
+    setEditando(null)
+    setEditForm(null)
+    setEditFeedback('')
+  }
+
+  function handleEditFormChange(event) {
+    const { name, value } = event.target
+    setEditForm((current) => ({ ...current, [name]: value }))
+  }
+
+  function handleEditItemChange(index, event) {
+    const { name, value } = event.target
+    setEditForm((current) => {
+      const itens = current.itens.map((item, i) => {
+        if (i !== index) return item
+        const nextItem = { ...item, [name]: value }
+        if (name === 'insumoId') nextItem.unidadeMedidaId = ''
+        return nextItem
+      })
+      return { ...current, itens }
+    })
+  }
+
+  function addEditItem() {
+    setEditForm((current) => ({ ...current, itens: [...current.itens, { ...defaultItem }] }))
+  }
+
+  function removeEditItem(index) {
+    setEditForm((current) => ({
+      ...current,
+      itens: current.itens.length > 1 ? current.itens.filter((_, i) => i !== index) : current.itens,
+    }))
+  }
+
+  async function handleSubmitEdicao(event) {
+    event.preventDefault()
+    setIsSavingEdit(true)
+    setEditFeedback('')
+    try {
+      await editarConsumoEstoque(editando.id, currentUser.email, editForm)
+      fecharEdicao()
+      await fetchHistorico(filtroDataInicio, filtroDataFim)
+    } catch (error) {
+      setEditFeedback(error.message || 'Falha ao salvar a edição.')
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
+  async function handleAbrirResumo() {
+    setResumoAberto(true)
+    setResumoFeedback('')
+    const inicio = filtroDataInicio || hojeIso()
+    const fim = filtroDataFim || hojeIso()
+    setIsLoadingResumo(true)
+    try {
+      const lista = await resumoConsumoEstoquePorPeriodo(inicio, fim)
+      setResumo(lista)
+    } catch (error) {
+      setResumoFeedback(error.message || 'Falha ao gerar o resumo.')
+    } finally {
+      setIsLoadingResumo(false)
     }
   }
 
@@ -231,7 +359,13 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
 
           <label>
             <span>Data do consumo</span>
-            <input type="datetime-local" name="dataConsumo" value={form.dataConsumo} onChange={handleFormChange} />
+            <input
+              type="datetime-local"
+              name="dataConsumo"
+              value={form.dataConsumo}
+              max={maxDataConsumo}
+              onChange={handleFormChange}
+            />
           </label>
 
           {feedback.message ? (
@@ -249,7 +383,36 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
       </div>
 
       <div className="insumos-split-layout__historico">
-        <h3>Log de movimentações</h3>
+        <div className="insumos-historico__header">
+          <h3>Log de movimentações</h3>
+          <button type="button" className="btn-row" onClick={handleAbrirResumo}>
+            Resumo
+          </button>
+        </div>
+
+        <div className="data-toolbar">
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">De</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={filtroDataInicio}
+              max={filtroDataFim || undefined}
+              onChange={(e) => setFiltroDataInicio(e.target.value)}
+            />
+          </label>
+          <label className="toolbar-date-label">
+            <span className="toolbar-date-label__text">Até</span>
+            <input
+              type="date"
+              className="toolbar-date"
+              value={filtroDataFim}
+              min={filtroDataInicio || undefined}
+              onChange={(e) => setFiltroDataFim(e.target.value)}
+            />
+          </label>
+        </div>
+
         <div className="data-table-wrapper">
           <table className="data-table">
             <thead>
@@ -298,13 +461,19 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
                       )}
                     </td>
                     <td>
-                      {podeCancelar(c) ? (
-                        <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(c)}>
-                          Cancelar
-                        </button>
-                      ) : (
-                        <span>—</span>
-                      )}
+                      <div className="row-actions">
+                        {podeEditar(c) ? (
+                          <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
+                            Editar
+                          </button>
+                        ) : null}
+                        {podeCancelar(c) ? (
+                          <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(c)}>
+                            Cancelar
+                          </button>
+                        ) : null}
+                        {!podeEditar(c) && !podeCancelar(c) ? <span>—</span> : null}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -324,6 +493,76 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
           onChange={(e) => setJustificativa(e.target.value)}
           onSubmit={handleSubmitCancelamento}
         />
+      ) : null}
+
+      {editando && editForm ? (
+        <EditarConsumoEstoqueModal
+          consumo={editando}
+          formData={editForm}
+          insumosEstoque={insumosEstoque}
+          isSaving={isSavingEdit}
+          feedback={editFeedback}
+          onClose={fecharEdicao}
+          onChange={handleEditFormChange}
+          onItemChange={handleEditItemChange}
+          onAddItem={addEditItem}
+          onRemoveItem={removeEditItem}
+          onSubmit={handleSubmitEdicao}
+        />
+      ) : null}
+
+      {resumoAberto ? (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>Resumo de consumo de estoque</h2>
+              <button type="button" className="modal-close" onClick={() => setResumoAberto(false)}>
+                ✕
+              </button>
+            </div>
+
+            <p className="form-help">
+              Período: {formatarData(filtroDataInicio || hojeIso())} a {formatarData(filtroDataFim || hojeIso())}
+            </p>
+
+            {resumoFeedback ? <p className="feedback feedback--error">{resumoFeedback}</p> : null}
+
+            {isLoadingResumo ? (
+              <p>Carregando...</p>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Quantidade total consumida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumo.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="table-empty">Nenhum consumo no período.</td>
+                    </tr>
+                  ) : (
+                    resumo.map((item) => (
+                      <tr key={item.insumoId}>
+                        <td>{item.insumoNome}</td>
+                        <td>
+                          {item.quantidadeTotal.toFixed(2)} {item.unidadeSigla}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setResumoAberto(false)}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   )

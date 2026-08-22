@@ -369,6 +369,15 @@
   padding: 10px;
 }
 
+/* Brilho verde de foco — aplicado a todos os formulários dentro de .modal-card */
+.modal-card input:focus,
+.modal-card select:focus,
+.modal-card textarea:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
 .details-grid {
   margin: 14px 0;
   display: grid;

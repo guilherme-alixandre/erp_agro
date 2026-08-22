@@ -85,6 +85,8 @@ async function cadastrarReciboSimples(email, formData) {
     descricao: sanitizeText(formData.descricao),
     dataEmissao: formData.dataEmissao || null,
     fornecedorId: formData.fornecedorId ? Number(formData.fornecedorId) : null,
+    produtoId: Number(formData.produtoId),
+    quantidade: Number(formData.quantidade),
     valorTotal: Number(formData.valorTotal),
     naturezaFinanceira: formData.naturezaFinanceira,
   }
@@ -94,6 +96,13 @@ async function cadastrarReciboSimples(email, formData) {
     body: JSON.stringify(body),
   })
   return normalizeDocumento(payload)
+}
+
+async function excluirDocumento(id, email) {
+  return request(`/documentos-entrada/${id}`, {
+    method: 'DELETE',
+    headers: usuarioHeaders(email),
+  })
 }
 
 // ── Aprovação ────────────────────────────────────────────────────────────
@@ -162,4 +171,5 @@ export {
   recusarDocumento,
   editarNfe,
   vincularProduto,
+  excluirDocumento,
 }

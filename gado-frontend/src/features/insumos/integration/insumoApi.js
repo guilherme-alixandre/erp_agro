@@ -10,10 +10,13 @@ function usuarioHeaders(email) {
 }
 
 function normalizeInsumoEstoque(raw) {
+  const statusRaw = raw?.status
+  const status = statusRaw === 'A' ? 'ATIVO' : statusRaw === 'I' ? 'INATIVO' : (statusRaw ?? 'ATIVO')
   return {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     tipo: raw?.tipo ?? '',
+    status,
     codigoProduto: raw?.codigoProduto ?? '',
     grupoProdutoId: raw?.grupoProdutoId ?? null,
     grupoProdutoNome: raw?.grupoProdutoNome ?? '',
@@ -36,14 +39,27 @@ function normalizeInsumoEstoque(raw) {
 
 // ── Catálogo geral de Insumos (Estoque) ──────────────────────────────────
 
-async function listarEstoque(termo) {
+async function listarEstoque(termo, statusFiltro = 'ATIVO') {
   const limpo = sanitizeText(termo)
-  const query = limpo ? `?busca=${encodeURIComponent(limpo)}` : ''
+  const params = new URLSearchParams()
+  if (limpo) params.set('busca', limpo)
+  if (statusFiltro && statusFiltro !== 'TODOS') {
+    params.set('status', statusFiltro === 'ATIVO' ? 'A' : 'I')
+  }
+  const query = params.toString() ? `?${params.toString()}` : ''
   const payload = await request(`/insumos/estoque${query}`)
   if (!Array.isArray(payload)) {
     throw new Error('Resposta inesperada ao listar o estoque.')
   }
   return payload.map(normalizeInsumoEstoque)
+}
+
+function inativarInsumoEstoque(id, email) {
+  return request(`/insumos/estoque/${id}`, { method: 'DELETE', headers: usuarioHeaders(email) })
+}
+
+function reativarInsumoEstoque(id, email) {
+  return request(`/insumos/estoque/${id}/reativar`, { method: 'PUT', headers: usuarioHeaders(email) })
 }
 
 async function cadastrarInsumoEstoque(email, formData) {
@@ -116,4 +132,6 @@ export {
   atualizarInsumoEstoque,
   registrarEntradaEstoque,
   listarVacinasDisponiveis,
+  inativarInsumoEstoque,
+  reativarInsumoEstoque,
 }

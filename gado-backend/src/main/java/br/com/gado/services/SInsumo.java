@@ -80,14 +80,56 @@ public class SInsumo {
 
     // ── Estoque: consulta ────────────────────────────────────────────────
 
+    /**
+     * @param status opcional: "A" (apenas ativos), "I" (apenas inativos), nulo/vazio = todos
+     *               (produtos inativos continuam visíveis na listagem, com a opção de reativar).
+     */
     @Transactional
-    public List<InsumoEstoqueRespostaDto> listarEstoque(String busca) {
+    public List<InsumoEstoqueRespostaDto> listarEstoque(String busca, String status) {
         String termo = busca == null ? "" : busca.trim();
-        List<EInsumo> insumos = termo.isBlank()
-                ? insumoInterface.findByStatusOrderByNomeAsc(EnStatus.A)
-                : insumoInterface.findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus.A, termo);
+        EnStatus filtroStatus = parseStatus(status);
+
+        List<EInsumo> insumos;
+        if (filtroStatus != null) {
+            insumos = termo.isBlank()
+                    ? insumoInterface.findByStatusOrderByNomeAsc(filtroStatus)
+                    : insumoInterface.findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(filtroStatus, termo);
+        } else {
+            insumos = termo.isBlank()
+                    ? insumoInterface.findAllByOrderByNomeAsc()
+                    : insumoInterface.findByNomeContainingIgnoreCaseOrderByNomeAsc(termo);
+        }
 
         return insumos.stream().map(this::toEstoqueRespostaDto).collect(Collectors.toList());
+    }
+
+    private EnStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return EnStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Status inválido. Use 'A' (ativo) ou 'I' (inativo).");
+        }
+    }
+
+    @Transactional
+    public String inativarInsumo(Long id, String emailUsuario) {
+        validaGestaoEstoque(emailUsuario);
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado."));
+        insumo.setStatus(EnStatus.I);
+        insumoInterface.save(insumo);
+        return "Produto inativado com sucesso.";
+    }
+
+    @Transactional
+    public String reativarInsumo(Long id, String emailUsuario) {
+        validaGestaoEstoque(emailUsuario);
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado."));
+        insumo.setStatus(EnStatus.A);
+        insumoInterface.save(insumo);
+        return "Produto reativado com sucesso.";
     }
 
     @Transactional
@@ -181,7 +223,16 @@ public class SInsumo {
     @Transactional
     public InsumoEstoqueRespostaDto registrarEntradaEstoque(Long id, EntradaEstoqueDto dto, String emailUsuario) {
         validaGestaoEstoque(emailUsuario);
+        return aplicarEntradaEstoque(id, dto);
+    }
 
+    /**
+     * Mesma lógica de registrarEntradaEstoque, sem a checagem de permissão de gestão de estoque —
+     * para uso interno de outros serviços (ex: SDocumentoEntrada) que já validaram a permissão
+     * adequada à própria operação (ex: aprovar um documento financeiro) antes de chamar aqui.
+     */
+    @Transactional
+    InsumoEstoqueRespostaDto aplicarEntradaEstoque(Long id, EntradaEstoqueDto dto) {
         EInsumo insumo = insumoInterface.findByIdAndStatus(id, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado ou inativo."));
 
@@ -307,6 +358,7 @@ public class SInsumo {
         dto.setId(insumo.getId());
         dto.setNome(insumo.getNome());
         dto.setTipo(insumo.getTipo());
+        dto.setStatus(insumo.getStatus());
         dto.setCodigoProduto(insumo.getCodigoProduto());
 
         if (insumo.getGrupoProduto() != null) {

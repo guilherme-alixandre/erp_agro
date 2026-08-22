@@ -14,4 +14,6 @@ public interface IGrupoProduto extends JpaRepository<EGrupoProduto, Long> {
     Optional<EGrupoProduto> findFirstByCodigoPrefixo(String codigoPrefixo);
     List<EGrupoProduto> findByStatusOrderByNomeAsc(EnStatus status);
     List<EGrupoProduto> findByStatusAndNomeContainingIgnoreCaseOrderByNomeAsc(EnStatus status, String nome);
+    List<EGrupoProduto> findAllByOrderByNomeAsc();
+    List<EGrupoProduto> findByNomeContainingIgnoreCaseOrderByNomeAsc(String nome);
 }

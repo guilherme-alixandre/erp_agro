@@ -5,11 +5,14 @@ function sanitize(value) {
 }
 
 function normalizeGrupoProduto(raw) {
+  const statusRaw = raw?.status
+  const status = statusRaw === 'A' ? 'ATIVO' : statusRaw === 'I' ? 'INATIVO' : (statusRaw ?? 'ATIVO')
   return {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     codigoPrefixo: raw?.codigoPrefixo ?? '',
     naturezaFinanceira: raw?.naturezaFinanceira ?? '',
+    status,
   }
 }
 
@@ -30,9 +33,14 @@ function toPayload(formData) {
   return { nome, codigoPrefixo, naturezaFinanceira }
 }
 
-async function listarGruposProduto(termo) {
+async function listarGruposProduto(termo, statusFiltro) {
   const limpo = sanitize(termo)
-  const query = limpo ? `?busca=${encodeURIComponent(limpo)}` : ''
+  const params = new URLSearchParams()
+  if (limpo) params.set('busca', limpo)
+  if (statusFiltro && statusFiltro !== 'TODOS') {
+    params.set('status', statusFiltro === 'ATIVO' ? 'A' : 'I')
+  }
+  const query = params.toString() ? `?${params.toString()}` : ''
   const payload = await request(`/grupos-produto${query}`)
   if (!Array.isArray(payload)) {
     throw new Error('Resposta inesperada ao listar grupos de produto.')
@@ -60,10 +68,15 @@ function deletarGrupoProduto(id) {
   return request(`/grupos-produto/${id}`, { method: 'DELETE' })
 }
 
+function reativarGrupoProduto(id) {
+  return request(`/grupos-produto/${id}/reativar`, { method: 'PUT' })
+}
+
 export {
   atualizarGrupoProduto,
   cadastrarGrupoProduto,
   deletarGrupoProduto,
+  reativarGrupoProduto,
   listarGruposProduto,
   normalizeGrupoProduto,
 }

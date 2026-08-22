@@ -52,7 +52,13 @@ function calcAgeLabel(dateText) {
         years -= 1
     }
 
-    if (years < 1) return 'menos de 1 ano'
+    if (years < 1) {
+        let months = (now.getFullYear() - birthYear) * 12 + (now.getMonth() + 1 - birthMonth)
+        if (dayDiff < 0) months -= 1
+        months = Math.max(0, months)
+        if (months < 1) return 'menos de 1 mês'
+        return `${months} ${months > 1 ? 'meses' : 'mês'}`
+    }
     return `${years} ${years > 1 ? 'anos' : 'ano'}`
 }
 

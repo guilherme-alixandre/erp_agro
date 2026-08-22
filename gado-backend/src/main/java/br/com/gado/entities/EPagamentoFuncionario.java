@@ -14,6 +14,7 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /** Histórico de um pagamento de folha para um funcionário em um Bloco Ano/Mês. */
 @EqualsAndHashCode(callSuper = true)
@@ -56,8 +57,24 @@ public class EPagamentoFuncionario extends EAbstract {
     @Column(name = "valor_beneficios", precision = 15, scale = 2)
     private BigDecimal valorBeneficios;
 
+    /** Bônus/recebimentos extras do mês, somados ao líquido. */
+    @Column(name = "valor_bonus", precision = 15, scale = 2)
+    private BigDecimal valorBonus;
+
     @Column(name = "valor_liquido", nullable = false, precision = 15, scale = 2)
     private BigDecimal valorLiquido;
+
+    @Column(nullable = false)
+    private Boolean estornado = false;
+
+    @Column(name = "motivo_estorno", length = 500)
+    private String motivoEstorno;
+
+    @Column(name = "estornado_por_email")
+    private String estornadoPorEmail;
+
+    @Column(name = "estornado_em")
+    private LocalDateTime estornadoEm;
 
     /**
      * Cópia da natureza financeira do funcionário no momento do pagamento — preserva o

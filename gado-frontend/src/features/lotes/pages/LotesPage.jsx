@@ -121,12 +121,15 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
       .catch(() => setSetores([]))
   }, [fetchLotes])
 
-  async function carregarAnimaisParaLote(loteAtualId) {
+  async function carregarAnimaisParaLote() {
     try {
       const lista = await listarAnimaisParaLote()
+      // Exclui animais já alocados em QUALQUER lote (incluindo o lote atual em edição):
+      // mover um animal já alocado para outro setor do mesmo lote deve ser feito pelo
+      // fluxo de transferência (que remove do setor de origem automaticamente), não
+      // pela seleção livre — evitar que o mesmo animal fique duplicado em dois setores.
       const ocupados = new Set(
         lotes
-          .filter((l) => l.id !== loteAtualId)
           .flatMap((l) => l.alocacoes.flatMap((aloc) => aloc.animais.map((a) => a.id)))
           .filter((id) => id !== null),
       )
@@ -168,7 +171,8 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
     setFormData(defaultForm)
     setFormFeedback('')
     setModal({ type: 'form', lote: null })
-    carregarAnimaisParaLote(null)
+    carregarAnimaisParaLote()
+    listarSetores().then(setSetores).catch(() => {})
   }
 
   function openEditModal(lote) {
@@ -188,7 +192,8 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
       })),
     })
     setModal({ type: 'form', lote })
-    carregarAnimaisParaLote(lote.id)
+    carregarAnimaisParaLote()
+    listarSetores().then(setSetores).catch(() => {})
   }
 
   function openDetailsModal(lote) {
@@ -210,6 +215,7 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
     // Atualiza sempre para refletir qualquer transferência parcialmente concluída
     const updatedLotes = await listarLotes()
     setLotes(updatedLotes)
+    listarSetores().then(setSetores).catch(() => {})
     const loteAtualizado = updatedLotes.find((l) => l.id === modal.lote?.id)
     if (loteAtualizado) {
       setFormData((current) => ({

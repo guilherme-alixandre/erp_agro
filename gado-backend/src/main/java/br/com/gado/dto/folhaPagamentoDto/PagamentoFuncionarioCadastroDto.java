@@ -32,4 +32,7 @@ public class PagamentoFuncionarioCadastroDto {
 
     /** Descontos extras do mês (faltas, adiantamentos), além do INSS calculado automaticamente. */
     private BigDecimal descontoOutros;
+
+    /** Bônus/recebimentos extras do mês (ex: comissão, gratificação), somado ao líquido. */
+    private BigDecimal valorBonus;
 }

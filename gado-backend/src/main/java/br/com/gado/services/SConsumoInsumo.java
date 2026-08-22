@@ -1,6 +1,8 @@
 package br.com.gado.services;
 
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoCadastroDto;
+import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoEdicaoDto;
+import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoResumoItemDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoRespostaDto;
 import br.com.gado.entities.EConsumoInsumo;
 import br.com.gado.entities.EInsumo;
@@ -8,6 +10,7 @@ import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
 import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.IInsumo;
@@ -15,13 +18,17 @@ import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.ISetor;
 import br.com.gado.repositories.IUnidadeMedida;
 import br.com.gado.repositories.IUsuario;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -82,6 +89,8 @@ public class SConsumoInsumo {
                     "Este insumo não possui unidade de medida cadastrada e não pode ter consumo registrado.");
         }
 
+        validaDataNaoFutura(dto.getDataConsumo());
+
         EUnidadeMedida unidadeRegistro = resolveUnidadeRegistro(insumo, dto.getUnidadeMedidaId());
         double quantidadeBaixa = converterParaUnidadePrimaria(insumo, unidadeRegistro, dto.getQuantidade());
 
@@ -118,12 +127,100 @@ public class SConsumoInsumo {
         return toRespostaDto(salvo);
     }
 
+    /** Autor do lançamento, Gerente ou Administrador podem editar. */
     @Transactional
-    public List<ConsumoInsumoRespostaDto> listarPorSetor(Long setorId) {
-        return consumoInsumoInterface.findBySetor_IdAndStatusOrderByDataConsumoDesc(setorId, EnStatus.A)
+    public ConsumoInsumoRespostaDto editarConsumo(Long id, ConsumoInsumoEdicaoDto dto, String emailUsuario) {
+        EUsuario usuario = resolveUsuarioObrigatorio(emailUsuario);
+        EConsumoInsumo consumo = consumoInsumoInterface.findById(id)
+                .filter(c -> c.getStatus() == EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Lançamento de consumo não encontrado."));
+
+        validaPermissaoEdicao(usuario, consumo);
+        validaDataNaoFutura(dto.getDataConsumo());
+
+        EInsumo insumo = consumo.getInsumo();
+
+        // Estorna a baixa anterior antes de recalcular com os novos valores.
+        double saldoComEstorno = (insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0)
+                + consumo.getQuantidadeBaixaUnidadePrimaria();
+
+        EUnidadeMedida unidadeRegistro = resolveUnidadeRegistro(insumo, dto.getUnidadeMedidaId());
+        double novaQuantidadeBaixa = converterParaUnidadePrimaria(insumo, unidadeRegistro, dto.getQuantidade());
+
+        if (saldoComEstorno < novaQuantidadeBaixa) {
+            throw new IllegalArgumentException(String.format(
+                    "Estoque insuficiente para esta edição. Saldo disponível: %.2f %s.",
+                    saldoComEstorno, insumo.getUnidadeMedidaPrimaria().getUnidade()));
+        }
+
+        insumo.setSaldoAtual(saldoComEstorno - novaQuantidadeBaixa);
+        insumoInterface.save(insumo);
+
+        int totalAnimais = contarAnimaisDoSetor(consumo.getSetor().getId());
+        Double consumoPorAnimal = totalAnimais > 0 ? dto.getQuantidade() / totalAnimais : null;
+
+        consumo.setQuantidadeRegistrada(dto.getQuantidade());
+        consumo.setUnidadeRegistro(unidadeRegistro);
+        consumo.setQuantidadeBaixaUnidadePrimaria(novaQuantidadeBaixa);
+        consumo.setTotalAnimaisSetor(totalAnimais);
+        consumo.setConsumoPorAnimal(consumoPorAnimal);
+        consumo.setDataConsumo(dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now());
+
+        return toRespostaDto(consumoInsumoInterface.save(consumo));
+    }
+
+    private void validaPermissaoEdicao(EUsuario usuario, EConsumoInsumo consumo) {
+        if (usuario.getPerfil() == EnPerfilUsuario.ADMINISTRADOR || usuario.getPerfil() == EnPerfilUsuario.GERENTE) {
+            return;
+        }
+        if (consumo.getRegistradoPorEmail() != null
+                && consumo.getRegistradoPorEmail().trim().equalsIgnoreCase(usuario.getEmail().trim())) {
+            return;
+        }
+        throw new IllegalArgumentException("Você só pode editar lançamentos que você mesmo criou.");
+    }
+
+    private void validaDataNaoFutura(LocalDateTime dataConsumo) {
+        if (dataConsumo != null && dataConsumo.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("A data de consumo não pode ser no futuro.");
+        }
+    }
+
+    @Transactional
+    public List<ConsumoInsumoRespostaDto> listarPorSetor(Long setorId, LocalDate dataInicio, LocalDate dataFim) {
+        List<EConsumoInsumo> lista;
+        if (dataInicio != null && dataFim != null) {
+            lista = consumoInsumoInterface.findBySetor_IdAndStatusAndDataConsumoBetweenOrderByDataConsumoDesc(
+                    setorId, EnStatus.A, dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59));
+        } else {
+            lista = consumoInsumoInterface.findBySetor_IdAndStatusOrderByDataConsumoDesc(setorId, EnStatus.A);
+        }
+        return lista.stream().map(this::toRespostaDto).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ConsumoInsumoResumoItemDto> resumoPorSetorEPeriodo(Long setorId, LocalDate dataInicio, LocalDate dataFim) {
+        List<IConsumoInsumo.ResumoInsumoProjection> agregados = consumoInsumoInterface.resumoPorSetorEPeriodo(
+                setorId, EnStatus.A, dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59));
+
+        Map<Long, EInsumo> insumosPorId = insumoInterface
+                .findAllById(agregados.stream().map(IConsumoInsumo.ResumoInsumoProjection::getInsumoId).collect(Collectors.toList()))
                 .stream()
-                .map(this::toRespostaDto)
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(EInsumo::getId, i -> i, (a, b) -> a, HashMap::new));
+
+        return agregados.stream().map(a -> {
+            ConsumoInsumoResumoItemDto item = new ConsumoInsumoResumoItemDto();
+            item.setInsumoId(a.getInsumoId());
+            item.setQuantidadeTotal(a.getTotal());
+            EInsumo insumo = insumosPorId.get(a.getInsumoId());
+            if (insumo != null) {
+                item.setInsumoNome(insumo.getNome());
+                if (insumo.getUnidadeMedidaPrimaria() != null) {
+                    item.setUnidadeSigla(insumo.getUnidadeMedidaPrimaria().getUnidade());
+                }
+            }
+            return item;
+        }).collect(Collectors.toList());
     }
 
     // ── Helpers de conversão e rateio ───────────────────────────────────

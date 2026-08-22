@@ -7,6 +7,7 @@ import br.com.gado.dto.documentoEntradaDto.NfeUpdateDto;
 import br.com.gado.dto.documentoEntradaDto.ReciboSimplesCadastroDto;
 import br.com.gado.dto.documentoEntradaDto.RecusaDocumentoDto;
 import br.com.gado.dto.documentoEntradaDto.VincularProdutoDto;
+import br.com.gado.dto.insumoDto.EntradaEstoqueDto;
 import br.com.gado.entities.EDocumentoEntrada;
 import br.com.gado.entities.EDocumentoEntradaItem;
 import br.com.gado.entities.EInsumo;
@@ -80,6 +81,9 @@ public class SDocumentoEntrada {
 
     @Autowired
     private SLancamentoFinanceiro lancamentoFinanceiroService;
+
+    @Autowired
+    private SInsumo insumoService;
 
     // ── Permissões ───────────────────────────────────────────────────────
 
@@ -160,9 +164,32 @@ public class SDocumentoEntrada {
 
         for (EDocumentoEntradaItem item : salvo.getItens()) {
             lancamentoFinanceiroService.registrarOuAtualizarSaidaItemDocumento(item, emailUsuarioLogado);
+            aplicarEntradaEstoqueSeNecessario(item, salvo.getDataEmissao());
         }
 
         return toRespostaDto(salvo);
+    }
+
+    /**
+     * Dá entrada no saldo/custo médio do produto vinculado a este item, uma única vez
+     * (controlado por entradaEstoqueAplicada) — chamado quando o documento se torna APROVADO
+     * (ou, se o produto só for vinculado depois, no momento da vinculação a um documento já
+     * aprovado). Itens sem produto vinculado (ex: NF-e ainda não conciliada) não afetam estoque.
+     */
+    private void aplicarEntradaEstoqueSeNecessario(EDocumentoEntradaItem item, LocalDate dataEmissao) {
+        if (item.getProduto() == null || Boolean.TRUE.equals(item.getEntradaEstoqueAplicada())) {
+            return;
+        }
+
+        EntradaEstoqueDto entradaDto = new EntradaEstoqueDto();
+        entradaDto.setQuantidade(item.getQuantidade().doubleValue());
+        entradaDto.setPrecoUnitario(item.getValorUnitario().doubleValue());
+        entradaDto.setDataEntrada(dataEmissao.atStartOfDay());
+
+        insumoService.aplicarEntradaEstoque(item.getProduto().getId(), entradaDto);
+
+        item.setEntradaEstoqueAplicada(true);
+        itemInterface.save(item);
     }
 
     private DadosNfeExtraidos simularExtracaoXml(MultipartFile file) {
@@ -210,6 +237,10 @@ public class SDocumentoEntrada {
     public DocumentoEntradaRespostaDto cadastrarReciboSimples(ReciboSimplesCadastroDto dto, String emailUsuarioLogado) {
         resolveUsuarioModulo(emailUsuarioLogado);
 
+        EInsumo produto = insumoInterface.findByIdAndStatus(dto.getProdutoId(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Produto não encontrado ou inativo. Cadastre o produto no catálogo antes de lançar o recibo."));
+
         EDocumentoEntrada documento = new EDocumentoEntrada();
         documento.setTipoDocumento(EnTipoDocumentoFinanceiro.RECIBO_SIMPLES);
         documento.setStatusAprovacao(EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO);
@@ -224,18 +255,23 @@ public class SDocumentoEntrada {
             documento.setFornecedor(fornecedor);
         }
 
+        BigDecimal valorUnitario = dto.getValorTotal().divide(dto.getQuantidade(), 4, java.math.RoundingMode.HALF_UP);
+
         EDocumentoEntradaItem item = new EDocumentoEntradaItem();
         item.setDocumentoEntrada(documento);
         item.setDescricaoXml(dto.getDescricao().trim());
-        item.setQuantidade(BigDecimal.ONE);
-        item.setValorUnitario(dto.getValorTotal());
+        item.setQuantidade(dto.getQuantidade());
+        item.setValorUnitario(valorUnitario);
         item.setValorTotal(dto.getValorTotal());
-        item.setVinculado(false);
+        item.setProduto(produto);
+        item.setVinculado(true);
+        item.setVinculadoPorEmail(emailUsuarioLogado.trim());
+        item.setVinculadoEm(LocalDateTime.now());
         item.setNaturezaFinanceira(dto.getNaturezaFinanceira());
         documento.setItens(List.of(item));
 
-        // Não gera lançamento financeiro aqui: um recibo PENDENTE ainda não é despesa
-        // confirmada, e só deve compor o DRE após aprovarDocumento.
+        // Não gera lançamento financeiro nem entrada de estoque aqui: um recibo PENDENTE ainda
+        // não é despesa confirmada — ambos só se aplicam após aprovarDocumento.
         EDocumentoEntrada salvo = documentoInterface.save(documento);
         return toRespostaDto(salvo);
     }
@@ -260,9 +296,58 @@ public class SDocumentoEntrada {
 
         for (EDocumentoEntradaItem item : salvo.getItens()) {
             lancamentoFinanceiroService.registrarOuAtualizarSaidaItemDocumento(item, emailUsuarioLogado);
+            aplicarEntradaEstoqueSeNecessario(item, salvo.getDataEmissao());
         }
 
         return toRespostaDto(salvo);
+    }
+
+    /**
+     * Exclui/estorna um documento de entrada já lançado: reverte a entrada de estoque aplicada
+     * (se houver) e o lançamento financeiro correspondente, e inativa o documento. Restrito aos
+     * mesmos perfis do módulo (Gerente, Administrador, Financeiro).
+     *
+     * Limitação conhecida: o custo médio ponderado do produto não é recalculado retroativamente
+     * ao "como era antes" desta entrada (isso exigiria um histórico completo de movimentações) —
+     * apenas a quantidade é revertida do saldo. Bloqueamos a exclusão se o saldo já foi consumido
+     * a ponto de não comportar a reversão (ficaria negativo).
+     */
+    @Transactional
+    public String excluirDocumento(Long idDocumento, String emailUsuarioLogado) {
+        resolveUsuarioModulo(emailUsuarioLogado);
+
+        EDocumentoEntrada documento = documentoInterface.findById(idDocumento)
+                .filter(d -> d.getStatus() == EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Documento não encontrado."));
+
+        for (EDocumentoEntradaItem item : documento.getItens()) {
+            if (Boolean.TRUE.equals(item.getEntradaEstoqueAplicada()) && item.getProduto() != null) {
+                EInsumo produto = item.getProduto();
+                double saldoAtual = produto.getSaldoAtual() != null ? produto.getSaldoAtual() : 0.0;
+                double quantidade = item.getQuantidade().doubleValue();
+                if (saldoAtual < quantidade) {
+                    throw new IllegalArgumentException(String.format(
+                            "Não é possível excluir: o produto \"%s\" já teve parte deste estoque consumida "
+                                    + "(saldo atual %.2f, quantidade desta entrada %.2f).",
+                            produto.getNome(), saldoAtual, quantidade));
+                }
+            }
+        }
+
+        for (EDocumentoEntradaItem item : documento.getItens()) {
+            if (Boolean.TRUE.equals(item.getEntradaEstoqueAplicada()) && item.getProduto() != null) {
+                EInsumo produto = item.getProduto();
+                double saldoAtual = produto.getSaldoAtual() != null ? produto.getSaldoAtual() : 0.0;
+                produto.setSaldoAtual(saldoAtual - item.getQuantidade().doubleValue());
+                insumoInterface.save(produto);
+            }
+            lancamentoFinanceiroService.estornarSaidaItemDocumento(item);
+        }
+
+        documento.setStatus(EnStatus.I);
+        documentoInterface.save(documento);
+
+        return "Documento excluído com sucesso.";
     }
 
     @Transactional
@@ -385,6 +470,7 @@ public class SDocumentoEntrada {
 
         if (salvo.getDocumentoEntrada().getStatusAprovacao() == EnStatusAprovacaoFinanceira.APROVADO) {
             lancamentoFinanceiroService.registrarOuAtualizarSaidaItemDocumento(salvo, emailUsuarioLogado);
+            aplicarEntradaEstoqueSeNecessario(salvo, salvo.getDocumentoEntrada().getDataEmissao());
         }
 
         return toItemRespostaDto(salvo);
@@ -403,7 +489,7 @@ public class SDocumentoEntrada {
     @Transactional
     public List<DocumentoEntradaRespostaDto> listarTodos(String emailUsuarioLogado) {
         resolveUsuarioModulo(emailUsuarioLogado);
-        return documentoInterface.findAllByOrderByDataEntradaDesc()
+        return documentoInterface.findByStatusOrderByDataEntradaDesc(EnStatus.A)
                 .stream().map(this::toRespostaDto).collect(Collectors.toList());
     }
 

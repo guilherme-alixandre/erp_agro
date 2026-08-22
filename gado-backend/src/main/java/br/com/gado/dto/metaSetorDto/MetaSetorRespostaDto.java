@@ -29,6 +29,12 @@ public class MetaSetorRespostaDto {
     /** (quantidadeRealizada / quantidadeEsperada) * 100, arredondado em 2 casas. */
     private Double percentualProgresso;
 
+    /** Soma de litros vendidos (EVendaMetaLote) — só se aplica a metas de LEITE. */
+    private Double quantidadeVendida;
+
+    /** (quantidadeVendida / quantidadeEsperada) * 100, arredondado em 2 casas. */
+    private Double percentualVendido;
+
     /** quantidadeRealizada * precoMedio */
     private Double valorRealizado;
 

@@ -9,12 +9,15 @@ import {
   cadastrarInsumoEstoque,
   atualizarInsumoEstoque,
   registrarEntradaEstoque,
+  inativarInsumoEstoque,
+  reativarInsumoEstoque,
 } from '../integration/insumoApi'
 import { listarUnidadesMedida } from '../integration/unidadeMedidaApi'
 import {
   atualizarGrupoProduto,
   cadastrarGrupoProduto,
   deletarGrupoProduto,
+  reativarGrupoProduto,
   listarGruposProduto,
 } from '../integration/grupoProdutoApi'
 import '../../animais/styles/animais.css'
@@ -66,12 +69,15 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   const [grupoFormData, setGrupoFormData] = useState(defaultGrupoForm)
   const [grupoFormFeedback, setGrupoFormFeedback] = useState('')
   const [isSavingGrupo, setIsSavingGrupo] = useState(false)
+  const [grupoSearch, setGrupoSearch] = useState('')
+  const [grupoActiveSearch, setGrupoActiveSearch] = useState('')
+  const [grupoStatusFiltro, setGrupoStatusFiltro] = useState('ATIVO')
 
-  const fetchGrupos = useCallback(async () => {
+  const fetchGrupos = useCallback(async (termo, statusFiltro) => {
     setIsLoadingGrupos(true)
     setGruposFeedback({ type: '', message: '' })
     try {
-      const list = await listarGruposProduto('')
+      const list = await listarGruposProduto(termo ?? '', statusFiltro ?? 'ATIVO')
       setGrupos(list)
     } catch (error) {
       setGruposFeedback({
@@ -82,6 +88,25 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       setIsLoadingGrupos(false)
     }
   }, [])
+
+  function handleGrupoSearchSubmit(event) {
+    event.preventDefault()
+    const termo = grupoSearch.trim()
+    setGrupoActiveSearch(termo)
+    fetchGrupos(termo, grupoStatusFiltro)
+  }
+
+  function handleGrupoClearSearch() {
+    setGrupoSearch('')
+    setGrupoActiveSearch('')
+    fetchGrupos('', grupoStatusFiltro)
+  }
+
+  function handleGrupoStatusFiltroChange(event) {
+    const novoStatus = event.target.value
+    setGrupoStatusFiltro(novoStatus)
+    fetchGrupos(grupoActiveSearch, novoStatus)
+  }
 
   function closeGrupoModal() {
     setGrupoModal({ open: false, grupo: null })
@@ -143,11 +168,25 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     try {
       await deletarGrupoProduto(grupo.id)
       setGruposFeedback({ type: 'info', message: 'Grupo inativado com sucesso.' })
-      await fetchGrupos()
+      await fetchGrupos(grupoActiveSearch, grupoStatusFiltro)
     } catch (error) {
       setGruposFeedback({
         type: 'error',
         message: error.message || 'Falha ao inativar o grupo.',
+      })
+    }
+  }
+
+  async function handleReativarGrupo(grupo) {
+    setGruposFeedback({ type: '', message: '' })
+    try {
+      await reativarGrupoProduto(grupo.id)
+      setGruposFeedback({ type: 'info', message: 'Grupo reativado com sucesso.' })
+      await fetchGrupos(grupoActiveSearch, grupoStatusFiltro)
+    } catch (error) {
+      setGruposFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao reativar o grupo.',
       })
     }
   }
@@ -168,12 +207,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   const [entradaFormData, setEntradaFormData] = useState(defaultEntradaForm)
   const [entradaFeedback, setEntradaFeedback] = useState('')
   const [isSavingEntrada, setIsSavingEntrada] = useState(false)
+  const [estoqueStatusFiltro, setEstoqueStatusFiltro] = useState('ATIVO')
 
-  const fetchEstoque = useCallback(async (termo) => {
+  const fetchEstoque = useCallback(async (termo, statusFiltro) => {
     setIsLoadingEstoque(true)
     setEstoqueFeedback({ type: '', message: '' })
     try {
-      const list = await listarEstoque(termo)
+      const list = await listarEstoque(termo, statusFiltro ?? 'ATIVO')
       setInsumosEstoque(list)
     } catch (error) {
       setEstoqueFeedback({
@@ -186,8 +226,8 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   }, [])
 
   useEffect(() => {
-    fetchEstoque('')
-    fetchGrupos()
+    fetchEstoque('', 'ATIVO')
+    fetchGrupos('', 'ATIVO')
     listarUnidadesMedida()
       .then(setUnidades)
       .catch(() => setUnidades([]))
@@ -197,13 +237,43 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     event.preventDefault()
     const termo = estoqueSearch.trim()
     setEstoqueActiveSearch(termo)
-    fetchEstoque(termo)
+    fetchEstoque(termo, estoqueStatusFiltro)
   }
 
   function handleEstoqueClearSearch() {
     setEstoqueSearch('')
     setEstoqueActiveSearch('')
-    fetchEstoque('')
+    fetchEstoque('', estoqueStatusFiltro)
+  }
+
+  function handleEstoqueStatusFiltroChange(event) {
+    const novoStatus = event.target.value
+    setEstoqueStatusFiltro(novoStatus)
+    fetchEstoque(estoqueActiveSearch, novoStatus)
+  }
+
+  async function handleInativarProduto(insumo) {
+    const confirmar = window.confirm(`Deseja inativar o produto "${insumo.nome}"?`)
+    if (!confirmar) return
+    setEstoqueFeedback({ type: '', message: '' })
+    try {
+      await inativarInsumoEstoque(insumo.id, currentUser.email)
+      setEstoqueFeedback({ type: 'info', message: 'Produto inativado com sucesso.' })
+      await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
+    } catch (error) {
+      setEstoqueFeedback({ type: 'error', message: error.message || 'Falha ao inativar o produto.' })
+    }
+  }
+
+  async function handleReativarProduto(insumo) {
+    setEstoqueFeedback({ type: '', message: '' })
+    try {
+      await reativarInsumoEstoque(insumo.id, currentUser.email)
+      setEstoqueFeedback({ type: 'info', message: 'Produto reativado com sucesso.' })
+      await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
+    } catch (error) {
+      setEstoqueFeedback({ type: 'error', message: error.message || 'Falha ao reativar o produto.' })
+    }
   }
 
   function closeEstoqueModal() {
@@ -271,7 +341,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         setEstoqueFeedback({ type: 'info', message: 'Produto atualizado com sucesso.' })
       }
       closeEstoqueModal()
-      await fetchEstoque(estoqueActiveSearch)
+      await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
     } catch (error) {
       setEstoqueFormFeedback(error.message || 'Falha ao salvar o produto.')
     } finally {
@@ -288,7 +358,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       await registrarEntradaEstoque(estoqueModal.insumo.id, currentUser.email, entradaFormData)
       setEstoqueFeedback({ type: 'info', message: 'Entrada de estoque registrada com sucesso.' })
       closeEstoqueModal()
-      await fetchEstoque(estoqueActiveSearch)
+      await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
     } catch (error) {
       setEntradaFeedback(error.message || 'Falha ao registrar a entrada de estoque.')
     } finally {
@@ -431,6 +501,16 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                 ) : null}
               </form>
 
+              <select
+                className="toolbar-select"
+                value={estoqueStatusFiltro}
+                onChange={handleEstoqueStatusFiltroChange}
+              >
+                <option value="ATIVO">Ativos</option>
+                <option value="INATIVO">Inativos</option>
+                <option value="TODOS">Todos</option>
+              </select>
+
               {canGerenciarEstoque ? (
                 <button type="button" className="btn-new-entity" onClick={openCreateEstoqueModal}>
                   + Novo Produto
@@ -473,6 +553,9 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                         <td className="codigo-produto">{insumo.codigoProduto || '—'}</td>
                         <td>
                           {insumo.nome}
+                          {insumo.status === 'INATIVO' ? (
+                            <span className="setor-badge setor-badge--inativo estoque-badge">Inativo</span>
+                          ) : null}
                           {insumo.abaixoDoEstoqueMinimo ? (
                             <span className="vacina-badge vacina-badge--pendente estoque-badge">
                               Abaixo do mínimo
@@ -497,22 +580,39 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                         <td>
                           <div className="row-actions">
                             {canGerenciarEstoque ? (
-                              <>
+                              insumo.status === 'INATIVO' ? (
                                 <button
                                   type="button"
                                   className="btn-row"
-                                  onClick={() => openEntradaModal(insumo)}
+                                  onClick={() => handleReativarProduto(insumo)}
                                 >
-                                  Registrar Entrada
+                                  Reativar
                                 </button>
-                                <button
-                                  type="button"
-                                  className="btn-row btn-row--edit"
-                                  onClick={() => openEditEstoqueModal(insumo)}
-                                >
-                                  Editar
-                                </button>
-                              </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-row"
+                                    onClick={() => openEntradaModal(insumo)}
+                                  >
+                                    Registrar Entrada
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--edit"
+                                    onClick={() => openEditEstoqueModal(insumo)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--danger"
+                                    onClick={() => handleInativarProduto(insumo)}
+                                  >
+                                    Inativar
+                                  </button>
+                                </>
+                              )
                             ) : (
                               <span>—</span>
                             )}
@@ -538,6 +638,36 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
             ) : null}
 
             <div className="data-toolbar">
+              <form className="toolbar-search" onSubmit={handleGrupoSearchSubmit}>
+                <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                <input
+                  type="text"
+                  value={grupoSearch}
+                  onChange={(e) => setGrupoSearch(e.target.value)}
+                  placeholder="Buscar grupo por nome"
+                />
+                {grupoActiveSearch ? (
+                  <button
+                    type="button"
+                    className="toolbar-search__clear"
+                    onClick={handleGrupoClearSearch}
+                    aria-label="Limpar busca"
+                  >
+                    ✕
+                  </button>
+                ) : null}
+              </form>
+
+              <select
+                className="toolbar-select"
+                value={grupoStatusFiltro}
+                onChange={handleGrupoStatusFiltroChange}
+              >
+                <option value="ATIVO">Ativos</option>
+                <option value="INATIVO">Inativos</option>
+                <option value="TODOS">Todos</option>
+              </select>
+
               <p className="animals-count">
                 {isLoadingGrupos
                   ? 'Carregando...'
@@ -578,27 +708,42 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                     grupos.map((grupo) => (
                       <tr key={grupo.id}>
                         <td className="codigo-produto">{grupo.codigoPrefixo}</td>
-                        <td>{grupo.nome}</td>
+                        <td>
+                          {grupo.nome}
+                          {grupo.status === 'INATIVO' ? (
+                            <span className="setor-badge setor-badge--inativo estoque-badge">Inativo</span>
+                          ) : null}
+                        </td>
                         <td>{grupo.naturezaFinanceira === 'CUSTO' ? 'Custo' : 'Gasto'}</td>
                         <td>
                           <div className="row-actions">
                             {canGerenciarEstoque ? (
-                              <>
+                              grupo.status === 'INATIVO' ? (
                                 <button
                                   type="button"
-                                  className="btn-row btn-row--edit"
-                                  onClick={() => openEditGrupoModal(grupo)}
+                                  className="btn-row"
+                                  onClick={() => handleReativarGrupo(grupo)}
                                 >
-                                  Editar
+                                  Reativar
                                 </button>
-                                <button
-                                  type="button"
-                                  className="btn-row btn-row--danger"
-                                  onClick={() => handleDeletarGrupo(grupo)}
-                                >
-                                  Inativar
-                                </button>
-                              </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--edit"
+                                    onClick={() => openEditGrupoModal(grupo)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--danger"
+                                    onClick={() => handleDeletarGrupo(grupo)}
+                                  >
+                                    Inativar
+                                  </button>
+                                </>
+                              )
                             ) : (
                               <span>—</span>
                             )}
