@@ -5,6 +5,7 @@ import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
 import br.com.gado.dto.loteDto.LotePutDto;
 import br.com.gado.dto.loteDto.TransferenciaAnimalDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SLote;
 import br.com.gado.services.SPdfRelatorio;
 import jakarta.validation.Valid;
@@ -52,31 +53,22 @@ public class CLote {
     }
 
     @PostMapping
-    public String postLote(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody LoteCadastroDto dto) {
-        return loteService.cadastra(emailUsuario, dto);
+    public String postLote(@Valid @RequestBody LoteCadastroDto dto) {
+        return loteService.cadastra(SecurityUtils.currentUserEmail(), dto);
     }
 
     @PutMapping("/{id}")
-    public String putLote(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody LotePutDto dto) {
-        return loteService.altera(id, emailUsuario, dto);
+    public String putLote(@PathVariable Long id, @Valid @RequestBody LotePutDto dto) {
+        return loteService.altera(id, SecurityUtils.currentUserEmail(), dto);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteLote(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return loteService.deleta(id, emailUsuario);
+    public String deleteLote(@PathVariable Long id) {
+        return loteService.deleta(id, SecurityUtils.currentUserEmail());
     }
 
     @PostMapping("/transferir-animal")
-    public String transferirAnimal(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody TransferenciaAnimalDto dto) {
-        return loteService.transferirAnimal(emailUsuario, dto);
+    public String transferirAnimal(@Valid @RequestBody TransferenciaAnimalDto dto) {
+        return loteService.transferirAnimal(SecurityUtils.currentUserEmail(), dto);
     }
 }

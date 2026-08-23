@@ -29,11 +29,6 @@ function getUsuarioDoPayload(payload) {
   return null
 }
 
-function adminHeaders(adminEmail) {
-  if (!adminEmail) return {}
-  return { 'X-Admin-Email': String(adminEmail).trim() }
-}
-
 async function buscarUsuarioPorEmail(email) {
   const emailCodificado = encodeURIComponent(email.trim())
   const payload = await request(`/usuarios/${emailCodificado}`)
@@ -46,41 +41,34 @@ async function buscarUsuarioPorEmail(email) {
   return usuario
 }
 
-function cadastrarUsuario(usuario, adminEmail) {
+function cadastrarUsuario(usuario) {
   return request('/usuarios', {
     method: 'POST',
-    headers: adminHeaders(adminEmail),
     body: JSON.stringify(toCadastroPayload(usuario)),
   })
 }
 
-async function listarUsuarios(adminEmail) {
-  const payload = await request('/usuarios', {
-    headers: adminHeaders(adminEmail),
-  })
+async function listarUsuarios() {
+  const payload = await request('/usuarios')
   if (!Array.isArray(payload)) {
     throw new Error('Resposta inesperada ao listar usuários.')
   }
   return payload
 }
 
-async function atualizarUsuario(email, data, adminEmail) {
+async function atualizarUsuario(email, data) {
   const emailCodificado = encodeURIComponent(String(email).trim())
   const payload = await request(`/usuarios/${emailCodificado}`, {
     method: 'PUT',
-    headers: adminHeaders(adminEmail),
     body: JSON.stringify(data),
   })
   const usuario = getUsuarioDoPayload(payload)
   return usuario ?? payload
 }
 
-function deletarUsuario(email, adminEmail) {
+function deletarUsuario(email) {
   const emailCodificado = encodeURIComponent(String(email).trim())
-  return request(`/usuarios/${emailCodificado}`, {
-    method: 'DELETE',
-    headers: adminHeaders(adminEmail),
-  })
+  return request(`/usuarios/${emailCodificado}`, { method: 'DELETE' })
 }
 
 async function loginUsuario(email, senha) {
@@ -97,7 +85,7 @@ async function loginUsuario(email, senha) {
     throw new Error(payload?.Erro ?? payload?.erro ?? 'Credenciais inválidas.')
   }
 
-  return usuario
+  return { usuario, token: payload?.token ?? null }
 }
 
 async function verificarCredenciais(email, senha) {

@@ -4,9 +4,9 @@ function sanitizeText(value) {
   return String(value ?? '').trim()
 }
 
-function usuarioHeaders(email) {
-  const emailLimpo = sanitizeText(email)
-  return emailLimpo ? { 'X-Usuario-Email': emailLimpo } : {}
+// Autenticação agora é feita via o token JWT anexado automaticamente pelo apiClient.
+function usuarioHeaders() {
+  return {}
 }
 
 function normalizeItem(raw) {
@@ -69,9 +69,10 @@ async function listarPendentesAprovacao(email) {
 
 // ── Importação / cadastro ──────────────────────────────────────────────
 
-async function importarNfeXml(email, file) {
+async function importarNfeXml(email, file, fornecedorId) {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('fornecedorId', fornecedorId)
   const payload = await request('/documentos-entrada/importar-nfe', {
     method: 'POST',
     headers: usuarioHeaders(email),

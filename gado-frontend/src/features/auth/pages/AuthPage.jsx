@@ -25,8 +25,8 @@ function AuthPage({ onLogin, sessionFeedback }) {
     setLoginFeedback({ type: '', message: '' })
 
     try {
-      const usuario = await loginUsuario(loginForm.email, loginForm.senha)
-      onLogin(usuario)
+      const { usuario, token } = await loginUsuario(loginForm.email, loginForm.senha)
+      onLogin(usuario, token)
       setLoginForm(defaultLoginForm)
     } catch (error) {
       setLoginFeedback({

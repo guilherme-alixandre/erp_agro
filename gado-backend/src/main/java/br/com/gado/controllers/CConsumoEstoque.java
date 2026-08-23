@@ -5,6 +5,7 @@ import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueCancelamentoDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueEdicaoDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueResumoItemDto;
 import br.com.gado.dto.consumoEstoqueDto.ConsumoEstoqueRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SConsumoEstoque;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,27 +46,23 @@ public class CConsumoEstoque {
     }
 
     @PostMapping
-    public ResponseEntity<ConsumoEstoqueRespostaDto> registrarConsumo(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody ConsumoEstoqueCadastroDto dto) {
+    public ResponseEntity<ConsumoEstoqueRespostaDto> registrarConsumo(@Valid @RequestBody ConsumoEstoqueCadastroDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         consumoEstoqueService.validaUsuarioAtivo(emailUsuario);
         ConsumoEstoqueRespostaDto criado = consumoEstoqueService.registrarConsumo(dto, emailUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ConsumoEstoqueRespostaDto> editarConsumo(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody ConsumoEstoqueEdicaoDto dto) {
-        return ResponseEntity.ok(consumoEstoqueService.editarConsumo(id, dto, emailUsuario));
+    public ResponseEntity<ConsumoEstoqueRespostaDto> editarConsumo(@PathVariable Long id, @Valid @RequestBody ConsumoEstoqueEdicaoDto dto) {
+        return ResponseEntity.ok(consumoEstoqueService.editarConsumo(id, dto, SecurityUtils.currentUserEmail()));
     }
 
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<ConsumoEstoqueRespostaDto> cancelarConsumo(
             @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @Valid @RequestBody ConsumoEstoqueCancelamentoDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         consumoEstoqueService.validaUsuarioAtivo(emailUsuario);
         ConsumoEstoqueRespostaDto cancelado = consumoEstoqueService.cancelarConsumo(id, dto, emailUsuario);
         return ResponseEntity.ok(cancelado);

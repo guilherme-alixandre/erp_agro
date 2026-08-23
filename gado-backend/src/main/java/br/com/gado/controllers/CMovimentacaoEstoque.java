@@ -1,8 +1,11 @@
 package br.com.gado.controllers;
 
 import br.com.gado.dto.MovimentacaoEstoqueDTO;
+import br.com.gado.dto.movimentacaoEstoqueDto.MovimentacaoEstoqueRespostaDto;
 import br.com.gado.services.SMovimentacaoEstoque;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -13,6 +16,11 @@ public class CMovimentacaoEstoque {
 
     public CMovimentacaoEstoque(SMovimentacaoEstoque movimetacaoEstoqueService) {
         this.movimetacaoEstoqueService = movimetacaoEstoqueService;
+    }
+
+    @GetMapping
+    public List<MovimentacaoEstoqueRespostaDto> listar(@RequestParam(required = false) Long insumoId) {
+        return movimetacaoEstoqueService.listarTodas(insumoId);
     }
 
     @GetMapping("/{movimentacaoEstoqueId}")

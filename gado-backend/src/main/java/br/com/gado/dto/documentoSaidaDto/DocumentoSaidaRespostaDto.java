@@ -18,6 +18,8 @@ public class DocumentoSaidaRespostaDto {
     private LocalDate dataEmissao;
     private BigDecimal valorTotal;
     private String criadoPorEmail;
+    private Long compradorId;
+    private String compradorNome;
 
     private List<ItemLeiteDto> itensLeite = new ArrayList<>();
     private List<ItemAnimalDto> itensAnimal = new ArrayList<>();

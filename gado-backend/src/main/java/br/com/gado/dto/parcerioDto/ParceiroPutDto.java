@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 public class ParceiroPutDto {
     private String nome;
+    private String email;
     private String endereco;
     private String telefone;
     private EnTipoParceiro tipo;

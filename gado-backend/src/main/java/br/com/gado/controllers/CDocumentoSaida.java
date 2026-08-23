@@ -3,6 +3,7 @@ package br.com.gado.controllers;
 import br.com.gado.dto.documentoSaidaDto.DocumentoSaidaRespostaDto;
 import br.com.gado.dto.documentoSaidaDto.VendaAnimalCadastroDto;
 import br.com.gado.dto.documentoSaidaDto.VendaLeiteCadastroDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SDocumentoSaida;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +22,19 @@ public class CDocumentoSaida {
     private SDocumentoSaida documentoSaidaService;
 
     @GetMapping
-    public List<DocumentoSaidaRespostaDto> listarTodos(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return documentoSaidaService.listarTodos(emailUsuario);
+    public List<DocumentoSaidaRespostaDto> listarTodos() {
+        return documentoSaidaService.listarTodos(SecurityUtils.currentUserEmail());
     }
 
     @PostMapping("/venda-leite")
-    public ResponseEntity<DocumentoSaidaRespostaDto> cadastrarVendaLeite(
-            @Valid @RequestBody VendaLeiteCadastroDto dto,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(documentoSaidaService.cadastrarVendaLeite(dto, emailUsuario));
+    public ResponseEntity<DocumentoSaidaRespostaDto> cadastrarVendaLeite(@Valid @RequestBody VendaLeiteCadastroDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(documentoSaidaService.cadastrarVendaLeite(dto, SecurityUtils.currentUserEmail()));
     }
 
     @PostMapping("/venda-animal")
-    public ResponseEntity<DocumentoSaidaRespostaDto> cadastrarVendaAnimal(
-            @Valid @RequestBody VendaAnimalCadastroDto dto,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(documentoSaidaService.cadastrarVendaAnimal(dto, emailUsuario));
+    public ResponseEntity<DocumentoSaidaRespostaDto> cadastrarVendaAnimal(@Valid @RequestBody VendaAnimalCadastroDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(documentoSaidaService.cadastrarVendaAnimal(dto, SecurityUtils.currentUserEmail()));
     }
 }

@@ -6,6 +6,7 @@ import br.com.gado.dto.unidadeMedidaDto.UnidadeMedidaRespostaDto;
 import br.com.gado.services.SUnidadeMedida;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,21 +31,25 @@ public class CUnidadeMedida {
         return unidadeMedidaService.buscarPorId(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PostMapping
     public UnidadeMedidaRespostaDto postUnidade(@Valid @RequestBody UnidadeMedidaCadastroDto dto) {
         return unidadeMedidaService.criar(dto);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PutMapping("/{id}")
     public UnidadeMedidaRespostaDto putUnidade(@PathVariable Long id, @Valid @RequestBody UnidadeMedidaPutDto dto) {
         return unidadeMedidaService.atualizar(id, dto);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @DeleteMapping("/{id}")
     public String deleteUnidade(@PathVariable Long id) {
         return unidadeMedidaService.inativar(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PutMapping("/{id}/reativar")
     public String reativarUnidade(@PathVariable Long id) {
         return unidadeMedidaService.reativar(id);

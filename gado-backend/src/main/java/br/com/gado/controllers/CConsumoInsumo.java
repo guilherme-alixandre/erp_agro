@@ -4,6 +4,7 @@ import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoCadastroDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoEdicaoDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoResumoItemDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SConsumoInsumo;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,19 +45,15 @@ public class CConsumoInsumo {
     }
 
     @PostMapping
-    public ResponseEntity<ConsumoInsumoRespostaDto> registrarConsumo(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody ConsumoInsumoCadastroDto dto) {
+    public ResponseEntity<ConsumoInsumoRespostaDto> registrarConsumo(@Valid @RequestBody ConsumoInsumoCadastroDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         consumoInsumoService.validaUsuarioAtivo(emailUsuario);
         ConsumoInsumoRespostaDto criado = consumoInsumoService.registrarConsumo(dto, emailUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ConsumoInsumoRespostaDto> editarConsumo(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @PathVariable Long id,
-            @Valid @RequestBody ConsumoInsumoEdicaoDto dto) {
-        return ResponseEntity.ok(consumoInsumoService.editarConsumo(id, dto, emailUsuario));
+    public ResponseEntity<ConsumoInsumoRespostaDto> editarConsumo(@PathVariable Long id, @Valid @RequestBody ConsumoInsumoEdicaoDto dto) {
+        return ResponseEntity.ok(consumoInsumoService.editarConsumo(id, dto, SecurityUtils.currentUserEmail()));
     }
 }

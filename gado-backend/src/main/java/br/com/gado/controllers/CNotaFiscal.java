@@ -1,6 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.dto.notaFiscalDto.NotaFiscalResumoDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SNotaFiscal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +21,7 @@ public class CNotaFiscal {
     public List<NotaFiscalResumoDto> listar(
             @RequestParam(required = false) String numero,
             @RequestParam(required = false) String chave,
-            @RequestParam(required = false) String direcao,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return notaFiscalService.listar(numero, chave, direcao, emailUsuario);
+            @RequestParam(required = false) String direcao) {
+        return notaFiscalService.listar(numero, chave, direcao, SecurityUtils.currentUserEmail());
     }
 }

@@ -1,6 +1,23 @@
 // Configuração baseada no ambiente
 const API_BASE_URL = 'http://localhost:8080/api'
 
+const TOKEN_STORAGE_KEY = 'erp_agro_token'
+let authToken = localStorage.getItem(TOKEN_STORAGE_KEY)
+let onUnauthorized = null
+
+function setAuthToken(token) {
+  authToken = token || null
+  if (authToken) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, authToken)
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+  }
+}
+
+function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+
 
 const ERROR_MESSAGES = {
     400: 'Não foi possível concluir a operação. Verifique os dados e tente novamente.',
@@ -74,6 +91,7 @@ async function request(path, options = {}) {
             headers: {
                 'Accept': 'application/json',
                 ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
                 ...(options.headers ?? {}),
             },
         })
@@ -81,6 +99,10 @@ async function request(path, options = {}) {
         throw new Error(
             'Não foi possível conectar ao servidor. Verifique sua conexão e se o backend está rodando.'
         )
+    }
+
+    if (response.status === 401 && onUnauthorized) {
+        onUnauthorized()
     }
 
     // Lê resposta como texto (alguns servidores retornam JSON com Content-Type errado)
@@ -112,4 +134,4 @@ async function request(path, options = {}) {
     return payload
 }
 
-export { API_BASE_URL, request }
+export { API_BASE_URL, request, setAuthToken, setUnauthorizedHandler }

@@ -1,6 +1,8 @@
 package br.com.gado.services;
 
 import br.com.gado.dto.OcorrenciaAnimalDTO;
+import br.com.gado.dto.ocorrenciaAnimalDto.OcorrenciaAnimalCadastroDto;
+import br.com.gado.dto.ocorrenciaAnimalDto.OcorrenciaAnimalRespostaDto;
 import br.com.gado.entities.EAnimal;
 import br.com.gado.entities.EOcorrenciaAnimal;
 import br.com.gado.enums.EnStatus;
@@ -11,6 +13,9 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SOcorrenciaAnimal {
@@ -64,6 +69,36 @@ public class SOcorrenciaAnimal {
             log.error("Erro ao atualizar a ocorrência animal Id: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    public List<OcorrenciaAnimalRespostaDto> listarPorAnimal(Long animalId) {
+        return ocorrenciaAnimalInterface
+                .findByIdAnimal_IdAndStatusOrderByDataOcorrenciaDesc(animalId, EnStatus.A)
+                .stream()
+                .map(this::toRespostaDto)
+                .collect(Collectors.toList());
+    }
+
+    public OcorrenciaAnimalRespostaDto criarOcorrenciaPorAnimalId(OcorrenciaAnimalCadastroDto dto) {
+        EAnimal animal = animalInterface.findByIdAndStatus(dto.getAnimalId(), EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Animal não encontrado ou inativo."));
+
+        EOcorrenciaAnimal ocorrencia = new EOcorrenciaAnimal();
+        ocorrencia.setTipoOcorrencia(dto.getTipoOcorrencia());
+        ocorrencia.setDataOcorrencia(dto.getDataOcorrencia());
+        ocorrencia.setObservacao(dto.getObservacao());
+        ocorrencia.setIdAnimal(animal);
+
+        return toRespostaDto(ocorrenciaAnimalInterface.save(ocorrencia));
+    }
+
+    private OcorrenciaAnimalRespostaDto toRespostaDto(EOcorrenciaAnimal ocorrencia) {
+        OcorrenciaAnimalRespostaDto dto = new OcorrenciaAnimalRespostaDto();
+        dto.setId(ocorrencia.getId());
+        dto.setTipoOcorrencia(ocorrencia.getTipoOcorrencia());
+        dto.setDataOcorrencia(ocorrencia.getDataOcorrencia());
+        dto.setObservacao(ocorrencia.getObservacao());
+        return dto;
     }
 
     public String excluirOcorrenciaAnimal(Long ocorrenciaAnimalId) {

@@ -4,11 +4,14 @@ import br.com.gado.dto.usuarioDto.UsuarioCadastroDto;
 import br.com.gado.dto.usuarioDto.UsuarioDto;
 import br.com.gado.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.dto.usuarioDto.UsuarioPutDto;
+import br.com.gado.dto.usuarioDto.UsuarioResumoDto;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IUsuario;
+import br.com.gado.security.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +37,9 @@ public class SUsuario {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Transactional(readOnly = true)
     public UsuarioDto encontraPorEmail(String email) {
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
@@ -53,6 +59,19 @@ public class SUsuario {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    @Transactional(readOnly = true)
+    public ArrayList<UsuarioResumoDto> buscarResumoTodosAtivos() {
+        return usuarioInterface.findAllByStatus(EnStatus.A).stream()
+                .map(usuario -> {
+                    UsuarioResumoDto resumo = new UsuarioResumoDto();
+                    resumo.setId(usuario.getId());
+                    resumo.setNome(usuario.getNome());
+                    resumo.setEmail(usuario.getEmail());
+                    return resumo;
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
     @Transactional
     public UsuarioDto cadastra(UsuarioCadastroDto dto) {
 
@@ -60,7 +79,7 @@ public class SUsuario {
             throw new RuntimeException("usuário já existe no sistema");
 
         EUsuario usuario = modelMapper.map(dto, EUsuario.class);
-        usuario.setSenha(sha256Hex(dto.getSenha()));
+        usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setDataCadastro(LocalDateTime.now());
 
         EUsuario usuarioSalvo = usuarioInterface.save(usuario);
@@ -83,22 +102,31 @@ public class SUsuario {
             throw new IllegalArgumentException("Credenciais inválidas.");
         }
 
-        String candidatoHash = sha256Hex(dto.getSenha());
-
-        if (isSha256Hex(senhaArmazenada)) {
-            if (!senhaArmazenada.equalsIgnoreCase(candidatoHash)) {
+        if (isBCrypt(senhaArmazenada)) {
+            if (!passwordEncoder.matches(dto.getSenha(), senhaArmazenada)) {
                 throw new IllegalArgumentException("Credenciais inválidas.");
             }
+        } else if (isSha256Hex(senhaArmazenada)) {
+            // Compatibilidade: senha antiga em SHA-256 puro — valida e faz o upgrade para BCrypt
+            if (!senhaArmazenada.equalsIgnoreCase(sha256Hex(dto.getSenha()))) {
+                throw new IllegalArgumentException("Credenciais inválidas.");
+            }
+            usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
+            usuarioInterface.save(usuario);
         } else {
-            // Compatibilidade: senha antiga em texto puro — valida e faz o upgrade para hash
+            // Compatibilidade: senha antiga em texto puro — valida e faz o upgrade para BCrypt
             if (!Objects.equals(senhaArmazenada, dto.getSenha())) {
                 throw new IllegalArgumentException("Credenciais inválidas.");
             }
-            usuario.setSenha(candidatoHash);
+            usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
             usuarioInterface.save(usuario);
         }
 
         return modelMapper.map(usuario, UsuarioDto.class);
+    }
+
+    private static boolean isBCrypt(String value) {
+        return value != null && value.matches("^\\$2[aby]?\\$\\d{2}\\$.{53}$");
     }
 
     private static boolean isSha256Hex(String value) {
@@ -139,6 +167,10 @@ public class SUsuario {
         EUsuario usuario = usuarioInterface.findByEmailAndStatus(email, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
+        if (dto.getPerfil() != null && !SecurityUtils.isAdministrador()) {
+            throw new IllegalArgumentException("Apenas administradores podem alterar o perfil de um usuário.");
+        }
+
         // Extrai e nulifica a senha antes do ModelMapper para evitar gravar texto puro
         String novaSenha = dto.getSenha();
         dto.setSenha(null);
@@ -147,7 +179,7 @@ public class SUsuario {
         modelMapper.map(dto, usuario);
 
         if (novaSenha != null && !novaSenha.isBlank()) {
-            usuario.setSenha(sha256Hex(novaSenha));
+            usuario.setSenha(passwordEncoder.encode(novaSenha));
         }
 
         EUsuario usuarioAtualizado = usuarioInterface.save(usuario);

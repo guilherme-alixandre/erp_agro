@@ -4,9 +4,9 @@ function sanitizeText(value) {
   return String(value ?? '').trim()
 }
 
-function usuarioHeaders(email) {
-  const emailLimpo = sanitizeText(email)
-  return emailLimpo ? { 'X-Usuario-Email': emailLimpo } : {}
+// Autenticação agora é feita via o token JWT anexado automaticamente pelo apiClient.
+function usuarioHeaders() {
+  return {}
 }
 
 function normalizeFuncionario(raw) {

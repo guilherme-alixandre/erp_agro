@@ -145,6 +145,9 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
           <button type="button" className="menu-item menu-item--active">
             Perfil
           </button>
+          <button type="button" className="menu-item" onClick={() => onNavigate('tarefas')}>
+            Tarefas
+          </button>
           {isAdmin ? (
             <button
               type="button"

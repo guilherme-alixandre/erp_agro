@@ -4,10 +4,12 @@ import br.com.gado.dto.insumoDto.EntradaEstoqueDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueCadastroDto;
 import br.com.gado.dto.insumoDto.InsumoEstoquePutDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueRespostaDto;
+import br.com.gado.entities.EAnimal;
 import br.com.gado.entities.EGrupoProduto;
 import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.EMovimentacaoEstoque;
 import br.com.gado.entities.EParceiro;
+import br.com.gado.entities.ESetor;
 import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -257,28 +260,44 @@ public class SInsumo {
         EInsumo insumoSalvo = insumoInterface.save(insumo);
 
         // Ledger imutável da entrada — mesma tabela que, no futuro, o importador de XML de NF-e usará.
-        EMovimentacaoEstoque movimentacao = new EMovimentacaoEstoque();
-        movimentacao.setEnTipoMovimentacaoEstoque(EnTipoMovimentacaoEstoque.ENTRADA);
-        movimentacao.setQuantidade(quantidadeEntrada);
-        movimentacao.setValorUnitario(precoUnitarioEntrada);
-        movimentacao.setDataMovimentacao(java.util.Date.from(
-                (dto.getDataEntrada() != null ? dto.getDataEntrada() : LocalDateTime.now())
-                        .atZone(java.time.ZoneId.systemDefault()).toInstant()));
-        movimentacao.setInsumoId(insumoSalvo);
-        movimentacao.setParceiroId(insumoSalvo.getParceiro());
-        movimentacaoEstoqueInterface.save(movimentacao);
+        registrarMovimentacao(insumoSalvo, EnTipoMovimentacaoEstoque.ENTRADA, quantidadeEntrada, precoUnitarioEntrada,
+                dto.getDataEntrada() != null ? dto.getDataEntrada() : LocalDateTime.now(),
+                insumoSalvo.getParceiro(), null, null);
 
         return toEstoqueRespostaDto(insumoSalvo);
     }
 
     /**
+     * Ponto único de escrita no histórico de movimentações de estoque (entradas, saídas,
+     * aplicações, perdas). Package-private — chamado pelos services que já validaram a
+     * permissão adequada à própria operação antes de chegar aqui.
+     */
+    void registrarMovimentacao(EInsumo insumo, EnTipoMovimentacaoEstoque tipo, double quantidade,
+                                Double valorUnitario, LocalDateTime dataMovimentacao,
+                                EParceiro parceiro, ESetor setor, EAnimal animal) {
+        EMovimentacaoEstoque movimentacao = new EMovimentacaoEstoque();
+        movimentacao.setEnTipoMovimentacaoEstoque(tipo);
+        movimentacao.setQuantidade(quantidade);
+        movimentacao.setValorUnitario(valorUnitario != null ? valorUnitario : 0.0);
+        movimentacao.setDataMovimentacao(java.util.Date.from(
+                (dataMovimentacao != null ? dataMovimentacao : LocalDateTime.now())
+                        .atZone(java.time.ZoneId.systemDefault()).toInstant()));
+        movimentacao.setInsumoId(insumo);
+        movimentacao.setParceiroId(parceiro);
+        movimentacao.setSetorId(setor);
+        movimentacao.setAnimalId(animal);
+        movimentacaoEstoqueInterface.save(movimentacao);
+    }
+
+    /**
      * Baixa simples de saldo (sem recalcular preço médio — venda não afeta o custo médio de
      * aquisição). Usado por SDocumentoSaida ao vender/abater um animal: debita 1 cabeça do
-     * produto da raça do animal. Package-private, sem checagem de permissão — o chamador já
-     * validou a permissão adequada à própria operação.
+     * produto da raça do animal, registrando a saída no histórico de movimentações. Package-
+     * private, sem checagem de permissão — o chamador já validou a permissão adequada à
+     * própria operação.
      */
     @Transactional
-    void baixarEstoque(Long produtoId, double quantidade) {
+    void baixarEstoque(Long produtoId, double quantidade, EAnimal animal, LocalDate dataMovimentacao) {
         EInsumo insumo = insumoInterface.findByIdAndStatus(produtoId, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado ou inativo."));
 
@@ -290,7 +309,12 @@ public class SInsumo {
         }
 
         insumo.setSaldoAtual(saldoAtual - quantidade);
-        insumoInterface.save(insumo);
+        EInsumo insumoSalvo = insumoInterface.save(insumo);
+
+        registrarMovimentacao(insumoSalvo, EnTipoMovimentacaoEstoque.SAIDA, quantidade,
+                insumoSalvo.getPrecoCompraMedio(),
+                (dataMovimentacao != null ? dataMovimentacao : LocalDate.now()).atStartOfDay(),
+                null, null, animal);
     }
 
     // ── Catálogo de Produtos: código sequencial ─────────────────────────

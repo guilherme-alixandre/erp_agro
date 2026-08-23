@@ -1,8 +1,8 @@
 import { API_BASE_URL, request } from '../../../integration/apiClient'
 
-function usuarioHeaders(email) {
-  const emailLimpo = String(email ?? '').trim()
-  return emailLimpo ? { 'X-Usuario-Email': emailLimpo } : {}
+// Autenticação agora é feita via o token JWT anexado automaticamente pelo apiClient.
+function usuarioHeaders() {
+  return {}
 }
 
 function normalizeMedicao(raw) {

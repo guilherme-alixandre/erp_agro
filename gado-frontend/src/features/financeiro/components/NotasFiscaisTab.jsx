@@ -13,6 +13,7 @@ import { cadastrarInsumoEstoque, listarEstoque } from '../../insumos/integration
 import { listarUnidadesMedida } from '../../insumos/integration/unidadeMedidaApi'
 import { listarGruposProduto } from '../../insumos/integration/grupoProdutoApi'
 import { listarLotes, listarAnimaisParaLote } from '../../lotes/integration/loteApi'
+import { listarParceiros } from '../integration/parceiroApi'
 import ImportarNfeModal from './ImportarNfeModal'
 import ReciboSimplesFormModal from './ReciboSimplesFormModal'
 import VincularItensModal from './VincularItensModal'
@@ -95,6 +96,8 @@ function NotasFiscaisTab({ currentUser }) {
 
   const [lotes, setLotes] = useState([])
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState([])
+  const [fornecedores, setFornecedores] = useState([])
+  const [compradores, setCompradores] = useState([])
   const [vendaModalOpen, setVendaModalOpen] = useState(false)
   const [isSavingVenda, setIsSavingVenda] = useState(false)
   const [vendaFeedback, setVendaFeedback] = useState('')
@@ -105,6 +108,8 @@ function NotasFiscaisTab({ currentUser }) {
     listarGruposProduto('', 'ATIVO').then(setGrupos).catch(() => setGrupos([]))
     listarLotes().then(setLotes).catch(() => setLotes([]))
     listarAnimaisParaLote().then(setAnimaisDisponiveis).catch(() => setAnimaisDisponiveis([]))
+    listarParceiros('FORNECEDOR').then(setFornecedores).catch(() => setFornecedores([]))
+    listarParceiros('COMPRADOR').then(setCompradores).catch(() => setCompradores([]))
   }, [])
 
   useEffect(() => {
@@ -154,11 +159,11 @@ function NotasFiscaisTab({ currentUser }) {
     setFeedbackPorItem({})
   }
 
-  async function handleImportarXml(file) {
+  async function handleImportarXml(file, fornecedorId) {
     setIsSaving(true)
     setModalFeedback('')
     try {
-      await importarNfeXml(currentUser.email, file)
+      await importarNfeXml(currentUser.email, file, fornecedorId)
       setFeedback({ type: 'info', message: 'NF-e importada e aprovada com sucesso.' })
       closeModal()
       await fetchDocumentos()
@@ -441,7 +446,13 @@ function NotasFiscaisTab({ currentUser }) {
       </div>
 
       {modal.type === 'importar' ? (
-        <ImportarNfeModal isSaving={isSaving} feedback={modalFeedback} onClose={closeModal} onSubmit={handleImportarXml} />
+        <ImportarNfeModal
+          fornecedores={fornecedores}
+          isSaving={isSaving}
+          feedback={modalFeedback}
+          onClose={closeModal}
+          onSubmit={handleImportarXml}
+        />
       ) : null}
 
       {modal.type === 'recibo' ? (
@@ -495,6 +506,7 @@ function NotasFiscaisTab({ currentUser }) {
         <RegistrarVendaModal
           lotes={lotes}
           animaisDisponiveis={animaisDisponiveis}
+          compradores={compradores}
           isSaving={isSavingVenda}
           feedback={vendaFeedback}
           onClose={() => setVendaModalOpen(false)}

@@ -1,18 +1,23 @@
 package br.com.gado.util;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.regex.Pattern;
 
 /**
- * Confere uma senha em texto puro contra o hash armazenado, usando o mesmo esquema
- * (SHA-256 hex, com compatibilidade para senhas antigas em texto puro) de SUsuario#login.
- * Extraído aqui para ser reaproveitado pela dupla validação de segurança do módulo
- * financeiro (SDocumentoEntrada.editarNfe) sem duplicar a lógica de hash.
+ * Confere uma senha em texto puro contra o hash armazenado — BCrypt (esquema atual de
+ * SUsuario#login), com compatibilidade para hashes SHA-256 e senhas antigas em texto puro que
+ * ainda não passaram pelo login (e por isso não foram migradas para BCrypt). Extraído aqui para
+ * ser reaproveitado pela dupla validação de segurança do módulo financeiro
+ * (SDocumentoEntrada.editarNfe) sem duplicar a lógica de hash.
  */
 public final class SenhaUtil {
 
     private static final Pattern SHA256_HEX = Pattern.compile("^[a-fA-F0-9]{64}$");
+    private static final Pattern BCRYPT = Pattern.compile("^\\$2[aby]?\\$\\d{2}\\$.{53}$");
+    private static final BCryptPasswordEncoder BCRYPT_ENCODER = new BCryptPasswordEncoder();
 
     private SenhaUtil() {
     }
@@ -23,10 +28,17 @@ public final class SenhaUtil {
             return false;
         }
 
+        if (isBCrypt(senhaArmazenada)) {
+            return BCRYPT_ENCODER.matches(senhaInformada, senhaArmazenada);
+        }
         if (isSha256Hex(senhaArmazenada)) {
             return senhaArmazenada.equalsIgnoreCase(sha256Hex(senhaInformada));
         }
         return senhaArmazenada.equals(senhaInformada);
+    }
+
+    private static boolean isBCrypt(String value) {
+        return BCRYPT.matcher(value).matches();
     }
 
     private static boolean isSha256Hex(String value) {

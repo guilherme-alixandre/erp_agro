@@ -47,7 +47,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
     setIsLoading(true)
     setFeedback({ type: '', message: '' })
     try {
-      const list = await listarUsuarios(currentUser.email)
+      const list = await listarUsuarios()
       setUsuarios(list)
     } catch (error) {
       setFeedback({
@@ -57,7 +57,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
     } finally {
       setIsLoading(false)
     }
-  }, [currentUser.email])
+  }, [])
 
   useEffect(() => {
     fetchUsuarios()
@@ -116,7 +116,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
     setFeedback({ type: '', message: '' })
 
     try {
-      await cadastrarUsuario(formData, currentUser.email)
+      await cadastrarUsuario(formData)
       setFeedback({
         type: 'info',
         message: `Usuário ${formData.nome} cadastrado com sucesso.`,
@@ -138,7 +138,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
 
     setFeedback({ type: '', message: '' })
     try {
-      await deletarUsuario(usuario.email, currentUser.email)
+      await deletarUsuario(usuario.email)
       setFeedback({ type: 'info', message: 'Usuário excluído com sucesso.' })
       await fetchUsuarios()
     } catch (error) {
@@ -164,7 +164,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
     setEditFeedback('')
     setFeedback({ type: '', message: '' })
     try {
-      const updated = await atualizarUsuario(editModal.usuario.email, formData, currentUser.email)
+      const updated = await atualizarUsuario(editModal.usuario.email, formData)
       if (updated.email === currentUser.email && onUpdateUser) {
         onUpdateUser(updated)
       }
@@ -237,6 +237,9 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
             onClick={() => onNavigate('perfil')}
           >
             Perfil
+          </button>
+          <button type="button" className="menu-item" onClick={() => onNavigate('tarefas')}>
+            Tarefas
           </button>
           <button type="button" className="menu-item menu-item--active">
             ⚙ Configurações

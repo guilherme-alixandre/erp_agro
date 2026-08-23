@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { setAuthToken, setUnauthorizedHandler } from './integration/apiClient'
 import AnimalPage from './features/animais/pages/AnimaisPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
 import AuthPage from './features/auth/pages/AuthPage'
@@ -8,6 +9,7 @@ import ConfiguracoesPage from './features/configuracoes/pages/ConfiguracoesPage'
 import SetoresPage from './features/setores/pages/SetoresPage'
 import LotesPage from './features/lotes/pages/LotesPage'
 import MetasPage from './features/metas/pages/MetasPage'
+import TarefasPage from './features/tarefas/pages/TarefasPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -24,6 +26,8 @@ function App() {
   const [sessionFeedback, setSessionFeedback] = useState('')
 
   useEffect(() => {
+    setUnauthorizedHandler(() => handleLogout('Sua sessão expirou. Faça login novamente.'))
+
     const storedUser = localStorage.getItem(STORAGE_KEY)
     if (storedUser) {
       try {
@@ -34,8 +38,9 @@ function App() {
     }
   }, [])
 
-  function handleLogin(usuario) {
+  function handleLogin(usuario, token) {
     const safeUser = sanitizeUser(usuario)
+    setAuthToken(token)
     setCurrentUser(safeUser)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
     setActivePage('animais')
@@ -48,11 +53,12 @@ function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
   }
 
-  function handleLogout() {
+  function handleLogout(message) {
+    setAuthToken(null)
     setCurrentUser(null)
     localStorage.removeItem(STORAGE_KEY)
     setActivePage('animais')
-    setSessionFeedback('Você saiu da sessão com sucesso.')
+    setSessionFeedback(typeof message === 'string' ? message : 'Você saiu da sessão com sucesso.')
   }
 
   if (!currentUser) {
@@ -113,6 +119,16 @@ function App() {
   if (activePage === 'setores') {
     return (
       <SetoresPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
+  }
+
+  if (activePage === 'tarefas') {
+    return (
+      <TarefasPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}

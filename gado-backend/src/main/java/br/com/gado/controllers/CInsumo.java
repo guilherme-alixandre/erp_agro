@@ -4,6 +4,7 @@ import br.com.gado.dto.insumoDto.EntradaEstoqueDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueCadastroDto;
 import br.com.gado.dto.insumoDto.InsumoEstoquePutDto;
 import br.com.gado.dto.insumoDto.InsumoEstoqueRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SInsumo;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,39 +35,27 @@ public class CInsumo {
     }
 
     @PostMapping("/estoque")
-    public InsumoEstoqueRespostaDto postInsumoEstoque(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @Valid @RequestBody InsumoEstoqueCadastroDto dto) {
-        return insumoService.criarInsumoEstoque(dto, emailUsuario);
+    public InsumoEstoqueRespostaDto postInsumoEstoque(@Valid @RequestBody InsumoEstoqueCadastroDto dto) {
+        return insumoService.criarInsumoEstoque(dto, SecurityUtils.currentUserEmail());
     }
 
     @PutMapping("/estoque/{id}")
-    public InsumoEstoqueRespostaDto putInsumoEstoque(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @PathVariable Long id,
-            @Valid @RequestBody InsumoEstoquePutDto dto) {
-        return insumoService.atualizarDadosEstoque(id, dto, emailUsuario);
+    public InsumoEstoqueRespostaDto putInsumoEstoque(@PathVariable Long id, @Valid @RequestBody InsumoEstoquePutDto dto) {
+        return insumoService.atualizarDadosEstoque(id, dto, SecurityUtils.currentUserEmail());
     }
 
     @PostMapping("/estoque/{id}/entradas")
-    public InsumoEstoqueRespostaDto postEntradaEstoque(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @PathVariable Long id,
-            @Valid @RequestBody EntradaEstoqueDto dto) {
-        return insumoService.registrarEntradaEstoque(id, dto, emailUsuario);
+    public InsumoEstoqueRespostaDto postEntradaEstoque(@PathVariable Long id, @Valid @RequestBody EntradaEstoqueDto dto) {
+        return insumoService.registrarEntradaEstoque(id, dto, SecurityUtils.currentUserEmail());
     }
 
     @DeleteMapping("/estoque/{id}")
-    public String deleteInsumoEstoque(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @PathVariable Long id) {
-        return insumoService.inativarInsumo(id, emailUsuario);
+    public String deleteInsumoEstoque(@PathVariable Long id) {
+        return insumoService.inativarInsumo(id, SecurityUtils.currentUserEmail());
     }
 
     @PutMapping("/estoque/{id}/reativar")
-    public String reativarInsumoEstoque(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
-            @PathVariable Long id) {
-        return insumoService.reativarInsumo(id, emailUsuario);
+    public String reativarInsumoEstoque(@PathVariable Long id) {
+        return insumoService.reativarInsumo(id, SecurityUtils.currentUserEmail());
     }
 }

@@ -15,6 +15,7 @@ public class ETarefa extends EAbstract{
    private String descricao;
    private Date dataLimite;
    private boolean statusConclusao;
+   private String atribuidoPorEmail;
 
    @ManyToOne
    @JoinColumn(name = "lista_tarefa_id")

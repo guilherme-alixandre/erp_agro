@@ -6,6 +6,7 @@ import br.com.gado.dto.grupoProdutoDto.GrupoProdutoRespostaDto;
 import br.com.gado.services.SGrupoProduto;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,21 +31,25 @@ public class CGrupoProduto {
         return grupoProdutoService.buscarPorId(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PostMapping
     public GrupoProdutoRespostaDto postGrupo(@Valid @RequestBody GrupoProdutoCadastroDto dto) {
         return grupoProdutoService.criar(dto);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PutMapping("/{id}")
     public GrupoProdutoRespostaDto putGrupo(@PathVariable Long id, @Valid @RequestBody GrupoProdutoPutDto dto) {
         return grupoProdutoService.atualizar(id, dto);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @DeleteMapping("/{id}")
     public String deleteGrupo(@PathVariable Long id) {
         return grupoProdutoService.inativar(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
     @PutMapping("/{id}/reativar")
     public String reativarGrupo(@PathVariable Long id) {
         return grupoProdutoService.reativar(id);

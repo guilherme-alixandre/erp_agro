@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class ParceiroDto extends AbstractDTO {
     private String nome;
     private String cpfCnpj;
+    private String email;
     private String endereco;
     private String telefone;
     private LocalDateTime dataCadastro;

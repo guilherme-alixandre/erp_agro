@@ -6,6 +6,7 @@ import EntradaEstoqueModal from '../components/EntradaEstoqueModal'
 import AlimentarSetoresTab from '../components/AlimentarSetoresTab'
 import ConsumoEstoqueTab from '../components/ConsumoEstoqueTab'
 import VacinarAnimaisTab from '../components/VacinarAnimaisTab'
+import MovimentacoesTab from '../components/MovimentacoesTab'
 import {
   listarEstoque,
   cadastrarInsumoEstoque,
@@ -568,6 +569,9 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           >
             Perfil
           </button>
+          <button type="button" className="menu-item" onClick={() => onNavigate('tarefas')}>
+            Tarefas
+          </button>
           {currentUser.perfil === 'ADMINISTRADOR' ? (
             <button
               type="button"
@@ -635,6 +639,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
             onClick={() => setActiveTab('vacinar')}
           >
             Vacinar Animais
+          </button>
+          <button
+            type="button"
+            className={`insumos-tab ${activeTab === 'movimentacoes' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('movimentacoes')}
+          >
+            Movimentações
           </button>
         </div>
 
@@ -1064,6 +1075,8 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         {activeTab === 'vacinar' ? (
           <VacinarAnimaisTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
         ) : null}
+
+        {activeTab === 'movimentacoes' ? <MovimentacoesTab /> : null}
       </section>
 
       {estoqueModal.type === 'form' ? (

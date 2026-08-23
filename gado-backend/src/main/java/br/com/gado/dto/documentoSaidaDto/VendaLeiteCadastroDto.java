@@ -25,6 +25,9 @@ public class VendaLeiteCadastroDto {
     private BigDecimal precoLitro;
     private BigDecimal valorTotal;
 
+    @NotNull(message = "Informe o comprador.")
+    private Long compradorId;
+
     @NotEmpty(message = "Selecione ao menos um lote de origem do leite.")
     @Valid
     private List<VendaLeiteItemCadastroDto> itens;

@@ -9,6 +9,7 @@ import br.com.gado.entities.EDocumentoSaida;
 import br.com.gado.entities.ELote;
 import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.EMetaSetor;
+import br.com.gado.entities.EParceiro;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.entities.EVendaAnimalItem;
 import br.com.gado.entities.EVendaLeiteItem;
@@ -23,6 +24,7 @@ import br.com.gado.repositories.ILote;
 import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.IMetaSetor;
 import br.com.gado.repositories.IAnimal;
+import br.com.gado.repositories.IParceiro;
 import br.com.gado.repositories.IUsuario;
 import br.com.gado.repositories.IVendaMetaLote;
 import jakarta.persistence.EntityNotFoundException;
@@ -71,6 +73,9 @@ public class SDocumentoSaida {
     private IUsuario usuarioInterface;
 
     @Autowired
+    private IParceiro parceiroInterface;
+
+    @Autowired
     private SLancamentoFinanceiro lancamentoFinanceiroService;
 
     @Autowired
@@ -87,6 +92,11 @@ public class SDocumentoSaida {
                     "Apenas Administrador, Gerente ou Financeiro podem acessar o módulo financeiro.");
         }
         return usuario;
+    }
+
+    private EParceiro resolveComprador(Long compradorId) {
+        return parceiroInterface.findById(compradorId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprador não encontrado."));
     }
 
     // ── Venda de leite ───────────────────────────────────────────────────
@@ -118,6 +128,7 @@ public class SDocumentoSaida {
         documento.setDataEmissao(dto.getDataEmissao());
         documento.setValorTotal(valorTotal);
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
+        documento.setComprador(resolveComprador(dto.getCompradorId()));
 
         List<EVendaLeiteItem> itens = new ArrayList<>();
         for (VendaLeiteItemCadastroDto itemDto : dto.getItens()) {
@@ -201,6 +212,7 @@ public class SDocumentoSaida {
         documento.setDataEmissao(dto.getDataEmissao());
         documento.setValorTotal(dto.getValorTotal());
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
+        documento.setComprador(resolveComprador(dto.getCompradorId()));
 
         BigDecimal valorPorAnimal = dto.getValorTotal()
                 .divide(BigDecimal.valueOf(animais.size()), 2, RoundingMode.HALF_UP);
@@ -227,7 +239,7 @@ public class SDocumentoSaida {
             // produto — animais legados sem raça, de antes da migration, não têm o que debitar).
             if (animal.getRaca() != null && animal.getRaca().getProduto() != null) {
                 item.setProduto(animal.getRaca().getProduto());
-                insumoService.baixarEstoque(animal.getRaca().getProduto().getId(), 1);
+                insumoService.baixarEstoque(animal.getRaca().getProduto().getId(), 1, animal, dto.getDataEmissao());
             }
 
             itens.add(item);
@@ -263,6 +275,11 @@ public class SDocumentoSaida {
         dto.setDataEmissao(documento.getDataEmissao());
         dto.setValorTotal(documento.getValorTotal());
         dto.setCriadoPorEmail(documento.getCriadoPorEmail());
+
+        if (documento.getComprador() != null) {
+            dto.setCompradorId(documento.getComprador().getId());
+            dto.setCompradorNome(documento.getComprador().getNome());
+        }
 
         dto.setItensLeite(documento.getItensLeite().stream().map(i -> {
             DocumentoSaidaRespostaDto.ItemLeiteDto item = new DocumentoSaidaRespostaDto.ItemLeiteDto();

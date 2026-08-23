@@ -220,6 +220,9 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           <button type="button" className="menu-item" onClick={() => onNavigate('perfil')}>
             Perfil
           </button>
+          <button type="button" className="menu-item" onClick={() => onNavigate('tarefas')}>
+            Tarefas
+          </button>
           {currentUser.perfil === 'ADMINISTRADOR' ? (
             <button type="button" className="menu-item" onClick={() => onNavigate('configuracoes')}>
               ⚙ Configurações

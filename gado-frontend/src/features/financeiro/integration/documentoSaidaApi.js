@@ -4,9 +4,9 @@ function sanitizeText(value) {
   return String(value ?? '').trim()
 }
 
-function usuarioHeaders(email) {
-  const emailLimpo = sanitizeText(email)
-  return emailLimpo ? { 'X-Usuario-Email': emailLimpo } : {}
+// Autenticação agora é feita via o token JWT anexado automaticamente pelo apiClient.
+function usuarioHeaders() {
+  return {}
 }
 
 async function cadastrarVendaLeite(email, formData) {
@@ -16,6 +16,7 @@ async function cadastrarVendaLeite(email, formData) {
     chaveAcesso: sanitizeText(formData.chaveAcesso) || null,
     precoLitro: formData.precoLitro !== '' && formData.precoLitro != null ? Number(formData.precoLitro) : null,
     valorTotal: formData.valorTotal !== '' && formData.valorTotal != null ? Number(formData.valorTotal) : null,
+    compradorId: Number(formData.compradorId),
     itens: (formData.itens ?? []).map((item) => ({
       loteId: Number(item.loteId),
       litros: Number(item.litros),
@@ -36,6 +37,7 @@ async function cadastrarVendaAnimal(email, formData) {
     destino: formData.destino,
     animalIds: (formData.animalIds ?? []).map(Number),
     valorTotal: Number(formData.valorTotal),
+    compradorId: Number(formData.compradorId),
   }
   return request('/documentos-saida/venda-animal', {
     method: 'POST',

@@ -31,4 +31,7 @@ public class VendaAnimalCadastroDto {
 
     @NotNull(message = "Informe o valor total da venda.")
     private BigDecimal valorTotal;
+
+    @NotNull(message = "Informe o comprador.")
+    private Long compradorId;
 }

@@ -3,6 +3,7 @@ package br.com.gado.controllers;
 import br.com.gado.dto.lancamentoFinanceiroDto.LancamentoFinanceiroRespostaDto;
 import br.com.gado.dto.lancamentoFinanceiroDto.LancamentoManualCadastroDto;
 import br.com.gado.dto.lancamentoFinanceiroDto.ResumoMensalDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SLancamentoFinanceiro;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,28 +23,20 @@ public class CLancamentoFinanceiro {
     private SLancamentoFinanceiro lancamentoFinanceiroService;
 
     @GetMapping
-    public List<LancamentoFinanceiroRespostaDto> listarPorBloco(
-            @RequestParam int ano,
-            @RequestParam int mes,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return lancamentoFinanceiroService.listarPorBloco(ano, mes, emailUsuario);
+    public List<LancamentoFinanceiroRespostaDto> listarPorBloco(@RequestParam int ano, @RequestParam int mes) {
+        return lancamentoFinanceiroService.listarPorBloco(ano, mes, SecurityUtils.currentUserEmail());
     }
 
     @GetMapping("/resumo-mensal")
-    public ResumoMensalDto gerarResumoMensal(
-            @RequestParam int ano,
-            @RequestParam int mes,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return lancamentoFinanceiroService.gerarResumoMensal(ano, mes, emailUsuario);
+    public ResumoMensalDto gerarResumoMensal(@RequestParam int ano, @RequestParam int mes) {
+        return lancamentoFinanceiroService.gerarResumoMensal(ano, mes, SecurityUtils.currentUserEmail());
     }
 
     @PostMapping
-    public ResponseEntity<LancamentoFinanceiroRespostaDto> registrarLancamentoManual(
-            @Valid @RequestBody LancamentoManualCadastroDto dto,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
+    public ResponseEntity<LancamentoFinanceiroRespostaDto> registrarLancamentoManual(@Valid @RequestBody LancamentoManualCadastroDto dto) {
         LancamentoFinanceiroRespostaDto criado = lancamentoFinanceiroService.registrarLancamentoManual(
                 dto.getTipoMovimento(), dto.getNaturezaFinanceira(), dto.getDescricao(), dto.getValor(),
-                dto.getDataCompetencia(), emailUsuario);
+                dto.getDataCompetencia(), SecurityUtils.currentUserEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 }

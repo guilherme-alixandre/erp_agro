@@ -15,6 +15,7 @@ import br.com.gado.entities.EVacinacaoAnimal;
 import br.com.gado.entities.EVacinacaoAnimalItem;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IAnimal;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.ILote;
@@ -60,6 +61,9 @@ public class SVacinacaoAnimal {
 
     @Autowired
     private IUsuario usuarioInterface;
+
+    @Autowired
+    private SInsumo insumoService;
 
     // ── Permissões ───────────────────────────────────────────────────────
 
@@ -137,6 +141,12 @@ public class SVacinacaoAnimal {
         insumo.setSaldoAtual(saldoAtual - quantidadeTotalBaixa);
         insumoInterface.save(insumo);
 
+        LocalDateTime dataAplicacao = dto.getDataAplicacao() != null ? dto.getDataAplicacao() : LocalDateTime.now();
+        for (EAnimal animal : animais) {
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.APLICACAO,
+                    quantidadeBaixaPorAnimal, insumo.getPrecoCompraMedio(), dataAplicacao, null, null, animal);
+        }
+
         EVacinacaoAnimal vacinacao = new EVacinacaoAnimal();
         vacinacao.setInsumo(insumo);
         vacinacao.setQuantidadePorAnimal(dto.getQuantidadePorAnimal());
@@ -183,6 +193,11 @@ public class SVacinacaoAnimal {
         double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
         insumo.setSaldoAtual(saldoAtual + vacinacao.getQuantidadeTotalBaixaUnidadePrimaria());
         insumoInterface.save(insumo);
+        for (EVacinacaoAnimalItem item : vacinacao.getItens()) {
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                    vacinacao.getQuantidadeBaixaPorAnimalUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                    LocalDateTime.now(), null, null, item.getAnimal());
+        }
 
         vacinacao.setCancelado(true);
         vacinacao.setMotivoCancelamento(dto.getMotivoCancelamento().trim());
@@ -226,6 +241,15 @@ public class SVacinacaoAnimal {
 
         insumo.setSaldoAtual(saldoComEstorno - novaQuantidadeTotalBaixa);
         insumoInterface.save(insumo);
+        LocalDateTime dataAplicacaoEdicao = dto.getDataAplicacao() != null ? dto.getDataAplicacao() : LocalDateTime.now();
+        for (EVacinacaoAnimalItem item : vacinacao.getItens()) {
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                    vacinacao.getQuantidadeBaixaPorAnimalUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                    LocalDateTime.now(), null, null, item.getAnimal());
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.APLICACAO,
+                    novaQuantidadeBaixaPorAnimal, insumo.getPrecoCompraMedio(),
+                    dataAplicacaoEdicao, null, null, item.getAnimal());
+        }
 
         vacinacao.setQuantidadePorAnimal(dto.getQuantidadePorAnimal());
         vacinacao.setUnidadeRegistro(unidadeRegistro);

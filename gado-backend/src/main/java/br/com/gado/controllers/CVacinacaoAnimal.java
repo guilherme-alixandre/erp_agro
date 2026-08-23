@@ -5,6 +5,7 @@ import br.com.gado.dto.vacinacaoAnimalDto.VacinacaoAnimalCancelamentoDto;
 import br.com.gado.dto.vacinacaoAnimalDto.VacinacaoAnimalEdicaoDto;
 import br.com.gado.dto.vacinacaoAnimalDto.VacinacaoAnimalResumoItemDto;
 import br.com.gado.dto.vacinacaoAnimalDto.VacinacaoAnimalRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SVacinacaoAnimal;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +50,8 @@ public class CVacinacaoAnimal {
 
     @PostMapping
     public ResponseEntity<VacinacaoAnimalRespostaDto> registrarAplicacao(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @Valid @RequestBody VacinacaoAnimalCadastroDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         vacinacaoAnimalService.validaUsuarioAtivo(emailUsuario);
         VacinacaoAnimalRespostaDto criado = vacinacaoAnimalService.registrarAplicacao(dto, emailUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
@@ -59,16 +60,16 @@ public class CVacinacaoAnimal {
     @PutMapping("/{id}")
     public ResponseEntity<VacinacaoAnimalRespostaDto> editarAplicacao(
             @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @Valid @RequestBody VacinacaoAnimalEdicaoDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         return ResponseEntity.ok(vacinacaoAnimalService.editarAplicacao(id, dto, emailUsuario));
     }
 
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<VacinacaoAnimalRespostaDto> cancelarAplicacao(
             @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario,
             @Valid @RequestBody VacinacaoAnimalCancelamentoDto dto) {
+        String emailUsuario = SecurityUtils.currentUserEmail();
         vacinacaoAnimalService.validaUsuarioAtivo(emailUsuario);
         VacinacaoAnimalRespostaDto cancelado = vacinacaoAnimalService.cancelarAplicacao(id, dto, emailUsuario);
         return ResponseEntity.ok(cancelado);

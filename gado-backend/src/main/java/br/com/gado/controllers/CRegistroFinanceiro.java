@@ -2,11 +2,14 @@ package br.com.gado.controllers;
 
 import br.com.gado.dto.RegistroFinanceiroDTO;
 import br.com.gado.services.SRegistroFinanceiro;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/** Ledger financeiro — leitura e escrita restritas aos perfis do módulo financeiro (mesma regra dos demais controllers financeiros). */
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/registroFinanceiro")
+@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FINANCEIRO')")
 public class CRegistroFinanceiro {
 
     private final SRegistroFinanceiro registroFinanceiroService;

@@ -1,6 +1,7 @@
 package br.com.gado.controllers;
 
 import br.com.gado.dto.SetorDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SPdfRelatorio;
 import br.com.gado.services.SSetor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +44,8 @@ public class CSetor {
     }
 
     @PostMapping
-    public ResponseEntity<SetorDto> postSetor(
-            @RequestHeader(name = "X-Usuario-Email", required = false) String email,
-            @RequestBody SetorDto dto) {
-        SetorDto criado = setorService.cadastra(dto, email);
+    public ResponseEntity<SetorDto> postSetor(@RequestBody SetorDto dto) {
+        SetorDto criado = setorService.cadastra(dto, SecurityUtils.currentUserEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
@@ -61,10 +60,7 @@ public class CSetor {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SetorDto> putSetor(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String email,
-            @RequestBody SetorDto dto) {
-        return ResponseEntity.ok(setorService.altera(id, dto, email));
+    public ResponseEntity<SetorDto> putSetor(@PathVariable Long id, @RequestBody SetorDto dto) {
+        return ResponseEntity.ok(setorService.altera(id, dto, SecurityUtils.currentUserEmail()));
     }
 }

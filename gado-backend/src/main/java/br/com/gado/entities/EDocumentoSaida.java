@@ -6,6 +6,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -45,6 +47,11 @@ public class EDocumentoSaida extends EAbstract {
 
     @Column(name = "criado_por_email", nullable = false)
     private String criadoPorEmail;
+
+    /** Parceiro (tipo COMPRADOR ou AMBOS) que comprou a mercadoria desta venda. */
+    @ManyToOne
+    @JoinColumn(name = "comprador_id")
+    private EParceiro comprador;
 
     @OneToMany(mappedBy = "documentoSaida", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EVendaLeiteItem> itensLeite = new ArrayList<>();

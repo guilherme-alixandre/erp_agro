@@ -104,6 +104,22 @@ public class DataInitializer implements CommandLineRunner {
         adminSeed.setDataCadastro(LocalDateTime.now());
         adminSeed = iUsuario.save(adminSeed);
 
+        EUsuario cuidadorChefe = new EUsuario();
+        cuidadorChefe.setNome("Márcia Souza");
+        cuidadorChefe.setEmail("marcia.chefe@gadoseed.com");
+        cuidadorChefe.setSenha(sha256("Seed@1234"));
+        cuidadorChefe.setPerfil(EnPerfilUsuario.CUIDADOR_CHEFE);
+        cuidadorChefe.setDataCadastro(LocalDateTime.now());
+        iUsuario.save(cuidadorChefe);
+
+        EUsuario financeiro = new EUsuario();
+        financeiro.setNome("Roberto Lima");
+        financeiro.setEmail("roberto.financeiro@gadoseed.com");
+        financeiro.setSenha(sha256("Seed@1234"));
+        financeiro.setPerfil(EnPerfilUsuario.FINANCEIRO);
+        financeiro.setDataCadastro(LocalDateTime.now());
+        iUsuario.save(financeiro);
+
         // ── 2. SETORES ────────────────────────────────────────────────────────────────
 
         ESetor setorPasto = new ESetor();

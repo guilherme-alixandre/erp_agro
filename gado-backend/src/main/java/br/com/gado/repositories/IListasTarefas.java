@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface IListasTarefas extends JpaRepository<EListasTarefas, Long> {
     void deleteById(Long id);
+    Optional<EListasTarefas> findByUsuario_Email(String email);
 }

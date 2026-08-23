@@ -11,4 +11,8 @@ import lombok.EqualsAndHashCode;
 public class EListasTarefas extends EAbstract{
 
     private String nomeLista;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private EUsuario usuario;
 }

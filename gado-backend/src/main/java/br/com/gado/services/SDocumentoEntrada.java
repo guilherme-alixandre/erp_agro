@@ -17,6 +17,7 @@ import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAprovacaoFinanceira;
 import br.com.gado.enums.EnTipoDocumentoFinanceiro;
+import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IDocumentoEntrada;
 import br.com.gado.repositories.IDocumentoEntradaItem;
 import br.com.gado.repositories.IInsumo;
@@ -45,13 +46,10 @@ import java.util.stream.Collectors;
  * Documentos de Entrada: importação de NF-e via XML, cadastro manual de recibos não fiscais,
  * fluxo de aprovação, edição segura (com senha) e vinculação de itens ao catálogo.
  *
- * Este projeto não usa Spring Security — a identidade de quem chama é resolvida pelo e-mail
- * informado pelo controller (mesmo padrão do header X-Usuario-Email já usado em
- * SConsumoEstoque/CConsumoEstoque), e a permissão é verificada manualmente aqui, comparando
- * EUsuario.perfil contra os conjuntos abaixo. Por isso os métodos sensíveis recebem um parâmetro
- * a mais de e-mail do que o enunciado original pedia (@PreAuthorize não teria efeito nenhum
- * neste projeto hoje — não há spring-security no pom.xml, nem SecurityContext populado — então
- * anotá-los seria decorativo e enganoso; ver observação na resposta).
+ * A identidade de quem chama vem do JWT autenticado (o controller resolve o e-mail via
+ * SecurityUtils.currentUserEmail() e o repassa aqui), e a permissão é verificada manualmente
+ * neste service, comparando EUsuario.perfil contra os conjuntos abaixo. Por isso os métodos
+ * sensíveis recebem um parâmetro a mais de e-mail.
  */
 @Service
 public class SDocumentoEntrada {
@@ -119,12 +117,17 @@ public class SDocumentoEntrada {
      * o schema da NF-e), extraindo emitente por CNPJ, itens por NCM/EAN, impostos etc.
      */
     @Transactional
-    public DocumentoEntradaRespostaDto importarNfeXml(MultipartFile file, String emailUsuarioLogado) throws IOException {
+    public DocumentoEntradaRespostaDto importarNfeXml(MultipartFile file, Long fornecedorId, String emailUsuarioLogado) throws IOException {
         resolveUsuarioModulo(emailUsuarioLogado);
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Selecione o arquivo XML da NF-e.");
         }
+        if (fornecedorId == null) {
+            throw new IllegalArgumentException("Selecione o fornecedor.");
+        }
+        EParceiro fornecedor = parceiroInterface.findById(fornecedorId)
+                .orElseThrow(() -> new IllegalArgumentException("Fornecedor não encontrado."));
 
         DadosNfeExtraidos dados = simularExtracaoXml(file);
 
@@ -142,6 +145,7 @@ public class SDocumentoEntrada {
         documento.setDataEntrada(LocalDate.now());
         documento.setValorTotal(dados.valorTotal);
         documento.setXmlOriginal(new String(file.getBytes(), StandardCharsets.UTF_8));
+        documento.setFornecedor(fornecedor);
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
         documento.setAprovadoPorEmail(emailUsuarioLogado.trim());
         documento.setAprovadoEm(LocalDateTime.now());
@@ -339,7 +343,11 @@ public class SDocumentoEntrada {
                 EInsumo produto = item.getProduto();
                 double saldoAtual = produto.getSaldoAtual() != null ? produto.getSaldoAtual() : 0.0;
                 produto.setSaldoAtual(saldoAtual - item.getQuantidade().doubleValue());
-                insumoInterface.save(produto);
+                EInsumo produtoSalvo = insumoInterface.save(produto);
+
+                insumoService.registrarMovimentacao(produtoSalvo, EnTipoMovimentacaoEstoque.SAIDA,
+                        item.getQuantidade().doubleValue(), item.getValorUnitario().doubleValue(),
+                        LocalDateTime.now(), documento.getFornecedor(), null, null);
             }
             lancamentoFinanceiroService.estornarSaidaItemDocumento(item);
         }

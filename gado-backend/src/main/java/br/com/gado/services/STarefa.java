@@ -1,96 +1,149 @@
 package br.com.gado.services;
 
-import br.com.gado.dto.TarefaDTO;
+import br.com.gado.dto.tarefaDto.TarefaAtribuirDto;
+import br.com.gado.dto.tarefaDto.TarefaEdicaoDto;
+import br.com.gado.dto.tarefaDto.TarefaRespostaDto;
 import br.com.gado.entities.EListasTarefas;
 import br.com.gado.entities.ETarefa;
+import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IListasTarefas;
 import br.com.gado.repositories.ITarefa;
+import br.com.gado.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Cada usuário tem uma lista de tarefas própria, criada automaticamente na primeira vez que
+ * alguém (inclusive ele mesmo) atribui uma tarefa a ele. Só o dono da lista (a quem a tarefa foi
+ * atribuída) ou quem atribuiu podem editar/excluir uma tarefa.
+ */
 @Service
 public class STarefa {
-
-    private static final Logger log = LoggerFactory.getLogger(STarefa.class);
 
     @Autowired
     private ITarefa tarefaInterface;
 
     @Autowired
-    private IListasTarefas listaTarefas;
+    private IListasTarefas listasTarefasInterface;
 
     @Autowired
-    private ModelMapper modelMapper;
+    private IUsuario usuarioInterface;
 
-    @Transactional
-    public TarefaDTO criarTarefa(TarefaDTO novaTarefa, Long listaId) {
-        try {
-            EListasTarefas lista = listaTarefas.findById(listaId)
-                    .orElseThrow(() -> {
-                        log.error("Erro ao criar tarefa: Lista ID {} não encontrada.", listaId);
-                        return new RuntimeException("Lista de tarefas não encontrada");
-                    });
-
-            ETarefa tarefa = modelMapper.map(novaTarefa, ETarefa.class);
-            tarefa.setStatusConclusao(false);
-            tarefa.setListasTarefaId(lista);
-
-            ETarefa tarefaSalva = tarefaInterface.save(tarefa);
-            log.info("Tarefa criada com sucesso! ID: {}", tarefaSalva.getId());
-
-            return modelMapper.map(tarefaSalva, TarefaDTO.class);
-        } catch (Exception e) {
-            log.error("Erro ao salvar tarefa: {}", e.getMessage(), e);
-            throw e;
+    private EUsuario resolveUsuarioAtivo(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário responsável pela operação.");
         }
+        return usuarioInterface.findByEmailAndStatus(email.trim(), EnStatus.A)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+    }
+
+    private EListasTarefas resolveOuCriarListaDoUsuario(EUsuario usuario) {
+        return listasTarefasInterface.findByUsuario_Email(usuario.getEmail())
+                .orElseGet(() -> {
+                    EListasTarefas lista = new EListasTarefas();
+                    lista.setNomeLista("Tarefas de " + usuario.getNome());
+                    lista.setUsuario(usuario);
+                    return listasTarefasInterface.save(lista);
+                });
     }
 
     @Transactional
-    public TarefaDTO buscarTarefaPorId(Long tarefaId) {
-        ETarefa tarefaEntity = this.tarefaInterface
-                .findById(tarefaId)
-                .orElseThrow(EntityNotFoundException::new);
-        return this.modelMapper.map(tarefaEntity, TarefaDTO.class);
+    public TarefaRespostaDto atribuirTarefa(TarefaAtribuirDto dto, String emailAtribuidor) {
+        resolveUsuarioAtivo(emailAtribuidor);
+        EUsuario destinatario = resolveUsuarioAtivo(dto.getAtribuidoParaEmail());
+        EListasTarefas lista = resolveOuCriarListaDoUsuario(destinatario);
+
+        ETarefa tarefa = new ETarefa();
+        tarefa.setDescricao(dto.getDescricao().trim());
+        tarefa.setDataLimite(dto.getDataLimite());
+        tarefa.setStatusConclusao(false);
+        tarefa.setAtribuidoPorEmail(emailAtribuidor.trim());
+        tarefa.setListasTarefaId(lista);
+
+        return toRespostaDto(tarefaInterface.save(tarefa));
     }
 
     @Transactional
-    public TarefaDTO atualizarTarefa(TarefaDTO tarefaParaAtualizar, Long tarefaId) {
-        ETarefa existingEntity = this.tarefaInterface
-                .findById(tarefaId)
-                .orElseThrow(EntityNotFoundException::new);
-
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-        this.modelMapper.map(tarefaParaAtualizar, existingEntity);
-
-        try {
-            ETarefa tarefaSalva = this.tarefaInterface.save(existingEntity);
-            return modelMapper.map(tarefaSalva, TarefaDTO.class);
-        } catch (Exception e) {
-            log.error("Erro ao atualizar tarefa: {}", e.getMessage(), e);
-            throw e;
-        }
+    public List<TarefaRespostaDto> listarMinhasTarefas(String email) {
+        resolveUsuarioAtivo(email);
+        return tarefaInterface
+                .findByListasTarefaId_Usuario_EmailAndStatusOrderByDataLimiteAsc(email, EnStatus.A)
+                .stream()
+                .map(this::toRespostaDto)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional
-    public String excluirTarefa(Long tarefaId) {
-        ETarefa tarefaParaExcluir = this.tarefaInterface
-                .findById(tarefaId)
-                .orElseThrow(EntityNotFoundException::new);
+    public TarefaRespostaDto editarTarefa(Long tarefaId, TarefaEdicaoDto dto, String email) {
+        EUsuario chamador = resolveUsuarioAtivo(email);
+        ETarefa tarefa = tarefaInterface.findById(tarefaId)
+                .orElseThrow(() -> new EntityNotFoundException("Tarefa não encontrada."));
 
-        tarefaParaExcluir.setStatus(EnStatus.I);
+        validarPermissao(chamador, tarefa);
 
-        try {
-            this.tarefaInterface.save(tarefaParaExcluir);
-            return "tarefa excluída com sucesso";
-        } catch (Exception e) {
-            log.error("Erro ao excluir tarefa: {}", e.getMessage(), e);
-            return "erro ao excluir tarefa";
+        if (dto.getDescricao() != null && !dto.getDescricao().isBlank()) {
+            tarefa.setDescricao(dto.getDescricao().trim());
         }
+        if (dto.getDataLimite() != null) {
+            tarefa.setDataLimite(dto.getDataLimite());
+        }
+        if (dto.getStatusConclusao() != null) {
+            tarefa.setStatusConclusao(dto.getStatusConclusao());
+        }
+
+        return toRespostaDto(tarefaInterface.save(tarefa));
+    }
+
+    @Transactional
+    public String excluirTarefa(Long tarefaId, String email) {
+        EUsuario chamador = resolveUsuarioAtivo(email);
+        ETarefa tarefa = tarefaInterface.findById(tarefaId)
+                .orElseThrow(() -> new EntityNotFoundException("Tarefa não encontrada."));
+
+        validarPermissao(chamador, tarefa);
+
+        tarefa.setStatus(EnStatus.I);
+        tarefaInterface.save(tarefa);
+        return "Tarefa excluída com sucesso.";
+    }
+
+    private void validarPermissao(EUsuario chamador, ETarefa tarefa) {
+        String donoLista = tarefa.getListasTarefaId().getUsuario() != null
+                ? tarefa.getListasTarefaId().getUsuario().getEmail()
+                : null;
+        boolean ehDono = chamador.getEmail().equalsIgnoreCase(donoLista);
+        boolean ehAtribuidor = chamador.getEmail().equalsIgnoreCase(tarefa.getAtribuidoPorEmail());
+
+        if (!ehDono && !ehAtribuidor) {
+            throw new IllegalArgumentException("Você só pode editar ou excluir tarefas atribuídas a você ou por você.");
+        }
+    }
+
+    private TarefaRespostaDto toRespostaDto(ETarefa tarefa) {
+        TarefaRespostaDto dto = new TarefaRespostaDto();
+        dto.setId(tarefa.getId());
+        dto.setDescricao(tarefa.getDescricao());
+        dto.setDataLimite(tarefa.getDataLimite());
+        dto.setStatusConclusao(tarefa.isStatusConclusao());
+        dto.setAtribuidoPorEmail(tarefa.getAtribuidoPorEmail());
+        dto.setCreatedAt(tarefa.getCreatedAt());
+
+        usuarioInterface.findByEmailAndStatus(tarefa.getAtribuidoPorEmail(), EnStatus.A)
+                .ifPresent(u -> dto.setAtribuidoPorNome(u.getNome()));
+
+        EUsuario dono = tarefa.getListasTarefaId().getUsuario();
+        if (dono != null) {
+            dto.setAtribuidoParaEmail(dono.getEmail());
+            dto.setAtribuidoParaNome(dono.getNome());
+        }
+
+        return dto;
     }
 }

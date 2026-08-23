@@ -3,6 +3,7 @@ package br.com.gado.controllers;
 import br.com.gado.dto.racaDto.RacaCadastroDto;
 import br.com.gado.dto.racaDto.RacaPutDto;
 import br.com.gado.dto.racaDto.RacaRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SRaca;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,31 +32,22 @@ public class CRaca {
     }
 
     @PostMapping
-    public RacaRespostaDto postRaca(
-            @Valid @RequestBody RacaCadastroDto dto,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return racaService.criar(dto, emailUsuario);
+    public RacaRespostaDto postRaca(@Valid @RequestBody RacaCadastroDto dto) {
+        return racaService.criar(dto, SecurityUtils.currentUserEmail());
     }
 
     @PutMapping("/{id}")
-    public RacaRespostaDto putRaca(
-            @PathVariable Long id,
-            @Valid @RequestBody RacaPutDto dto,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return racaService.atualizar(id, dto, emailUsuario);
+    public RacaRespostaDto putRaca(@PathVariable Long id, @Valid @RequestBody RacaPutDto dto) {
+        return racaService.atualizar(id, dto, SecurityUtils.currentUserEmail());
     }
 
     @DeleteMapping("/{id}")
-    public String deleteRaca(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return racaService.inativar(id, emailUsuario);
+    public String deleteRaca(@PathVariable Long id) {
+        return racaService.inativar(id, SecurityUtils.currentUserEmail());
     }
 
     @PutMapping("/{id}/reativar")
-    public String reativarRaca(
-            @PathVariable Long id,
-            @RequestHeader(name = "X-Usuario-Email", required = false) String emailUsuario) {
-        return racaService.reativar(id, emailUsuario);
+    public String reativarRaca(@PathVariable Long id) {
+        return racaService.reativar(id, SecurityUtils.currentUserEmail());
     }
 }

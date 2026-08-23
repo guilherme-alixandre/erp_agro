@@ -336,6 +336,9 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
           >
             Perfil
           </button>
+          <button type="button" className="menu-item" onClick={() => onNavigate('tarefas')}>
+            Tarefas
+          </button>
           {currentUser.perfil === 'ADMINISTRADOR' ? (
             <button
               type="button"

@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface IAnimal extends JpaRepository<EAnimal, Long> {
     Optional<EAnimal> findByCodigoBrincoAndStatus(String codigoBrinco, EnStatus status);
+    Optional<EAnimal> findByIdAndStatus(Long id, EnStatus status);
     Optional<ArrayList<EAnimal>> findAllByStatus(EnStatus status);
     Boolean existsByCodigoBrincoAndStatus(String codigoBrinco, EnStatus status);
     void deleteByCodigoBrinco(String codigoBrinco);

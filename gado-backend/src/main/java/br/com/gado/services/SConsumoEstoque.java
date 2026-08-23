@@ -14,6 +14,7 @@ import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IConsumoEstoque;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.IUnidadeMedida;
@@ -54,6 +55,9 @@ public class SConsumoEstoque {
 
     @Autowired
     private SLancamentoFinanceiro lancamentoFinanceiroService;
+
+    @Autowired
+    private SInsumo insumoService;
 
     // ── Permissões ───────────────────────────────────────────────────────
 
@@ -136,6 +140,8 @@ public class SConsumoEstoque {
 
             insumo.setSaldoAtual(saldoAtual - quantidadeBaixa);
             insumoInterface.save(insumo);
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.SAIDA, quantidadeBaixa,
+                    insumo.getPrecoCompraMedio(), consumo.getDataConsumo(), null, null, null);
 
             EConsumoEstoqueItem item = new EConsumoEstoqueItem();
             item.setConsumoEstoque(consumo);
@@ -174,6 +180,9 @@ public class SConsumoEstoque {
             double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
             insumo.setSaldoAtual(saldoAtual + item.getQuantidadeBaixaUnidadePrimaria());
             insumoInterface.save(insumo);
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                    item.getQuantidadeBaixaUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                    LocalDateTime.now(), null, null, null);
         }
 
         consumo.setCancelado(true);
@@ -211,6 +220,9 @@ public class SConsumoEstoque {
             double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
             insumo.setSaldoAtual(saldoAtual + item.getQuantidadeBaixaUnidadePrimaria());
             insumoInterface.save(insumo);
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                    item.getQuantidadeBaixaUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                    LocalDateTime.now(), null, null, null);
         }
         lancamentoFinanceiroService.estornarSaidaConsumoEstoque(consumo);
 
@@ -237,6 +249,10 @@ public class SConsumoEstoque {
 
             insumo.setSaldoAtual(saldoAtual - quantidadeBaixa);
             insumoInterface.save(insumo);
+            insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.SAIDA, quantidadeBaixa,
+                    insumo.getPrecoCompraMedio(),
+                    dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now(),
+                    null, null, null);
 
             EConsumoEstoqueItem item = new EConsumoEstoqueItem();
             item.setConsumoEstoque(consumo);

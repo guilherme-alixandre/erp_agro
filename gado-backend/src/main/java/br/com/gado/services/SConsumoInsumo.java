@@ -12,6 +12,7 @@ import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.ILoteSetor;
@@ -59,6 +60,9 @@ public class SConsumoInsumo {
     @Autowired
     private IUsuario usuarioInterface;
 
+    @Autowired
+    private SInsumo insumoService;
+
     // ── Permissões ───────────────────────────────────────────────────────
 
     /** Qualquer usuário ativo (incluindo Cuidadores comuns) pode registrar consumo. */
@@ -104,6 +108,10 @@ public class SConsumoInsumo {
         // Baixa de estoque, respeitando o fator de conversão (rule 4)
         insumo.setSaldoAtual(saldoAtual - quantidadeBaixa);
         insumoInterface.save(insumo);
+        insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.SAIDA, quantidadeBaixa,
+                insumo.getPrecoCompraMedio(),
+                dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now(),
+                null, setor, null);
 
         // Rateio: total de animais atualmente alocados neste setor, em lotes ativos (rule 3)
         int totalAnimais = contarAnimaisDoSetor(setor.getId());
@@ -155,6 +163,13 @@ public class SConsumoInsumo {
 
         insumo.setSaldoAtual(saldoComEstorno - novaQuantidadeBaixa);
         insumoInterface.save(insumo);
+        insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                consumo.getQuantidadeBaixaUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                LocalDateTime.now(), null, consumo.getSetor(), null);
+        insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.SAIDA, novaQuantidadeBaixa,
+                insumo.getPrecoCompraMedio(),
+                dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now(),
+                null, consumo.getSetor(), null);
 
         int totalAnimais = contarAnimaisDoSetor(consumo.getSetor().getId());
         Double consumoPorAnimal = totalAnimais > 0 ? dto.getQuantidade() / totalAnimais : null;

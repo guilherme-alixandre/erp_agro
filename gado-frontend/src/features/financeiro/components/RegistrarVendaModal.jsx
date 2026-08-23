@@ -13,7 +13,7 @@ function todayIso() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
-function RegistrarVendaModal({ lotes, animaisDisponiveis, isSaving, feedback, onClose, onSubmitLeite, onSubmitAnimal }) {
+function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving, feedback, onClose, onSubmitLeite, onSubmitAnimal }) {
   const [tipo, setTipo] = useState('')
 
   // ── Venda de leite ───────────────────────────────────────────────────
@@ -23,6 +23,7 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, isSaving, feedback, on
     chaveAcesso: '',
     precoLitro: '',
     valorTotal: '',
+    compradorId: '',
     itens: [{ loteId: '', litros: '' }],
   })
 
@@ -69,6 +70,7 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, isSaving, feedback, on
     loteId: '',
     animalIds: [],
     valorTotal: '',
+    compradorId: '',
   })
   const [selecaoModalOpen, setSelecaoModalOpen] = useState(false)
 
@@ -179,6 +181,16 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, isSaving, feedback, on
             </div>
 
             <label>
+              <span>Comprador <span className="required-marker">*</span></span>
+              <select name="compradorId" value={leiteForm.compradorId} onChange={handleLeiteChange} required>
+                <option value="">Selecione...</option>
+                {compradores.map((p) => (
+                  <option key={p.cpfCnpj} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
               <span>Data da venda <span className="required-marker">*</span></span>
               <input type="date" name="dataEmissao" value={leiteForm.dataEmissao} onChange={handleLeiteChange} required />
             </label>
@@ -258,6 +270,16 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, isSaving, feedback, on
                 <span className="ssm-trigger__arrow" aria-hidden="true">▼</span>
               </button>
             </div>
+
+            <label>
+              <span>Comprador <span className="required-marker">*</span></span>
+              <select name="compradorId" value={animalForm.compradorId} onChange={handleAnimalChange} required>
+                <option value="">Selecione...</option>
+                {compradores.map((p) => (
+                  <option key={p.cpfCnpj} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+            </label>
 
             <label>
               <span>Data da venda <span className="required-marker">*</span></span>

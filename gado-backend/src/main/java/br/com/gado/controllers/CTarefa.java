@@ -1,12 +1,21 @@
 package br.com.gado.controllers;
 
-import br.com.gado.dto.TarefaDTO;
+import br.com.gado.dto.tarefaDto.TarefaAtribuirDto;
+import br.com.gado.dto.tarefaDto.TarefaEdicaoDto;
+import br.com.gado.dto.tarefaDto.TarefaRespostaDto;
+import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.STarefa;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+/** Cada usuário tem uma lista de tarefas própria; qualquer usuário pode atribuir uma tarefa a qualquer outro. */
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
-@RequestMapping("/api/tarefa")
+@RequestMapping("/api/tarefas")
 public class CTarefa {
 
     private final STarefa tarefaService;
@@ -15,23 +24,24 @@ public class CTarefa {
         this.tarefaService = tarefaService;
     }
 
-    @GetMapping("/{tarefaId}")
-    public TarefaDTO getTarefa(@PathVariable Long tarefaId) {
-        return tarefaService.buscarTarefaPorId(tarefaId);
+    @GetMapping
+    public List<TarefaRespostaDto> listarMinhasTarefas() {
+        return tarefaService.listarMinhasTarefas(SecurityUtils.currentUserEmail());
     }
 
-    @PostMapping("/")
-    public TarefaDTO postTarefa(@RequestBody TarefaDTO tarefa, @RequestParam Long listaId) {
-        return tarefaService.criarTarefa(tarefa, listaId);
+    @PostMapping
+    public ResponseEntity<TarefaRespostaDto> atribuirTarefa(@Valid @RequestBody TarefaAtribuirDto dto) {
+        TarefaRespostaDto criada = tarefaService.atribuirTarefa(dto, SecurityUtils.currentUserEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(criada);
     }
 
-    @DeleteMapping("/{tarefaId}")
-    public String deleteTarefa(@PathVariable Long tarefaId) {
-        return tarefaService.excluirTarefa(tarefaId);
+    @PutMapping("/{id}")
+    public TarefaRespostaDto editarTarefa(@PathVariable Long id, @RequestBody TarefaEdicaoDto dto) {
+        return tarefaService.editarTarefa(id, dto, SecurityUtils.currentUserEmail());
     }
 
-    @PutMapping("/{tarefaId}")
-    public TarefaDTO putTarefa(@PathVariable Long tarefaId, @RequestBody TarefaDTO tarefa) {
-        return tarefaService.atualizarTarefa(tarefa, tarefaId);
+    @DeleteMapping("/{id}")
+    public String excluirTarefa(@PathVariable Long id) {
+        return tarefaService.excluirTarefa(id, SecurityUtils.currentUserEmail());
     }
 }
