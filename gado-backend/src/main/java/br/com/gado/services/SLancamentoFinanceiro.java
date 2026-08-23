@@ -1,18 +1,23 @@
 package br.com.gado.services;
 
+import br.com.gado.dto.lancamentoFinanceiroDto.FontesReceitaDto;
 import br.com.gado.dto.lancamentoFinanceiroDto.LancamentoFinanceiroRespostaDto;
 import br.com.gado.dto.lancamentoFinanceiroDto.ResumoMensalDto;
 import br.com.gado.entities.EConsumoEstoque;
 import br.com.gado.entities.EConsumoEstoqueItem;
 import br.com.gado.entities.EDocumentoEntradaItem;
+import br.com.gado.entities.EDocumentoSaida;
 import br.com.gado.entities.ELancamentoFinanceiro;
 import br.com.gado.entities.EPagamentoFuncionario;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.entities.EVendaAnimalItem;
 import br.com.gado.enums.EnNaturezaFinanceira;
 import br.com.gado.enums.EnOrigemLancamentoFinanceiro;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoDocumentoSaida;
 import br.com.gado.enums.EnTipoMovimentoFinanceiro;
+import br.com.gado.repositories.IDocumentoSaida;
 import br.com.gado.repositories.ILancamentoFinanceiro;
 import br.com.gado.repositories.IUsuario;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,6 +58,9 @@ public class SLancamentoFinanceiro {
 
     @Autowired
     private IUsuario usuarioInterface;
+
+    @Autowired
+    private IDocumentoSaida documentoSaidaInterface;
 
     // ── Permissões ───────────────────────────────────────────────────────
 
@@ -271,6 +282,62 @@ public class SLancamentoFinanceiro {
 
         return new ResumoMensalDto(ano, mes, totalEntradas, totalSaidasCusto, totalSaidasDespesa,
                 totalSaidas, lucroLiquido);
+    }
+
+    /**
+     * Mesmo cálculo de gerarResumoMensal, sem revalidar o perfil — para uso interno de SResumo,
+     * que já decidiu (antes de chamar aqui) se o perfil do usuário pode ver dados financeiros.
+     */
+    @Transactional
+    ResumoMensalDto gerarResumoMensalInterno(int ano, int mes) {
+        BigDecimal totalEntradas = lancamentoInterface.somarPorBloco(ano, mes, EnTipoMovimentoFinanceiro.ENTRADA, null);
+        BigDecimal totalSaidasCusto = lancamentoInterface.somarPorBlocoExcluindoOrigem(
+                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.CUSTO,
+                EnOrigemLancamentoFinanceiro.CONSUMO_ESTOQUE);
+        BigDecimal totalSaidasDespesa = lancamentoInterface.somarPorBlocoExcluindoOrigem(
+                ano, mes, EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.GASTO,
+                EnOrigemLancamentoFinanceiro.CONSUMO_ESTOQUE);
+        BigDecimal totalSaidas = totalSaidasCusto.add(totalSaidasDespesa);
+        BigDecimal lucroLiquido = totalEntradas.subtract(totalSaidas);
+
+        return new ResumoMensalDto(ano, mes, totalEntradas, totalSaidasCusto, totalSaidasDespesa,
+                totalSaidas, lucroLiquido);
+    }
+
+    /**
+     * Receita do mês agrupada por origem: um bucket "Leite" (soma de EDocumentoSaida.valorTotal
+     * das vendas de leite) e um bucket por raça (soma de EVendaAnimalItem.valorVenda) para vendas
+     * de animal. Retorna a maior e a menor fonte — usado pelo card "Resumo".
+     */
+    @Transactional
+    FontesReceitaDto analisarFontesReceita(int ano, int mes) {
+        LocalDate inicio = LocalDate.of(ano, mes, 1);
+        LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
+
+        List<EDocumentoSaida> vendas = documentoSaidaInterface.findByStatusAndDataEmissaoBetween(
+                EnStatus.A, inicio, fim);
+
+        Map<String, BigDecimal> porFonte = new LinkedHashMap<>();
+        for (EDocumentoSaida venda : vendas) {
+            if (venda.getTipoDocumento() == EnTipoDocumentoSaida.VENDA_LEITE) {
+                porFonte.merge("Leite", venda.getValorTotal(), BigDecimal::add);
+            } else {
+                for (EVendaAnimalItem item : venda.getItensAnimal()) {
+                    String raca = item.getAnimal().getRaca() != null
+                            ? item.getAnimal().getRaca().getNome() : "Sem raça";
+                    porFonte.merge(raca, item.getValorVenda(), BigDecimal::add);
+                }
+            }
+        }
+
+        if (porFonte.isEmpty()) {
+            return new FontesReceitaDto(null, null, null, null);
+        }
+
+        Map.Entry<String, BigDecimal> maior = Collections.max(porFonte.entrySet(), Map.Entry.comparingByValue());
+        Map.Entry<String, BigDecimal> menor = Collections.min(porFonte.entrySet(), Map.Entry.comparingByValue());
+
+        return new FontesReceitaDto(maior.getKey(), maior.getValue(), menor.getKey(), menor.getValue());
     }
 
     @Transactional

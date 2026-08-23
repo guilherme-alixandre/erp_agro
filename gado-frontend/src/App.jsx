@@ -10,6 +10,7 @@ import SetoresPage from './features/setores/pages/SetoresPage'
 import LotesPage from './features/lotes/pages/LotesPage'
 import MetasPage from './features/metas/pages/MetasPage'
 import TarefasPage from './features/tarefas/pages/TarefasPage'
+import ResumoPage from './features/resumo/pages/ResumoPage'
 
 const STORAGE_KEY = 'erp_agro_current_user'
 
@@ -21,7 +22,7 @@ function sanitizeUser(usuario) {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState('animais')
+  const [activePage, setActivePage] = useState('resumo')
   const [currentUser, setCurrentUser] = useState(null)
   const [sessionFeedback, setSessionFeedback] = useState('')
 
@@ -43,7 +44,7 @@ function App() {
     setAuthToken(token)
     setCurrentUser(safeUser)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser))
-    setActivePage('animais')
+    setActivePage('resumo')
     setSessionFeedback('')
   }
 
@@ -57,12 +58,22 @@ function App() {
     setAuthToken(null)
     setCurrentUser(null)
     localStorage.removeItem(STORAGE_KEY)
-    setActivePage('animais')
+    setActivePage('resumo')
     setSessionFeedback(typeof message === 'string' ? message : 'Você saiu da sessão com sucesso.')
   }
 
   if (!currentUser) {
     return <AuthPage onLogin={handleLogin} sessionFeedback={sessionFeedback} />
+  }
+
+  if (activePage === 'resumo') {
+    return (
+      <ResumoPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
+    )
   }
 
   if (activePage === 'perfil') {

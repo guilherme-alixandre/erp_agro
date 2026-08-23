@@ -5,9 +5,11 @@ import br.com.gado.enums.EnStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
 public interface IDocumentoSaida extends JpaRepository<EDocumentoSaida, Long> {
     List<EDocumentoSaida> findByStatusOrderByDataEmissaoDesc(EnStatus status);
+    List<EDocumentoSaida> findByStatusAndDataEmissaoBetween(EnStatus status, LocalDate inicio, LocalDate fim);
 }

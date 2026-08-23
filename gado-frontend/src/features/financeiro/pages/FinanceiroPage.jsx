@@ -16,6 +16,9 @@ function FinanceiroPage({ currentUser, onNavigate, onLogout }) {
       <aside className="animals-sidebar">
         <div className="animals-logo"><img src="/logo.png" alt="GADO" /></div>
         <nav>
+          <button type="button" className="menu-item" onClick={() => onNavigate('resumo')}>
+            Resumo
+          </button>
           <button type="button" className="menu-item" onClick={() => onNavigate('animais')}>
             Animais
           </button>
