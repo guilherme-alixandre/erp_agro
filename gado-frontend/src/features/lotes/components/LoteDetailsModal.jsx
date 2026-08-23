@@ -115,7 +115,7 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
                     {aloc.animais.map((a) => (
                       <li key={a.id}>
                         <strong>{a.codigoBrinco}</strong>
-                        {a.nome ? <span> — {a.nome}</span> : null}
+                        {a.racaNome ? <span> — {a.racaNome}</span> : null}
                       </li>
                     ))}
                   </ul>

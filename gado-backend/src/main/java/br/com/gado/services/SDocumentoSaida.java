@@ -73,6 +73,9 @@ public class SDocumentoSaida {
     @Autowired
     private SLancamentoFinanceiro lancamentoFinanceiroService;
 
+    @Autowired
+    private SInsumo insumoService;
+
     private EUsuario resolveUsuarioModulo(String emailUsuario) {
         if (emailUsuario == null || emailUsuario.isBlank()) {
             throw new IllegalArgumentException("Informe o e-mail do usuário responsável pela operação.");
@@ -219,6 +222,14 @@ public class SDocumentoSaida {
             item.setAnimal(animal);
             item.setDestino(dto.getDestino());
             item.setValorVenda(valorPorAnimal);
+
+            // Debita 1 cabeça do produto da raça do animal (se a raça já estiver vinculada a um
+            // produto — animais legados sem raça, de antes da migration, não têm o que debitar).
+            if (animal.getRaca() != null && animal.getRaca().getProduto() != null) {
+                item.setProduto(animal.getRaca().getProduto());
+                insumoService.baixarEstoque(animal.getRaca().getProduto().getId(), 1);
+            }
+
             itens.add(item);
         }
         documento.setItensAnimal(itens);
@@ -269,6 +280,12 @@ public class SDocumentoSaida {
             item.setId(i.getId());
             item.setAnimalId(i.getAnimal().getId());
             item.setAnimalCodigoBrinco(i.getAnimal().getCodigoBrinco());
+            if (i.getAnimal().getRaca() != null) {
+                item.setRacaNome(i.getAnimal().getRaca().getNome());
+            }
+            if (i.getProduto() != null) {
+                item.setProdutoId(i.getProduto().getId());
+            }
             item.setDestino(i.getDestino());
             item.setValorVenda(i.getValorVenda());
             return item;

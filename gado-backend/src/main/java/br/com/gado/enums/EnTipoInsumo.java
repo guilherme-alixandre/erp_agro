@@ -7,6 +7,7 @@ public enum EnTipoInsumo {
     RACAO,
     VACINA,
     MEDICAMENTO,
-    OUTROS
+    OUTROS,
+    ANIMAL
 
 }

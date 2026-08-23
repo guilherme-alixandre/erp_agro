@@ -271,6 +271,28 @@ public class SInsumo {
         return toEstoqueRespostaDto(insumoSalvo);
     }
 
+    /**
+     * Baixa simples de saldo (sem recalcular preço médio — venda não afeta o custo médio de
+     * aquisição). Usado por SDocumentoSaida ao vender/abater um animal: debita 1 cabeça do
+     * produto da raça do animal. Package-private, sem checagem de permissão — o chamador já
+     * validou a permissão adequada à própria operação.
+     */
+    @Transactional
+    void baixarEstoque(Long produtoId, double quantidade) {
+        EInsumo insumo = insumoInterface.findByIdAndStatus(produtoId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado ou inativo."));
+
+        double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
+        if (saldoAtual < quantidade) {
+            throw new IllegalArgumentException(String.format(
+                    "Estoque insuficiente para o produto \"%s\". Saldo atual: %.2f.",
+                    insumo.getNome(), saldoAtual));
+        }
+
+        insumo.setSaldoAtual(saldoAtual - quantidade);
+        insumoInterface.save(insumo);
+    }
+
     // ── Catálogo de Produtos: código sequencial ─────────────────────────
 
     /**

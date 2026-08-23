@@ -21,6 +21,6 @@ public class LoteSetorRespostaDto {
     public static class AnimalResumoDto {
         private Long id;
         private String codigoBrinco;
-        private String nome;
+        private String racaNome;
     }
 }

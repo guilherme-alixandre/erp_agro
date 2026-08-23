@@ -1,8 +1,11 @@
 package br.com.gado.config;
 
+import br.com.gado.dto.racaDto.RacaCadastroDto;
+import br.com.gado.dto.racaDto.RacaRespostaDto;
 import br.com.gado.entities.*;
 import br.com.gado.enums.*;
 import br.com.gado.repositories.*;
+import br.com.gado.services.SRaca;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -37,6 +40,8 @@ public class DataInitializer implements CommandLineRunner {
     private final IUnidadeMedida iUnidadeMedida;
     private final IInsumo iInsumo;
     private final IGrupoProduto iGrupoProduto;
+    private final IRaca iRaca;
+    private final SRaca sRaca;
 
     public DataInitializer(
             IUsuario iUsuario,
@@ -46,7 +51,9 @@ public class DataInitializer implements CommandLineRunner {
             ILoteSetor iLoteSetor,
             IUnidadeMedida iUnidadeMedida,
             IInsumo iInsumo,
-            IGrupoProduto iGrupoProduto) {
+            IGrupoProduto iGrupoProduto,
+            IRaca iRaca,
+            SRaca sRaca) {
         this.iUsuario = iUsuario;
         this.iSetor = iSetor;
         this.iAnimal = iAnimal;
@@ -55,6 +62,8 @@ public class DataInitializer implements CommandLineRunner {
         this.iUnidadeMedida = iUnidadeMedida;
         this.iInsumo = iInsumo;
         this.iGrupoProduto = iGrupoProduto;
+        this.iRaca = iRaca;
+        this.sRaca = sRaca;
     }
 
     @Override
@@ -134,13 +143,22 @@ public class DataInitializer implements CommandLineRunner {
         setorPatio.setAlteradoPor(adminSeed);
         iSetor.save(setorPatio);
 
-        // ── 3. ANIMAIS ────────────────────────────────────────────────────────────────
+        // ── 3. RAÇAS (Catálogo de Produtos + Animais) ────────────────────────────────
+        // Cada raça gera automaticamente um Produto (EInsumo) "Gado {nome}" no grupo
+        // "Animais" (semeado pela migration V23) — ver SRaca.criar.
+
+        ERaca racaNelore = criarRacaSeed("Nelore", "NE", adminSeed.getEmail());
+        ERaca racaAngus = criarRacaSeed("Angus", "AN", adminSeed.getEmail());
+        ERaca racaBrangus = criarRacaSeed("Brangus", "BR", adminSeed.getEmail());
+        ERaca racaGirolando = criarRacaSeed("Girolando", "GI", adminSeed.getEmail());
+        ERaca racaHolandesa = criarRacaSeed("Holandesa", "HO", adminSeed.getEmail());
+
+        // ── 4. ANIMAIS ────────────────────────────────────────────────────────────────
 
         EAnimal boi1 = new EAnimal();
-        boi1.setCodigoBrinco("BR001");
-        boi1.setNome("Trovão");
+        boi1.setCodigoBrinco("NE0001");
         boi1.setSexo(EnSexoAnimal.M);
-        boi1.setRaca("Nelore");
+        boi1.setRaca(racaNelore);
         boi1.setCor("Branca");
         boi1.setPesoAtual(480.0);
         boi1.setAlturaCernelha(1.45);
@@ -152,10 +170,9 @@ public class DataInitializer implements CommandLineRunner {
         boi1 = iAnimal.save(boi1);
 
         EAnimal boi2 = new EAnimal();
-        boi2.setCodigoBrinco("BR002");
-        boi2.setNome("Tempestade");
+        boi2.setCodigoBrinco("AN0001");
         boi2.setSexo(EnSexoAnimal.M);
-        boi2.setRaca("Angus");
+        boi2.setRaca(racaAngus);
         boi2.setCor("Preta");
         boi2.setPesoAtual(520.0);
         boi2.setAlturaCernelha(1.50);
@@ -167,10 +184,9 @@ public class DataInitializer implements CommandLineRunner {
         boi2 = iAnimal.save(boi2);
 
         EAnimal boi3 = new EAnimal();
-        boi3.setCodigoBrinco("BR003");
-        boi3.setNome("Furacão");
+        boi3.setCodigoBrinco("BR0001");
         boi3.setSexo(EnSexoAnimal.M);
-        boi3.setRaca("Brangus");
+        boi3.setRaca(racaBrangus);
         boi3.setCor("Cinza");
         boi3.setPesoAtual(495.0);
         boi3.setAlturaCernelha(1.47);
@@ -180,10 +196,9 @@ public class DataInitializer implements CommandLineRunner {
         boi3 = iAnimal.save(boi3);
 
         EAnimal vaca1 = new EAnimal();
-        vaca1.setCodigoBrinco("BR004");
-        vaca1.setNome("Mimosa");
+        vaca1.setCodigoBrinco("GI0001");
         vaca1.setSexo(EnSexoAnimal.F);
-        vaca1.setRaca("Girolando");
+        vaca1.setRaca(racaGirolando);
         vaca1.setCor("Malhada");
         vaca1.setPesoAtual(380.0);
         vaca1.setAlturaCernelha(1.38);
@@ -194,10 +209,9 @@ public class DataInitializer implements CommandLineRunner {
         vaca1 = iAnimal.save(vaca1);
 
         EAnimal vaca2 = new EAnimal();
-        vaca2.setCodigoBrinco("BR005");
-        vaca2.setNome("Estrela");
+        vaca2.setCodigoBrinco("HO0001");
         vaca2.setSexo(EnSexoAnimal.F);
-        vaca2.setRaca("Holandesa");
+        vaca2.setRaca(racaHolandesa);
         vaca2.setCor("Branca e Preta");
         vaca2.setPesoAtual(410.0);
         vaca2.setAlturaCernelha(1.42);
@@ -243,12 +257,8 @@ public class DataInitializer implements CommandLineRunner {
         iLoteSetor.save(alocacaoGalpao);
 
         // ── 6. GRUPOS DE PRODUTO (Catálogo de Insumos) ───────────────────────────────
-
-        EGrupoProduto grupoAnimais = new EGrupoProduto();
-        grupoAnimais.setNome("Animais");
-        grupoAnimais.setCodigoPrefixo("01");
-        grupoAnimais.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
-        iGrupoProduto.save(grupoAnimais);
+        // O grupo "Animais" (prefixo 01) já vem semeado pela migration V23 — não recriar aqui
+        // (a raça já o usa desde a seção 3).
 
         EGrupoProduto grupoVacinas = new EGrupoProduto();
         grupoVacinas.setNome("Vacinas");
@@ -318,6 +328,28 @@ public class DataInitializer implements CommandLineRunner {
         racao.setPrecoUltimaCompra(120.0);
         racao.setPendente(Boolean.FALSE);
         iInsumo.save(racao);
+
+        EInsumo vacinaAftosa = new EInsumo();
+        vacinaAftosa.setNome("Vacina Febre Aftosa");
+        vacinaAftosa.setTipo(EnTipoInsumo.VACINA);
+        vacinaAftosa.setGrupoProduto(grupoVacinas);
+        vacinaAftosa.setCodigoProduto(grupoVacinas.getCodigoPrefixo() + "000001");
+        vacinaAftosa.setUnidadeMedidaPrimaria(unidadeDose);
+        vacinaAftosa.setEstoqueMinimo(10.0);
+        vacinaAftosa.setSaldoAtual(50.0);
+        vacinaAftosa.setPrecoCompraMedio(8.0);
+        vacinaAftosa.setPrecoUltimaCompra(8.0);
+        vacinaAftosa.setPendente(Boolean.FALSE);
+        iInsumo.save(vacinaAftosa);
+    }
+
+    private ERaca criarRacaSeed(String nome, String sigla, String emailUsuario) {
+        RacaCadastroDto dto = new RacaCadastroDto();
+        dto.setNome(nome);
+        dto.setSigla(sigla);
+        RacaRespostaDto resposta = sRaca.criar(dto, emailUsuario);
+        return iRaca.findById(resposta.getId())
+                .orElseThrow(() -> new IllegalStateException("Falha ao semear a raça " + nome));
     }
 
     // Replica o mesmo algoritmo usado em SUsuario para garantir compatibilidade de login

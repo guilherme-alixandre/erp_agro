@@ -3,7 +3,7 @@ import SearchSelectModal from '../../../components/shared/SearchSelectModal'
 
 const ANIMAL_COLUMNS = [
   { key: 'codigoBrinco', label: 'Código' },
-  { key: 'nome', label: 'Nome' },
+  { key: 'racaNome', label: 'Raça' },
 ]
 
 const STATUS_VENDAVEL = new Set(['ATIVO', 'OBSERVACAO'])

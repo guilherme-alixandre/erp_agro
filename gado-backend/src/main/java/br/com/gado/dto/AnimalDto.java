@@ -7,25 +7,27 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class AnimalDto extends AbstractDTO {
 
-    // talvez eu tenha que ter um unique = true
+    /** Gerado automaticamente (sigla da raça + sequencial) — ignorado se enviado pelo cliente. */
     private String codigoBrinco;
-    private String nome;
     private String cor;
     private LocalDateTime dataNascimento;
 
     @DecimalMin(value = "30.0", message = "O peso mínimo para cadastro é 30kg.")
     private Double pesoAtual;
-    private String raca;
+
+    /** Obrigatório na criação. */
+    private Long racaId;
+    private String racaNome;
+    private String racaSigla;
+
     private Double alturaCernelha;
     private Double perimetroToracico;
     private Double comprimentoCorporal;
     private EnSexoAnimal sexo;
     private EnStatusAnimal statusAnimal;
-    private List<VacinacaoDTO> vacinas;
 }

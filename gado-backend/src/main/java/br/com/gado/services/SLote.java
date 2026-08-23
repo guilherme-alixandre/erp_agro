@@ -445,7 +445,9 @@ public class SLote {
                 LoteSetorRespostaDto.AnimalResumoDto ar = new LoteSetorRespostaDto.AnimalResumoDto();
                 ar.setId(a.getId());
                 ar.setCodigoBrinco(a.getCodigoBrinco());
-                ar.setNome(a.getNome());
+                if (a.getRaca() != null) {
+                    ar.setRacaNome(a.getRaca().getNome());
+                }
                 return ar;
             }).collect(Collectors.toList());
 

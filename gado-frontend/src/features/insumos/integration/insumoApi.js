@@ -117,21 +117,11 @@ async function registrarEntradaEstoque(id, email, formData) {
   return normalizeInsumoEstoque(payload)
 }
 
-/**
- * Vacinas agora são apenas insumos do catálogo geral com tipo === 'VACINA'
- * (grupo "Vacinas"). Usado pelo VacinaSelect no cadastro de Animais.
- */
-async function listarVacinasDisponiveis(termo) {
-  const lista = await listarEstoque(termo)
-  return lista.filter((item) => item.tipo === 'VACINA')
-}
-
 export {
   listarEstoque,
   cadastrarInsumoEstoque,
   atualizarInsumoEstoque,
   registrarEntradaEstoque,
-  listarVacinasDisponiveis,
   inativarInsumoEstoque,
   reativarInsumoEstoque,
 }

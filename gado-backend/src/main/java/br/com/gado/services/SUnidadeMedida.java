@@ -1,14 +1,15 @@
 package br.com.gado.services;
 
-import br.com.gado.dto.UnidadeMedidaDTO;
+import br.com.gado.dto.unidadeMedidaDto.UnidadeMedidaCadastroDto;
+import br.com.gado.dto.unidadeMedidaDto.UnidadeMedidaPutDto;
+import br.com.gado.dto.unidadeMedidaDto.UnidadeMedidaRespostaDto;
 import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IUnidadeMedida;
 import jakarta.persistence.EntityNotFoundException;
-import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,70 +17,106 @@ import java.util.stream.Collectors;
 @Service
 public class SUnidadeMedida {
 
-    private final IUnidadeMedida unidadeMedidaInterface;
-    private static final Logger log = LoggerFactory.getLogger(SUnidadeMedida.class);
-    private final ModelMapper modelMapper;
+    @Autowired
+    private IUnidadeMedida unidadeMedidaInterface;
 
-    public SUnidadeMedida(IUnidadeMedida unidadeMedidaInterface, ModelMapper modelMapper) {
-        this.unidadeMedidaInterface = unidadeMedidaInterface;
-        this.modelMapper = modelMapper;
+    /**
+     * Lista unidades de medida (ativas e inativas, para permitir reativação).
+     * @param status opcional: "A" (apenas ativas), "I" (apenas inativas), nulo/vazio = todas.
+     */
+    @Transactional
+    public List<UnidadeMedidaRespostaDto> listar(String busca, String status) {
+        String termo = busca == null ? "" : busca.trim();
+        EnStatus filtroStatus = parseStatus(status);
+
+        List<EUnidadeMedida> unidades;
+        if (filtroStatus != null) {
+            unidades = termo.isBlank()
+                    ? unidadeMedidaInterface.findByStatusOrderByUnidadeAsc(filtroStatus)
+                    : unidadeMedidaInterface.findByStatusAndUnidadeContainingIgnoreCaseOrderByUnidadeAsc(filtroStatus, termo);
+        } else {
+            unidades = termo.isBlank()
+                    ? unidadeMedidaInterface.findAllByOrderByUnidadeAsc()
+                    : unidadeMedidaInterface.findByUnidadeContainingIgnoreCaseOrderByUnidadeAsc(termo);
+        }
+
+        return unidades.stream().map(this::toRespostaDto).collect(Collectors.toList());
     }
 
-    public List<UnidadeMedidaDTO> listarTodas() {
-        return unidadeMedidaInterface.findAllByStatusOrderByUnidadeAsc(EnStatus.A).stream()
-                .map(u -> modelMapper.map(u, UnidadeMedidaDTO.class))
-                .collect(Collectors.toList());
-    }
-
-    public UnidadeMedidaDTO criarUnidadeMedida(UnidadeMedidaDTO unidadeMedidaDto) {
-        EUnidadeMedida novaUnidadeMedida = modelMapper.map(unidadeMedidaDto, EUnidadeMedida.class);
-
+    private EnStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
         try {
-            EUnidadeMedida unidadeMedidaSalva = this.unidadeMedidaInterface.save(novaUnidadeMedida);
-            return modelMapper.map(unidadeMedidaSalva, UnidadeMedidaDTO.class);
-        } catch (Exception e) {
-            log.error("Erro ao criar nova unidade de medida: {}", e.getMessage(), e);
-            throw e;
+            return EnStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Status inválido. Use 'A' (ativo) ou 'I' (inativo).");
         }
     }
 
-    public UnidadeMedidaDTO bucarUnidadeMedidaPorId(Long unidadeMedidaId) {
-        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
-                .findById(unidadeMedidaId)
-                .orElseThrow(EntityNotFoundException::new);
-        return modelMapper.map(existingEntity, UnidadeMedidaDTO.class);
+    public UnidadeMedidaRespostaDto buscarPorId(Long id) {
+        EUnidadeMedida unidade = unidadeMedidaInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Unidade de medida não encontrada."));
+        return toRespostaDto(unidade);
     }
 
-    public UnidadeMedidaDTO atualizarUnidadeMedida(Long unidadeMedidaId, UnidadeMedidaDTO unidadeMedidaDto) {
-        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
-                .findById(unidadeMedidaId)
-                .orElseThrow(EntityNotFoundException::new);
+    @Transactional
+    public UnidadeMedidaRespostaDto criar(UnidadeMedidaCadastroDto dto) {
+        String unidade = dto.getUnidade().trim().toUpperCase();
 
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
-        this.modelMapper.map(unidadeMedidaDto, existingEntity);
-
-        try {
-            EUnidadeMedida unidadeMedidaAtualizada = this.unidadeMedidaInterface.save(existingEntity);
-            return modelMapper.map(unidadeMedidaAtualizada, UnidadeMedidaDTO.class);
-        } catch (Exception e) {
-            log.error("Erro ao atualizar unidade de medida: {}", e.getMessage(), e);
-            throw e;
+        if (unidadeMedidaInterface.findFirstByUnidadeIgnoreCase(unidade).isPresent()) {
+            throw new IllegalArgumentException("Já existe uma unidade de medida com esse nome.");
         }
+
+        EUnidadeMedida nova = new EUnidadeMedida();
+        nova.setUnidade(unidade);
+
+        return toRespostaDto(unidadeMedidaInterface.save(nova));
     }
 
-    public String excluirUnidadeMedida(Long unidadeMedidaId) {
-        EUnidadeMedida existingEntity = this.unidadeMedidaInterface
-                .findById(unidadeMedidaId)
-                .orElseThrow(EntityNotFoundException::new);
+    @Transactional
+    public UnidadeMedidaRespostaDto atualizar(Long id, UnidadeMedidaPutDto dto) {
+        EUnidadeMedida existente = unidadeMedidaInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Unidade de medida não encontrada."));
 
-        existingEntity.setStatus(EnStatus.I);
-
-        try {
-            this.unidadeMedidaInterface.save(existingEntity);
-            return "unidade de medida excluída com sucesso";
-        } catch (Exception e) {
-            log.error("Erro ao excluir unidade de medida: {}", e.getMessage(), e);
-            return "erro ao excluir unidade de medida";
+        if (dto.getUnidade() != null) {
+            String unidade = dto.getUnidade().trim().toUpperCase();
+            if (unidade.isBlank()) {
+                throw new IllegalArgumentException("A unidade não pode ser vazia.");
+            }
+            unidadeMedidaInterface.findFirstByUnidadeIgnoreCase(unidade)
+                    .filter(outra -> !outra.getId().equals(id))
+                    .ifPresent(outra -> {
+                        throw new IllegalArgumentException("Já existe uma unidade de medida com esse nome.");
+                    });
+            existente.setUnidade(unidade);
         }
+
+        return toRespostaDto(unidadeMedidaInterface.save(existente));
+    }
+
+    /** Inativação lógica — produtos já vinculados à unidade continuam intactos. */
+    @Transactional
+    public String inativar(Long id) {
+        EUnidadeMedida unidade = unidadeMedidaInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Unidade de medida não encontrada."));
+        unidade.setStatus(EnStatus.I);
+        unidadeMedidaInterface.save(unidade);
+        return "Unidade de medida inativada com sucesso";
+    }
+
+    @Transactional
+    public String reativar(Long id) {
+        EUnidadeMedida unidade = unidadeMedidaInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Unidade de medida não encontrada."));
+        unidade.setStatus(EnStatus.A);
+        unidadeMedidaInterface.save(unidade);
+        return "Unidade de medida reativada com sucesso";
+    }
+
+    private UnidadeMedidaRespostaDto toRespostaDto(EUnidadeMedida unidade) {
+        UnidadeMedidaRespostaDto dto = new UnidadeMedidaRespostaDto();
+        dto.setId(unidade.getId());
+        dto.setUnidade(unidade.getUnidade());
+        dto.setStatus(unidade.getStatus());
+        return dto;
     }
 }

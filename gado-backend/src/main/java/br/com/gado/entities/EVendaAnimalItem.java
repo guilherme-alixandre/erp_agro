@@ -29,6 +29,11 @@ public class EVendaAnimalItem extends EAbstract {
     @JoinColumn(name = "animal_id", nullable = false)
     private EAnimal animal;
 
+    /** Produto (EInsumo) da raça do animal — recebe a baixa de 1 cabeça nesta venda. */
+    @ManyToOne
+    @JoinColumn(name = "produto_id")
+    private EInsumo produto;
+
     /** VENDIDO (vivo) ou ABATIDO. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

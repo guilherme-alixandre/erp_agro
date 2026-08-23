@@ -37,6 +37,8 @@ public class DocumentoSaidaRespostaDto {
         private Long id;
         private Long animalId;
         private String animalCodigoBrinco;
+        private Long produtoId;
+        private String racaNome;
         private EnStatusAnimal destino;
         private BigDecimal valorVenda;
     }

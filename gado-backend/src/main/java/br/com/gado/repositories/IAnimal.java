@@ -19,8 +19,11 @@ public interface IAnimal extends JpaRepository<EAnimal, Long> {
     Boolean existsByCodigoBrincoAndStatus(String codigoBrinco, EnStatus status);
     void deleteByCodigoBrinco(String codigoBrinco);
 
+    /** Maior codigoBrinco já emitido para uma sigla de raça (ex: prefixo "NE" → achar "NE0007"). */
+    Optional<EAnimal> findFirstByCodigoBrincoStartingWithOrderByCodigoBrincoDesc(String prefixo);
+
     @Query("SELECT a FROM EAnimal a WHERE a.status = :status AND ("
             + "LOWER(a.codigoBrinco) LIKE LOWER(CONCAT('%', :termo, '%')) "
-            + "OR LOWER(a.nome) LIKE LOWER(CONCAT('%', :termo, '%')))")
+            + "OR LOWER(a.raca.nome) LIKE LOWER(CONCAT('%', :termo, '%')))")
     List<EAnimal> buscarPorTermo(@Param("status") EnStatus status, @Param("termo") String termo);
 }

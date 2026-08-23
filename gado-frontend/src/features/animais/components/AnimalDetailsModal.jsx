@@ -1,7 +1,17 @@
+import { useEffect, useState } from 'react'
+import { listarVacinacoesPorAnimal } from '../../insumos/integration/vacinacaoAnimalApi'
+
 function formatDate(dateText) {
   if (!dateText) return '-'
   const [year, month, day] = dateText.split('-')
   return `${day}/${month}/${year}`
+}
+
+function formatDateTime(iso) {
+  if (!iso) return '—'
+  const data = new Date(iso)
+  if (Number.isNaN(data.getTime())) return iso
+  return data.toLocaleString('pt-BR')
 }
 
 function formatCm(value) {
@@ -12,6 +22,31 @@ function formatCm(value) {
 }
 
 function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
+  const [vacinacoes, setVacinacoes] = useState([])
+  const [isLoadingVacinacoes, setIsLoadingVacinacoes] = useState(false)
+
+  useEffect(() => {
+    if (!animal.id) {
+      setVacinacoes([])
+      return
+    }
+    let cancelado = false
+    setIsLoadingVacinacoes(true)
+    listarVacinacoesPorAnimal(animal.id)
+      .then((lista) => {
+        if (!cancelado) setVacinacoes(lista)
+      })
+      .catch(() => {
+        if (!cancelado) setVacinacoes([])
+      })
+      .finally(() => {
+        if (!cancelado) setIsLoadingVacinacoes(false)
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [animal.id])
+
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
@@ -28,10 +63,6 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
             <dd>{animal.codigoBrinco}</dd>
           </div>
           <div>
-            <dt>Nome</dt>
-            <dd>{animal.nome || '-'}</dd>
-          </div>
-          <div>
             <dt>Data de nascimento</dt>
             <dd>{formatDate(animal.dataNascimento)}</dd>
           </div>
@@ -41,7 +72,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </div>
           <div>
             <dt>Raça</dt>
-            <dd>{animal.raca || '-'}</dd>
+            <dd>{animal.racaNome || '-'}</dd>
           </div>
           <div>
             <dt>Cor</dt>
@@ -69,18 +100,25 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </div>
         </dl>
 
-        <h3 className="details-section">Vacinas</h3>
-        {Array.isArray(animal.vacinas) && animal.vacinas.length > 0 ? (
+        <h3 className="details-section">Vacinas aplicadas</h3>
+        {isLoadingVacinacoes ? (
+          <p className="vacinas-empty">Carregando...</p>
+        ) : vacinacoes.length > 0 ? (
           <ul className="vacinas-detail-list">
-            {animal.vacinas.map((v, i) => (
-              <li key={v?.id ?? i}>
-                <strong>{v.nome || 'Sem nome'}</strong>
-                <span>{formatDate(v.dataOcorrencia)}</span>
+            {vacinacoes.map((v) => (
+              <li key={v.id}>
+                <strong>
+                  {v.insumoNome}
+                  {v.cancelado ? ' (cancelada)' : ''}
+                </strong>
+                <span>
+                  {formatDateTime(v.dataAplicacao)} — {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
+                </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="vacinas-empty">Nenhuma vacina cadastrada para este animal.</p>
+          <p className="vacinas-empty">Nenhuma vacina aplicada a este animal.</p>
         )}
 
         <div className="modal-actions">

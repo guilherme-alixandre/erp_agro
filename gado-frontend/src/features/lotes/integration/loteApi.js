@@ -13,7 +13,7 @@ function normalizeAnimalResumo(raw) {
   return {
     id: raw?.id ?? null,
     codigoBrinco: raw?.codigoBrinco ?? '',
-    nome: raw?.nome ?? '',
+    racaNome: raw?.racaNome ?? '',
   }
 }
 
@@ -117,7 +117,7 @@ async function listarAnimaisParaLote() {
     .map((raw) => ({
       id: raw.id,
       codigoBrinco: raw?.codigoBrinco ?? '',
-      nome: raw?.nome ?? '',
+      racaNome: raw?.racaNome ?? '',
       statusAnimal: raw?.statusAnimal ?? 'ATIVO',
     }))
 }

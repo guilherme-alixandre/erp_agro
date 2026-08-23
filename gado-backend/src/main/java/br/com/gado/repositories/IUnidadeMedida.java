@@ -10,7 +10,10 @@ import java.util.Optional;
 
 @Repository
 public interface IUnidadeMedida extends JpaRepository<EUnidadeMedida, Long> {
-    Optional<EUnidadeMedida> findById(Long id);
+    Optional<EUnidadeMedida> findFirstByUnidadeIgnoreCase(String unidade);
 
-    List<EUnidadeMedida> findAllByStatusOrderByUnidadeAsc(EnStatus status);
+    List<EUnidadeMedida> findByStatusOrderByUnidadeAsc(EnStatus status);
+    List<EUnidadeMedida> findByStatusAndUnidadeContainingIgnoreCaseOrderByUnidadeAsc(EnStatus status, String unidade);
+    List<EUnidadeMedida> findAllByOrderByUnidadeAsc();
+    List<EUnidadeMedida> findByUnidadeContainingIgnoreCaseOrderByUnidadeAsc(String unidade);
 }

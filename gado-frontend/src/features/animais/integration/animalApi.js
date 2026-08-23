@@ -60,41 +60,25 @@ function validatePeso(pesoAtual) {
 // Helpers: Normalização (Backend → Frontend)
 // ============================================================================
 
-function normalizeVacinas(rawVacinas) {
-    if (!Array.isArray(rawVacinas)) return []
-
-    return rawVacinas.map((v) => {
-        const dataRaw = v?.dataOcorrencia ?? ''
-        const dataIso = typeof dataRaw === 'string' && dataRaw.length >= 10
-            ? dataRaw.slice(0, 10)
-            : dataRaw
-
-        return {
-            id: v?.id ?? null,
-            nome: v?.insumoRelacionado?.nome ?? '',
-            dataOcorrencia: dataIso || '',
-        }
-    })
-}
-
 function normalizeAnimal(rawAnimal) {
     const nascimento = rawAnimal?.dataNascimento?.slice(0, 10) ?? ''
 
     return {
+        id: rawAnimal?.id ?? null,
         codigoBrinco: rawAnimal?.codigoBrinco ?? '',
-        nome: rawAnimal?.nome ?? '',
         dataNascimento: nascimento,
         pesoAtual: typeof rawAnimal?.pesoAtual === 'number'
             ? rawAnimal.pesoAtual
             : Number(rawAnimal?.pesoAtual ?? 0),
-        raca: rawAnimal?.raca ?? '',
+        racaId: rawAnimal?.racaId ?? '',
+        racaNome: rawAnimal?.racaNome ?? '',
+        racaSigla: rawAnimal?.racaSigla ?? '',
         cor: rawAnimal?.cor ?? '',
         alturaCernelha: String(rawAnimal?.alturaCernelha ?? ''),
         perimetroToracico: String(rawAnimal?.perimetroToracico ?? ''),
         comprimentoCorporal: String(rawAnimal?.comprimentoCorporal ?? ''),
         sexo: rawAnimal?.sexo ?? 'M',
         statusAnimal: rawAnimal?.statusAnimal ?? 'ATIVO',
-        vacinas: normalizeVacinas(rawAnimal?.vacinas),
     }
 }
 
@@ -102,39 +86,20 @@ function normalizeAnimal(rawAnimal) {
 // Helpers: Transformação (Frontend → Backend)
 // ============================================================================
 
-function sanitizeVacinas(vacinas) {
-    if (!Array.isArray(vacinas)) return []
-
-    const list = []
-    vacinas.forEach((v, index) => {
-        const nome = sanitizeText(v?.nome)
-        const data = sanitizeText(v?.dataOcorrencia)
-
-        if (!nome && !data) return
-        if (!nome) throw new Error(`Informe o nome da vacina ${index + 1}.`)
-        if (!data) throw new Error(`Informe a data da vacina "${nome}".`)
-
-        list.push({
-            insumoRelacionado: { nome },
-            dataOcorrencia: `${data}T00:00:00`,
-        })
-    })
-
-    return list
-}
-
-function toPayload(animal, { incluirVacinas = false } = {}) {
+function toPayload(animal) {
     const dataNascimento = sanitizeText(animal.dataNascimento)
     validateBirthDate(dataNascimento)
 
     const pesoAtual = validatePeso(animal.pesoAtual)
 
-    const payload = {
-        codigoBrinco: sanitizeText(animal.codigoBrinco),
-        nome: sanitizeText(animal.nome),
+    if (!animal.racaId) {
+        throw new Error('Selecione a raça do animal.')
+    }
+
+    return {
         dataNascimento: `${dataNascimento}T00:00:00`,
         pesoAtual,
-        raca: sanitizeText(animal.raca),
+        racaId: Number(animal.racaId),
         cor: sanitizeText(animal.cor),
         alturaCernelha: parseOptionalNumber(animal.alturaCernelha, 'Altura na cernelha'),
         perimetroToracico: parseOptionalNumber(animal.perimetroToracico, 'Perímetro torácico'),
@@ -142,12 +107,6 @@ function toPayload(animal, { incluirVacinas = false } = {}) {
         sexo: animal.sexo,
         statusAnimal: animal.statusAnimal,
     }
-
-    if (incluirVacinas) {
-        payload.vacinas = sanitizeVacinas(animal.vacinas)
-    }
-
-    return payload
 }
 
 // ============================================================================
@@ -215,7 +174,7 @@ async function cadastrarAnimal(email, animal) {
     }
 
     const emailCodificado = encodeURIComponent(emailLimpo)
-    const payload = toPayload(animal, { incluirVacinas: true })
+    const payload = toPayload(animal)
 
     return request(`/animais/usuarios/${emailCodificado}`, {
         method: 'POST',

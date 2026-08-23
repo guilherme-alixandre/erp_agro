@@ -3,7 +3,7 @@ import SearchSelectModal from '../../../components/shared/SearchSelectModal'
 
 const ANIMAL_COLUMNS = [
   { key: 'codigoBrinco', label: 'Código' },
-  { key: 'nome', label: 'Nome' },
+  { key: 'racaNome', label: 'Raça' },
 ]
 
 const ANIMAL_FILTER = {
@@ -46,7 +46,7 @@ function buildAnimalTriggerText(selectedIds, animaisDisponiveis) {
   if (selectedIds.length === 1) {
     const found = animaisDisponiveis.find((a) => a.id === selectedIds[0])
     if (found) {
-      return found.nome ? `${found.codigoBrinco} — ${found.nome}` : found.codigoBrinco
+      return found.racaNome ? `${found.codigoBrinco} — ${found.racaNome}` : found.codigoBrinco
     }
     return '1 selecionado'
   }

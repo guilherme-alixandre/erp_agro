@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import GrupoProdutoFormModal from '../components/GrupoProdutoFormModal'
+import UnidadeMedidaFormModal from '../components/UnidadeMedidaFormModal'
 import InsumoEstoqueFormModal from '../components/InsumoEstoqueFormModal'
 import EntradaEstoqueModal from '../components/EntradaEstoqueModal'
 import AlimentarSetoresTab from '../components/AlimentarSetoresTab'
 import ConsumoEstoqueTab from '../components/ConsumoEstoqueTab'
+import VacinarAnimaisTab from '../components/VacinarAnimaisTab'
 import {
   listarEstoque,
   cadastrarInsumoEstoque,
@@ -12,7 +14,13 @@ import {
   inativarInsumoEstoque,
   reativarInsumoEstoque,
 } from '../integration/insumoApi'
-import { listarUnidadesMedida } from '../integration/unidadeMedidaApi'
+import {
+  listarUnidadesMedida,
+  cadastrarUnidadeMedida,
+  atualizarUnidadeMedida,
+  deletarUnidadeMedida,
+  reativarUnidadeMedida,
+} from '../integration/unidadeMedidaApi'
 import {
   atualizarGrupoProduto,
   cadastrarGrupoProduto,
@@ -30,6 +38,11 @@ const defaultGrupoForm = {
   nome: '',
   codigoPrefixo: '',
   naturezaFinanceira: '',
+}
+
+const defaultUnidadeForm = {
+  id: null,
+  unidade: '',
 }
 
 const defaultEstoqueForm = {
@@ -191,6 +204,139 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     }
   }
 
+  // ── Unidades de Medida ───────────────────────────────────────────────
+
+  const [isLoadingUnidadesGerenciadas, setIsLoadingUnidadesGerenciadas] = useState(false)
+  const [unidadesFeedback, setUnidadesFeedback] = useState({ type: '', message: '' })
+  const [unidadesGerenciadas, setUnidadesGerenciadas] = useState([])
+  const [unidadeModal, setUnidadeModal] = useState({ open: false, unidade: null })
+  const [unidadeFormMode, setUnidadeFormMode] = useState('create')
+  const [unidadeFormData, setUnidadeFormData] = useState(defaultUnidadeForm)
+  const [unidadeFormFeedback, setUnidadeFormFeedback] = useState('')
+  const [isSavingUnidade, setIsSavingUnidade] = useState(false)
+  const [unidadeSearch, setUnidadeSearch] = useState('')
+  const [unidadeActiveSearch, setUnidadeActiveSearch] = useState('')
+  const [unidadeStatusFiltro, setUnidadeStatusFiltro] = useState('ATIVO')
+
+  const fetchUnidadesGerenciadas = useCallback(async (termo, statusFiltro) => {
+    setIsLoadingUnidadesGerenciadas(true)
+    setUnidadesFeedback({ type: '', message: '' })
+    try {
+      const list = await listarUnidadesMedida(termo ?? '', statusFiltro ?? 'ATIVO')
+      setUnidadesGerenciadas(list)
+    } catch (error) {
+      setUnidadesFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao carregar as unidades de medida.',
+      })
+    } finally {
+      setIsLoadingUnidadesGerenciadas(false)
+    }
+  }, [])
+
+  function handleUnidadeSearchSubmit(event) {
+    event.preventDefault()
+    const termo = unidadeSearch.trim()
+    setUnidadeActiveSearch(termo)
+    fetchUnidadesGerenciadas(termo, unidadeStatusFiltro)
+  }
+
+  function handleUnidadeClearSearch() {
+    setUnidadeSearch('')
+    setUnidadeActiveSearch('')
+    fetchUnidadesGerenciadas('', unidadeStatusFiltro)
+  }
+
+  function handleUnidadeStatusFiltroChange(event) {
+    const novoStatus = event.target.value
+    setUnidadeStatusFiltro(novoStatus)
+    fetchUnidadesGerenciadas(unidadeActiveSearch, novoStatus)
+  }
+
+  function closeUnidadeModal() {
+    setUnidadeModal({ open: false, unidade: null })
+    setUnidadeFormData(defaultUnidadeForm)
+    setUnidadeFormFeedback('')
+  }
+
+  function handleUnidadeFormChange(event) {
+    const { name, value } = event.target
+    setUnidadeFormData((current) => ({ ...current, [name]: value }))
+  }
+
+  function openCreateUnidadeModal() {
+    setUnidadeFormMode('create')
+    setUnidadeFormData(defaultUnidadeForm)
+    setUnidadeFormFeedback('')
+    setUnidadeModal({ open: true, unidade: null })
+  }
+
+  function openEditUnidadeModal(unidade) {
+    setUnidadeFormMode('edit')
+    setUnidadeFormFeedback('')
+    setUnidadeFormData({
+      id: unidade.id,
+      unidade: unidade.unidade,
+    })
+    setUnidadeModal({ open: true, unidade })
+  }
+
+  async function handleSubmitUnidadeForm(event) {
+    event.preventDefault()
+    setIsSavingUnidade(true)
+    setUnidadeFormFeedback('')
+    setUnidadesFeedback({ type: '', message: '' })
+    try {
+      if (unidadeFormMode === 'create') {
+        await cadastrarUnidadeMedida(unidadeFormData)
+        setUnidadesFeedback({ type: 'info', message: 'Unidade de medida cadastrada com sucesso.' })
+      } else {
+        await atualizarUnidadeMedida(unidadeFormData.id, unidadeFormData)
+        setUnidadesFeedback({ type: 'info', message: 'Unidade de medida atualizada com sucesso.' })
+      }
+      closeUnidadeModal()
+      await fetchUnidadesGerenciadas(unidadeActiveSearch, unidadeStatusFiltro)
+      await fetchUnidades()
+    } catch (error) {
+      setUnidadeFormFeedback(error.message || 'Falha ao salvar a unidade de medida.')
+    } finally {
+      setIsSavingUnidade(false)
+    }
+  }
+
+  async function handleDeletarUnidade(unidade) {
+    const confirmar = window.confirm(`Deseja inativar a unidade "${unidade.unidade}"?`)
+    if (!confirmar) return
+
+    setUnidadesFeedback({ type: '', message: '' })
+    try {
+      await deletarUnidadeMedida(unidade.id)
+      setUnidadesFeedback({ type: 'info', message: 'Unidade de medida inativada com sucesso.' })
+      await fetchUnidadesGerenciadas(unidadeActiveSearch, unidadeStatusFiltro)
+      await fetchUnidades()
+    } catch (error) {
+      setUnidadesFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao inativar a unidade de medida.',
+      })
+    }
+  }
+
+  async function handleReativarUnidade(unidade) {
+    setUnidadesFeedback({ type: '', message: '' })
+    try {
+      await reativarUnidadeMedida(unidade.id)
+      setUnidadesFeedback({ type: 'info', message: 'Unidade de medida reativada com sucesso.' })
+      await fetchUnidadesGerenciadas(unidadeActiveSearch, unidadeStatusFiltro)
+      await fetchUnidades()
+    } catch (error) {
+      setUnidadesFeedback({
+        type: 'error',
+        message: error.message || 'Falha ao reativar a unidade de medida.',
+      })
+    }
+  }
+
   // ── Estoque (Catálogo geral de Insumos) ──────────────────────────────
 
   const [estoqueSearch, setEstoqueSearch] = useState('')
@@ -225,13 +371,21 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     }
   }, [])
 
+  const fetchUnidades = useCallback(async () => {
+    try {
+      const list = await listarUnidadesMedida()
+      setUnidades(list)
+    } catch {
+      setUnidades([])
+    }
+  }, [])
+
   useEffect(() => {
     fetchEstoque('', 'ATIVO')
     fetchGrupos('', 'ATIVO')
-    listarUnidadesMedida()
-      .then(setUnidades)
-      .catch(() => setUnidades([]))
-  }, [fetchEstoque, fetchGrupos])
+    fetchUnidadesGerenciadas('', 'ATIVO')
+    fetchUnidades()
+  }, [fetchEstoque, fetchGrupos, fetchUnidadesGerenciadas, fetchUnidades])
 
   function handleEstoqueSearchSubmit(event) {
     event.preventDefault()
@@ -456,6 +610,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           </button>
           <button
             type="button"
+            className={`insumos-tab ${activeTab === 'unidades' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('unidades')}
+          >
+            Unidades de Medida
+          </button>
+          <button
+            type="button"
             className={`insumos-tab ${activeTab === 'alimentar' ? 'insumos-tab--active' : ''}`}
             onClick={() => setActiveTab('alimentar')}
           >
@@ -467,6 +628,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
             onClick={() => setActiveTab('consumo')}
           >
             Consumo de Estoque
+          </button>
+          <button
+            type="button"
+            className={`insumos-tab ${activeTab === 'vacinar' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('vacinar')}
+          >
+            Vacinar Animais
           </button>
         </div>
 
@@ -758,12 +926,143 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           </>
         ) : null}
 
+        {activeTab === 'unidades' ? (
+          <>
+            {unidadesFeedback.message ? (
+              <p
+                className={`feedback ${unidadesFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
+              >
+                {unidadesFeedback.message}
+              </p>
+            ) : null}
+
+            <div className="data-toolbar">
+              <form className="toolbar-search" onSubmit={handleUnidadeSearchSubmit}>
+                <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                <input
+                  type="text"
+                  value={unidadeSearch}
+                  onChange={(e) => setUnidadeSearch(e.target.value)}
+                  placeholder="Buscar unidade"
+                />
+                {unidadeActiveSearch ? (
+                  <button
+                    type="button"
+                    className="toolbar-search__clear"
+                    onClick={handleUnidadeClearSearch}
+                    aria-label="Limpar busca"
+                  >
+                    ✕
+                  </button>
+                ) : null}
+              </form>
+
+              <select
+                className="toolbar-select"
+                value={unidadeStatusFiltro}
+                onChange={handleUnidadeStatusFiltroChange}
+              >
+                <option value="ATIVO">Ativas</option>
+                <option value="INATIVO">Inativas</option>
+                <option value="TODOS">Todas</option>
+              </select>
+
+              <p className="animals-count">
+                {isLoadingUnidadesGerenciadas
+                  ? 'Carregando...'
+                  : `${unidadesGerenciadas.length} ${unidadesGerenciadas.length === 1 ? 'unidade cadastrada' : 'unidades cadastradas'}`}
+              </p>
+
+              {canGerenciarEstoque ? (
+                <button type="button" className="btn-new-entity" onClick={openCreateUnidadeModal}>
+                  + Nova Unidade
+                </button>
+              ) : null}
+            </div>
+
+            <div className="data-table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Unidade</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingUnidadesGerenciadas ? (
+                    <tr>
+                      <td colSpan={2} className="table-loading">Carregando...</td>
+                    </tr>
+                  ) : unidadesGerenciadas.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="table-empty">
+                        {canGerenciarEstoque
+                          ? 'Nenhuma unidade cadastrada. Clique em "+ Nova Unidade" para começar.'
+                          : 'Nenhuma unidade cadastrada.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    unidadesGerenciadas.map((unidade) => (
+                      <tr key={unidade.id}>
+                        <td>
+                          {unidade.unidade}
+                          {unidade.status === 'INATIVO' ? (
+                            <span className="setor-badge setor-badge--inativo estoque-badge">Inativo</span>
+                          ) : null}
+                        </td>
+                        <td>
+                          <div className="row-actions">
+                            {canGerenciarEstoque ? (
+                              unidade.status === 'INATIVO' ? (
+                                <button
+                                  type="button"
+                                  className="btn-row"
+                                  onClick={() => handleReativarUnidade(unidade)}
+                                >
+                                  Reativar
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--edit"
+                                    onClick={() => openEditUnidadeModal(unidade)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--danger"
+                                    onClick={() => handleDeletarUnidade(unidade)}
+                                  >
+                                    Inativar
+                                  </button>
+                                </>
+                              )
+                            ) : (
+                              <span>—</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : null}
+
         {activeTab === 'alimentar' ? (
           <AlimentarSetoresTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
         ) : null}
 
         {activeTab === 'consumo' ? (
           <ConsumoEstoqueTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
+        ) : null}
+
+        {activeTab === 'vacinar' ? (
+          <VacinarAnimaisTab currentUser={currentUser} insumosEstoque={insumosEstoque} />
         ) : null}
       </section>
 
@@ -802,6 +1101,18 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
           onClose={closeGrupoModal}
           onChange={handleGrupoFormChange}
           onSubmit={handleSubmitGrupoForm}
+        />
+      ) : null}
+
+      {unidadeModal.open ? (
+        <UnidadeMedidaFormModal
+          mode={unidadeFormMode}
+          formData={unidadeFormData}
+          isSaving={isSavingUnidade}
+          feedback={unidadeFormFeedback}
+          onClose={closeUnidadeModal}
+          onChange={handleUnidadeFormChange}
+          onSubmit={handleSubmitUnidadeForm}
         />
       ) : null}
     </main>

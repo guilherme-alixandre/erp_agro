@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
+import RacaFormModal from '../components/RacaFormModal'
 import {
     buscarAnimais,
     cadastrarAnimal,
@@ -9,8 +10,15 @@ import {
     getBackendMessage,
     isBackendErrorMessage,
 } from '../integration/animalApi.js'
-import { listarVacinasDisponiveis } from '../../insumos/integration/insumoApi.js'
+import {
+    listarRacas,
+    cadastrarRaca,
+    atualizarRaca,
+    deletarRaca,
+    reativarRaca,
+} from '../integration/racaApi.js'
 import '../styles/animais.css'
+import '../../insumos/styles/insumos.css'
 
 // ============================================================================
 // Default Form
@@ -18,18 +26,18 @@ import '../styles/animais.css'
 
 const DEFAULT_FORM = {
     codigoBrinco: '',
-    nome: '',
     dataNascimento: '',
     pesoAtual: '',
-    raca: '',
+    racaId: '',
     cor: '',
     alturaCernelha: '',
     perimetroToracico: '',
     comprimentoCorporal: '',
     sexo: 'M',
     statusAnimal: 'ATIVO',
-    vacinas: [],
 }
+
+const DEFAULT_RACA_FORM = { id: null, nome: '', sigla: '' }
 
 const ROWS_PER_PAGE = 10
 
@@ -71,11 +79,10 @@ function toCardAnimal(animal) {
 }
 
 function exportAnimaisCSV(animais) {
-    const headers = ['Código Brinco', 'Nome', 'Raça', 'Sexo', 'Peso (KG)', 'Nascimento', 'Status']
+    const headers = ['Código Brinco', 'Raça', 'Sexo', 'Peso (KG)', 'Nascimento', 'Status']
     const rows = animais.map((a) => [
         a.codigoBrinco,
-        a.nome || '',
-        a.raca || '',
+        a.racaNome || '',
         a.sexo === 'M' ? 'Macho' : 'Fêmea',
         Number(a.pesoAtual || 0).toFixed(0),
         a.dataNascimento || '',
@@ -98,6 +105,8 @@ function exportAnimaisCSV(animais) {
 // ============================================================================
 
 function AnimaisPage({ currentUser, onNavigate, onLogout }) {
+    const [activeTab, setActiveTab] = useState('animais')
+
     // Estado: Busca
     const [search, setSearch] = useState('')
     const [activeSearch, setActiveSearch] = useState('')
@@ -120,12 +129,25 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     // Estado: Dados
     const [animals, setAnimals] = useState([])
-    const [vacinasDisponiveis, setVacinasDisponiveis] = useState([])
+    const [racasDisponiveis, setRacasDisponiveis] = useState([])
 
     // Estado: Modal
     const [modal, setModal] = useState({ type: null, animal: null })
     const [formMode, setFormMode] = useState('create')
     const [formData, setFormData] = useState(DEFAULT_FORM)
+
+    // Estado: aba Raças
+    const [racas, setRacas] = useState([])
+    const [isLoadingRacas, setIsLoadingRacas] = useState(false)
+    const [racasFeedback, setRacasFeedback] = useState({ type: '', message: '' })
+    const [racaSearch, setRacaSearch] = useState('')
+    const [racaActiveSearch, setRacaActiveSearch] = useState('')
+    const [racaStatusFiltro, setRacaStatusFiltro] = useState('ATIVO')
+    const [racaModal, setRacaModal] = useState({ open: false, raca: null })
+    const [racaFormMode, setRacaFormMode] = useState('create')
+    const [racaFormData, setRacaFormData] = useState(DEFAULT_RACA_FORM)
+    const [racaFormFeedback, setRacaFormFeedback] = useState('')
+    const [isSavingRaca, setIsSavingRaca] = useState(false)
 
     const cards = useMemo(() => animals.map(toCardAnimal), [animals])
 
@@ -168,7 +190,117 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     useEffect(() => {
         fetchAnimals('')
+        listarRacas('', 'ATIVO').then(setRacasDisponiveis).catch(() => setRacasDisponiveis([]))
     }, [fetchAnimals])
+
+    // ============================================================================
+    // Aba Raças
+    // ============================================================================
+
+    const fetchRacas = useCallback(async (termo, statusFiltro) => {
+        setIsLoadingRacas(true)
+        setRacasFeedback({ type: '', message: '' })
+        try {
+            const lista = await listarRacas(termo ?? '', statusFiltro ?? 'ATIVO')
+            setRacas(lista)
+        } catch (error) {
+            setRacasFeedback({ type: 'error', message: error.message || 'Falha ao carregar as raças.' })
+        } finally {
+            setIsLoadingRacas(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (activeTab === 'racas') {
+            fetchRacas(racaActiveSearch, racaStatusFiltro)
+        }
+    }, [activeTab, fetchRacas, racaActiveSearch, racaStatusFiltro])
+
+    function handleRacaSearchSubmit(event) {
+        event.preventDefault()
+        setRacaActiveSearch(racaSearch.trim())
+    }
+
+    function handleRacaClearSearch() {
+        setRacaSearch('')
+        setRacaActiveSearch('')
+    }
+
+    function openCreateRacaModal() {
+        setRacaFormMode('create')
+        setRacaFormData(DEFAULT_RACA_FORM)
+        setRacaFormFeedback('')
+        setRacaModal({ open: true, raca: null })
+    }
+
+    function openEditRacaModal(raca) {
+        setRacaFormMode('edit')
+        setRacaFormFeedback('')
+        setRacaFormData({ id: raca.id, nome: raca.nome, sigla: raca.sigla })
+        setRacaModal({ open: true, raca })
+    }
+
+    function closeRacaModal() {
+        setRacaModal({ open: false, raca: null })
+        setRacaFormData(DEFAULT_RACA_FORM)
+        setRacaFormFeedback('')
+    }
+
+    function handleRacaFormChange(event) {
+        const { name, value } = event.target
+        setRacaFormData((c) => ({ ...c, [name]: value }))
+    }
+
+    async function refreshRacasDisponiveis() {
+        listarRacas('', 'ATIVO').then(setRacasDisponiveis).catch(() => {})
+    }
+
+    async function handleSubmitRacaForm(event) {
+        event.preventDefault()
+        setIsSavingRaca(true)
+        setRacaFormFeedback('')
+        try {
+            if (racaFormMode === 'create') {
+                await cadastrarRaca(currentUser.email, racaFormData)
+                setRacasFeedback({ type: 'info', message: 'Raça cadastrada com sucesso.' })
+            } else {
+                await atualizarRaca(racaFormData.id, currentUser.email, racaFormData)
+                setRacasFeedback({ type: 'info', message: 'Raça atualizada com sucesso.' })
+            }
+            closeRacaModal()
+            await fetchRacas(racaActiveSearch, racaStatusFiltro)
+            await refreshRacasDisponiveis()
+        } catch (error) {
+            setRacaFormFeedback(error.message || 'Falha ao salvar a raça.')
+        } finally {
+            setIsSavingRaca(false)
+        }
+    }
+
+    async function handleInativarRaca(raca) {
+        if (!window.confirm(`Deseja inativar a raça "${raca.nome}"?`)) return
+        setRacasFeedback({ type: '', message: '' })
+        try {
+            await deletarRaca(raca.id, currentUser.email)
+            setRacasFeedback({ type: 'info', message: 'Raça inativada com sucesso.' })
+            await fetchRacas(racaActiveSearch, racaStatusFiltro)
+            await refreshRacasDisponiveis()
+        } catch (error) {
+            setRacasFeedback({ type: 'error', message: error.message || 'Falha ao inativar a raça.' })
+        }
+    }
+
+    async function handleReativarRaca(raca) {
+        setRacasFeedback({ type: '', message: '' })
+        try {
+            await reativarRaca(raca.id, currentUser.email)
+            setRacasFeedback({ type: 'info', message: 'Raça reativada com sucesso.' })
+            await fetchRacas(racaActiveSearch, racaStatusFiltro)
+            await refreshRacasDisponiveis()
+        } catch (error) {
+            setRacasFeedback({ type: 'error', message: error.message || 'Falha ao reativar a raça.' })
+        }
+    }
 
     // ============================================================================
     // Search & Filter Handlers
@@ -204,7 +336,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
         setFormData(DEFAULT_FORM)
         setFormFeedback('')
         setModal({ type: 'form', animal: null })
-        carregarVacinasDisponiveis()
     }
 
     function openEditModal(animal) {
@@ -214,7 +345,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
             ...DEFAULT_FORM,
             ...animal,
             pesoAtual: String(animal.pesoAtual ?? ''),
-            vacinas: animal.vacinas || [], // CORRIGIDO: Agora mantém as vacinas vindas do backend na edição
         })
         setModal({ type: 'form', animal })
     }
@@ -230,37 +360,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     function handleFormChange(event) {
         const { name, value } = event.target
         setFormData((prev) => ({ ...prev, [name]: value }))
-    }
-
-    function handleAddVacina() {
-        setFormData((prev) => ({
-            ...prev,
-            vacinas: [...(prev.vacinas ?? []), { nome: '', dataOcorrencia: '' }],
-        }))
-    }
-
-    function handleChangeVacina(index, field, value) {
-        setFormData((prev) => {
-            const vacinas = [...(prev.vacinas ?? [])]
-            vacinas[index] = { ...vacinas[index], [field]: value }
-            return { ...prev, vacinas }
-        })
-    }
-
-    function handleRemoveVacina(index) {
-        setFormData((prev) => ({
-            ...prev,
-            vacinas: (prev.vacinas ?? []).filter((_, i) => i !== index),
-        }))
-    }
-
-    async function carregarVacinasDisponiveis() {
-        try {
-            const lista = await listarVacinasDisponiveis('')
-            setVacinasDisponiveis(lista)
-        } catch {
-            setVacinasDisponiveis([])
-        }
     }
 
     // ============================================================================
@@ -414,6 +513,25 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                     <h1>Animais</h1>
                 </header>
 
+                <div className="insumos-tabs">
+                    <button
+                        type="button"
+                        className={`insumos-tab ${activeTab === 'animais' ? 'insumos-tab--active' : ''}`}
+                        onClick={() => setActiveTab('animais')}
+                    >
+                        Animais
+                    </button>
+                    <button
+                        type="button"
+                        className={`insumos-tab ${activeTab === 'racas' ? 'insumos-tab--active' : ''}`}
+                        onClick={() => setActiveTab('racas')}
+                    >
+                        Raças
+                    </button>
+                </div>
+
+                {activeTab === 'animais' ? (
+                <>
                 {/* Feedback */}
                 {feedback.message ? (
                     <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
@@ -429,7 +547,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Buscar por nome ou código do brinco"
+                            placeholder="Buscar por código do brinco"
                         />
                         {activeSearch ? (
                             <button
@@ -517,7 +635,6 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                         <thead>
                             <tr>
                                 <th>Código Brinco</th>
-                                <th>Nome</th>
                                 <th>Raça</th>
                                 <th>Sexo</th>
                                 <th>Peso</th>
@@ -529,13 +646,13 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                         <tbody>
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={8} className="table-loading">
+                                    <td colSpan={7} className="table-loading">
                                         Carregando...
                                     </td>
                                 </tr>
                             ) : paginatedCards.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="table-empty">
+                                    <td colSpan={7} className="table-empty">
                                         {activeSearch
                                             ? `Nenhum resultado para "${activeSearch}".`
                                             : 'Nenhum animal cadastrado. Clique em "+ Novo Animal" para começar.'}
@@ -545,8 +662,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                                 paginatedCards.map((animal) => (
                                     <tr key={animal.codigoBrinco}>
                                         <td className="td-mono">{animal.codigoBrinco}</td>
-                                        <td>{animal.nome || '—'}</td>
-                                        <td>{animal.raca || '—'}</td>
+                                        <td>{animal.racaNome || '—'}</td>
                                         <td>{animal.sexo === 'M' ? 'Macho' : 'Fêmea'}</td>
                                         <td>{animal.pesoLabel}</td>
                                         <td>{animal.idadeLabel}</td>
@@ -614,6 +730,111 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                         </button>
                     </div>
                 </footer>
+                </>
+                ) : (
+                <>
+                {racasFeedback.message ? (
+                    <p className={`feedback ${racasFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
+                        {racasFeedback.message}
+                    </p>
+                ) : null}
+
+                <div className="data-toolbar">
+                    <form className="toolbar-search" onSubmit={handleRacaSearchSubmit}>
+                        <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                        <input
+                            type="text"
+                            value={racaSearch}
+                            onChange={(e) => setRacaSearch(e.target.value)}
+                            placeholder="Buscar raça por nome"
+                        />
+                        {racaActiveSearch ? (
+                            <button
+                                type="button"
+                                className="toolbar-search__clear"
+                                onClick={handleRacaClearSearch}
+                                aria-label="Limpar busca"
+                            >
+                                ✕
+                            </button>
+                        ) : null}
+                    </form>
+
+                    <select
+                        className="toolbar-select"
+                        value={racaStatusFiltro}
+                        onChange={(e) => setRacaStatusFiltro(e.target.value)}
+                    >
+                        <option value="ATIVO">Ativas</option>
+                        <option value="INATIVO">Inativas</option>
+                        <option value="TODOS">Todas</option>
+                    </select>
+
+                    <button type="button" className="btn-new-entity" onClick={openCreateRacaModal}>
+                        + Nova Raça
+                    </button>
+                </div>
+
+                <div className="data-table-wrapper">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Sigla</th>
+                                <th>Nome</th>
+                                <th>Produto vinculado</th>
+                                <th>Cabeças (saldo)</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoadingRacas ? (
+                                <tr>
+                                    <td colSpan={5} className="table-loading">Carregando...</td>
+                                </tr>
+                            ) : racas.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="table-empty">
+                                        Nenhuma raça cadastrada. Clique em "+ Nova Raça" para começar.
+                                    </td>
+                                </tr>
+                            ) : (
+                                racas.map((raca) => (
+                                    <tr key={raca.id}>
+                                        <td className="codigo-produto">{raca.sigla}</td>
+                                        <td>
+                                            {raca.nome}
+                                            {raca.status === 'INATIVO' ? (
+                                                <span className="setor-badge setor-badge--inativo estoque-badge">Inativa</span>
+                                            ) : null}
+                                        </td>
+                                        <td>{raca.produtoNome || '—'} {raca.produtoCodigo ? `(${raca.produtoCodigo})` : ''}</td>
+                                        <td>{raca.saldoAtual ?? 0}</td>
+                                        <td>
+                                            <div className="row-actions">
+                                                {raca.status === 'INATIVO' ? (
+                                                    <button type="button" className="btn-row" onClick={() => handleReativarRaca(raca)}>
+                                                        Reativar
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <button type="button" className="btn-row btn-row--edit" onClick={() => openEditRacaModal(raca)}>
+                                                            Editar
+                                                        </button>
+                                                        <button type="button" className="btn-row btn-row--danger" onClick={() => handleInativarRaca(raca)}>
+                                                            Inativar
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                </>
+                )}
             </section>
 
             {/* Modals */}
@@ -624,13 +845,22 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                     isSaving={isSaving}
                     feedback={formFeedback}
                     userEmail={currentUser.email}
-                    vacinasDisponiveis={vacinasDisponiveis}
+                    racasDisponiveis={racasDisponiveis}
                     onClose={closeModal}
                     onChange={handleFormChange}
                     onSubmit={handleSubmitForm}
-                    onAddVacina={handleAddVacina}
-                    onChangeVacina={handleChangeVacina}
-                    onRemoveVacina={handleRemoveVacina}
+                />
+            )}
+
+            {racaModal.open && (
+                <RacaFormModal
+                    mode={racaFormMode}
+                    formData={racaFormData}
+                    isSaving={isSavingRaca}
+                    feedback={racaFormFeedback}
+                    onClose={closeRacaModal}
+                    onChange={handleRacaFormChange}
+                    onSubmit={handleSubmitRacaForm}
                 />
             )}
 

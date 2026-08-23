@@ -17,10 +17,13 @@ import java.time.LocalDateTime;
 public class EAnimal extends EAbstract{
 
     private String codigoBrinco;
-    private String nome;
     private LocalDateTime dataNascimento;
     private Double pesoAtual;
-    private String raca;
+
+    @ManyToOne
+    @JoinColumn(name = "raca_id")
+    private ERaca raca;
+
     private String cor;
     private Double alturaCernelha;
     private Double perimetroToracico;
