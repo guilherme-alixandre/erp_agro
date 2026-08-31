@@ -4,6 +4,7 @@ import AprovacoesTab from '../components/AprovacoesTab'
 import FuncionariosTab from '../components/FuncionariosTab'
 import ParceirosTab from '../components/ParceirosTab'
 import DashboardTab from '../components/DashboardTab'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import '../../animais/styles/animais.css'
 import '../../insumos/styles/insumos.css'
 import '../styles/financeiro.css'
@@ -59,10 +60,15 @@ function FinanceiroPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
-          <h1>Financeiro</h1>
-          <span>{currentUser.email}</span>
-        </header>
+        <ModuleHeader
+          icon="wallet"
+          title="Financeiro"
+          description="Documentos, aprovações e resultados reunidos para uma conferência rápida e segura."
+          metrics={[
+            { value: '5', label: 'Áreas integradas' },
+            { value: currentUser.perfil === 'FINANCEIRO' ? 'Financeiro' : 'Gestor', label: 'Seu acesso' },
+          ]}
+        />
 
         <div className="insumos-tabs">
           <button

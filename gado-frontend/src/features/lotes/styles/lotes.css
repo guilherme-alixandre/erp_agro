@@ -28,7 +28,7 @@
 }
 
 .lote-card__status {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;
@@ -158,7 +158,7 @@
 }
 
 .aloc-card__capacidade {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;
@@ -176,8 +176,8 @@
   border: 0;
   background: #e8e8e8;
   border-radius: 6px;
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 48px;
   font-size: 0.9rem;
   color: #555;
   display: flex;
@@ -194,7 +194,7 @@
 
 .aloc-card__aviso {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #8e2222;
   font-weight: 600;
 }
@@ -262,7 +262,7 @@
 
 .multiselect__arrow {
   color: #777;
-  font-size: 0.75rem;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
@@ -336,7 +336,7 @@
 }
 
 .lote-alocacao__capacidade {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;

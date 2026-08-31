@@ -1,4 +1,11 @@
 const STATUS_OPTIONS = ['ABATIDO', 'OBITO', 'ATIVO', 'OBSERVACAO', 'VENDIDO']
+const STATUS_LABELS = {
+  ABATIDO: 'Abatido',
+  OBITO: 'Óbito',
+  ATIVO: 'Ativo',
+  OBSERVACAO: 'Em observação',
+  VENDIDO: 'Vendido',
+}
 
 const MIN_BIRTH_DATE = '1990-01-01'
 
@@ -184,7 +191,7 @@ function AnimalFormModal({
             >
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {STATUS_LABELS[status]}
                 </option>
               ))}
             </select>

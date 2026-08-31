@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { listarMinhasTarefas, atribuirTarefa, concluirTarefa, excluirTarefa } from '../integration/tarefaApi'
 import { listarUsuariosResumo } from '../integration/usuarioResumoApi'
 import AtribuirTarefaModal from '../components/AtribuirTarefaModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import '../../animais/styles/animais.css'
 
 const defaultForm = { descricao: '', dataLimite: '', atribuidoParaEmail: '' }
@@ -88,26 +89,42 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
   const pendentes = tarefas.filter((t) => !t.statusConclusao)
   const concluidas = tarefas.filter((t) => t.statusConclusao)
 
-  function renderLinha(tarefa) {
+  function renderCard(tarefa) {
     const souAtribuidor = tarefa.atribuidoPorEmail?.toLowerCase() === currentUser.email?.toLowerCase()
+    const prazo = tarefa.dataLimite ? new Date(`${tarefa.dataLimite}T23:59:59`) : null
+    const atrasada = !tarefa.statusConclusao && prazo && prazo < new Date()
     return (
-      <tr key={tarefa.id}>
-        <td>{tarefa.descricao}</td>
-        <td>{formatDate(tarefa.dataLimite)}</td>
-        <td>
-          {souAtribuidor ? `Para: ${tarefa.atribuidoParaNome || tarefa.atribuidoParaEmail}` : `De: ${tarefa.atribuidoPorNome || tarefa.atribuidoPorEmail}`}
-        </td>
-        <td>
-          <div className="row-actions">
-            <button type="button" className="btn-row" onClick={() => handleConcluir(tarefa)}>
-              {tarefa.statusConclusao ? 'Reabrir' : 'Concluir'}
-            </button>
-            <button type="button" className="btn-row btn-row--danger" onClick={() => handleExcluir(tarefa)}>
-              Excluir
-            </button>
+      <article className={`task-card${tarefa.statusConclusao ? ' task-card--done' : ''}`} key={tarefa.id}>
+        <button
+          type="button"
+          className="task-card__check"
+          onClick={() => handleConcluir(tarefa)}
+          aria-label={tarefa.statusConclusao ? 'Reabrir tarefa' : 'Concluir tarefa'}
+          title={tarefa.statusConclusao ? 'Reabrir tarefa' : 'Concluir tarefa'}
+        >
+          {tarefa.statusConclusao ? '✓' : ''}
+        </button>
+        <div className="task-card__body">
+          <strong>{tarefa.descricao}</strong>
+          <div className="task-card__meta">
+            <span className={atrasada ? 'task-card__due task-card__due--late' : 'task-card__due'}>
+              {atrasada ? 'Atrasada · ' : 'Prazo · '}{formatDate(tarefa.dataLimite)}
+            </span>
+            <span>
+              {souAtribuidor ? `Para ${tarefa.atribuidoParaNome || tarefa.atribuidoParaEmail}` : `De ${tarefa.atribuidoPorNome || tarefa.atribuidoPorEmail}`}
+            </span>
           </div>
-        </td>
-      </tr>
+        </div>
+        <button
+          type="button"
+          className="task-card__delete"
+          onClick={() => handleExcluir(tarefa)}
+          aria-label="Excluir tarefa"
+          title="Excluir tarefa"
+        >
+          ×
+        </button>
+      </article>
     )
   }
 
@@ -161,10 +178,16 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
-          <h1>Tarefas</h1>
-          <span>Sessão ativa: {currentUser.nome}</span>
-        </header>
+        <ModuleHeader
+          icon="check"
+          title="Tarefas da equipe"
+          description="Uma lista de trabalho direta para saber o que fazer, para quem e até quando."
+          metrics={[
+            { value: pendentes.length, label: 'Pendentes' },
+            { value: concluidas.length, label: 'Concluídas' },
+            { value: tarefas.length, label: 'Total' },
+          ]}
+        />
 
         {feedback.message ? (
           <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
@@ -181,50 +204,36 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
           </button>
         </div>
 
-        <h3 className="details-section">Pendentes</h3>
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Prazo</th>
-                <th>Origem/Destino</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="task-board">
+          <section className="task-column">
+            <header className="task-column__header">
+              <span className="task-column__dot task-column__dot--pending" />
+              <h2>Para fazer</h2>
+              <strong>{pendentes.length}</strong>
+            </header>
+            <div className="task-column__list">
               {isLoading ? (
-                <tr><td colSpan={4} className="table-loading">Carregando...</td></tr>
+                <p className="task-column__empty">Carregando tarefas...</p>
               ) : pendentes.length === 0 ? (
-                <tr><td colSpan={4} className="table-empty">Nenhuma tarefa pendente.</td></tr>
-              ) : (
-                pendentes.map(renderLinha)
-              )}
-            </tbody>
-          </table>
-        </div>
+                <p className="task-column__empty">Tudo em dia por aqui.</p>
+              ) : pendentes.map(renderCard)}
+            </div>
+          </section>
 
-        <h3 className="details-section">Concluídas</h3>
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Prazo</th>
-                <th>Origem/Destino</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+          <section className="task-column task-column--done">
+            <header className="task-column__header">
+              <span className="task-column__dot task-column__dot--done" />
+              <h2>Concluídas</h2>
+              <strong>{concluidas.length}</strong>
+            </header>
+            <div className="task-column__list">
               {isLoading ? (
-                <tr><td colSpan={4} className="table-loading">Carregando...</td></tr>
+                <p className="task-column__empty">Carregando tarefas...</p>
               ) : concluidas.length === 0 ? (
-                <tr><td colSpan={4} className="table-empty">Nenhuma tarefa concluída.</td></tr>
-              ) : (
-                concluidas.map(renderLinha)
-              )}
-            </tbody>
-          </table>
+                <p className="task-column__empty">As tarefas finalizadas aparecem aqui.</p>
+              ) : concluidas.map(renderCard)}
+            </div>
+          </section>
         </div>
       </section>
 

@@ -7,7 +7,7 @@
 /* ── Status de aprovação ──────────────────────────────────────────────── */
 
 .financeiro-status {
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   font-weight: 700;
   text-transform: uppercase;
   padding: 3px 10px;
@@ -36,7 +36,7 @@
 
 .financeiro-item-feedback {
   margin: 4px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.92rem;
 }
 
 /* ── Edição segura de NF-e (dupla validação por senha) ─────────────────── */
@@ -90,11 +90,11 @@
   border: 1px solid #d0d0d0;
   border-radius: 8px;
   padding: 0 10px;
-  font-size: 0.88rem;
+  font-size: 1rem;
   background: #fff;
   color: #1d1d1d;
   outline: none;
-  height: 38px;
+  height: 48px;
   cursor: pointer;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .financeiro-kpi-card__label {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: #6a6a6a;
   font-weight: 600;
 }

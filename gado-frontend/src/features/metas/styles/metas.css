@@ -55,7 +55,7 @@
 }
 
 .meta-card__subtitle {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   color: #6b7280;
 }
 
@@ -65,7 +65,7 @@
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -95,7 +95,7 @@
 }
 
 .meta-progress__label {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   color: #374151;
   font-weight: 500;
 }
@@ -149,7 +149,7 @@
 }
 
 .meta-stat__label {
-  font-size: 0.72rem;
+  font-size: 0.86rem;
   color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -173,7 +173,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   color: #4b5563;
   padding: 0;
   display: flex;
@@ -190,12 +190,12 @@
 .meta-medicoes__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
 }
 
 .meta-medicoes__table th {
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -217,7 +217,7 @@
 .meta-medicoes__empty {
   text-align: center;
   color: #9ca3af;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   padding: 1rem 0;
   font-style: italic;
 }
@@ -229,7 +229,7 @@
   border: none;
   cursor: pointer;
   color: #3b82f6;
-  font-size: 0.78rem;
+  font-size: 0.94rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   transition: background 0.15s;
@@ -245,7 +245,7 @@
   border: none;
   cursor: pointer;
   color: #ef4444;
-  font-size: 0.78rem;
+  font-size: 0.94rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   transition: background 0.15s;
@@ -276,7 +276,7 @@
 }
 
 .metas-setor-filter label {
-  font-size: 0.85rem;
+  font-size: 0.96rem;
   color: #374151;
   font-weight: 500;
   white-space: nowrap;
@@ -287,7 +287,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #111827;
   background: #fff;
   min-width: 180px;
@@ -313,13 +313,13 @@
 }
 
 .metas-estado-vazio span {
-  font-size: 0.82rem;
+  font-size: 0.94rem;
 }
 
 /* ── Formulário (herda .animal-form / .modal-card de animais.css) ──── */
 
 .meta-form__subtitle {
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   color: #6b7280;
   margin: -4px 0 12px;
 }
@@ -332,7 +332,7 @@
 }
 
 .meta-form label span {
-  font-size: 0.82rem;
+  font-size: 0.96rem;
   font-weight: 600;
   color: #374151;
   display: block;
@@ -345,7 +345,7 @@
   padding: 0.55rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #111827;
   background: #fff;
   box-sizing: border-box;

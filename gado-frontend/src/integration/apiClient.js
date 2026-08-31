@@ -1,5 +1,5 @@
-// Configuração baseada no ambiente
-const API_BASE_URL = 'http://localhost:8080/api'
+// Usa o proxy do Vite em desenvolvimento e permite configurar a URL em produção.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '')
 
 const TOKEN_STORAGE_KEY = 'erp_agro_token'
 let authToken = localStorage.getItem(TOKEN_STORAGE_KEY)

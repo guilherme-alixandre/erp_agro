@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { buscarResumo } from '../integration/resumoApi'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import '../../animais/styles/animais.css'
 import '../styles/resumo.css'
 
@@ -88,10 +89,17 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
-          <h1>Resumo</h1>
-          <span>Sessão ativa: {currentUser.nome}</span>
-        </header>
+        <ModuleHeader
+          icon="home"
+          eyebrow={`Olá, ${currentUser.nome?.split(' ')[0] || 'produtor'}`}
+          title="Resumo da fazenda"
+          description="O que precisa da sua atenção hoje, reunido em uma visão simples."
+          metrics={[
+            { value: resumo?.totalAnimais ?? '—', label: 'Animais' },
+            { value: resumo?.totalLotes ?? '—', label: 'Lotes' },
+            { value: resumo?.tarefasPendentes?.length ?? '—', label: 'Tarefas' },
+          ]}
+        />
 
         {feedback.message ? (
           <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
@@ -99,8 +107,16 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
           </p>
         ) : null}
 
-        {isLoading || !resumo ? (
+        {isLoading ? (
           <p className="animals-count">Carregando...</p>
+        ) : !resumo ? (
+          <div className="resumo-empty-state">
+            <strong>Não foi possível montar o resumo agora.</strong>
+            <span>Confira o servidor e tente carregar os indicadores novamente.</span>
+            <button type="button" className="btn-primary" onClick={fetchResumo}>
+              Tentar novamente
+            </button>
+          </div>
         ) : (
           <>
             {resumo.financeiroVisivel ? (

@@ -10,7 +10,7 @@ function CancelarVacinacaoAnimalModal({ vacinacao, justificativa, isSaving, feed
         </div>
 
         <p className="form-info">
-          Esta ação irá estornar ao estoque de "{vacinacao.insumoNome}" toda a dose aplicada nesta
+          Esta ação irá estornar ao estoque de &quot;{vacinacao.insumoNome}&quot; toda a dose aplicada nesta
           movimentação registrada em{' '}
           {vacinacao.dataAplicacao ? new Date(vacinacao.dataAplicacao).toLocaleString('pt-BR') : '—'}.
         </p>

@@ -11,8 +11,27 @@ import LotesPage from './features/lotes/pages/LotesPage'
 import MetasPage from './features/metas/pages/MetasPage'
 import TarefasPage from './features/tarefas/pages/TarefasPage'
 import ResumoPage from './features/resumo/pages/ResumoPage'
+import AppShell from './components/shared/AppShell'
+import './styles/design-system.css'
 
 const STORAGE_KEY = 'erp_agro_current_user'
+const VISUAL_PREFERENCES_KEY = 'erp_agro_visual_preferences'
+const DEFAULT_VISUAL_PREFERENCES = {
+  fontSize: 'comfortable',
+  theme: 'light',
+  highContrast: false,
+  reduceMotion: false,
+}
+function loadVisualPreferences() {
+  try {
+    return {
+      ...DEFAULT_VISUAL_PREFERENCES,
+      ...JSON.parse(localStorage.getItem(VISUAL_PREFERENCES_KEY) || '{}'),
+    }
+  } catch {
+    return DEFAULT_VISUAL_PREFERENCES
+  }
+}
 
 function sanitizeUser(usuario) {
   if (!usuario || typeof usuario !== 'object') return null
@@ -25,6 +44,17 @@ function App() {
   const [activePage, setActivePage] = useState('resumo')
   const [currentUser, setCurrentUser] = useState(null)
   const [sessionFeedback, setSessionFeedback] = useState('')
+  const [visualPreferences, setVisualPreferences] = useState(loadVisualPreferences)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.fontSize = visualPreferences.fontSize
+    root.dataset.theme = visualPreferences.theme
+    root.dataset.contrast = visualPreferences.highContrast ? 'high' : 'standard'
+    root.dataset.motion = visualPreferences.reduceMotion ? 'reduce' : 'standard'
+    root.style.colorScheme = visualPreferences.theme
+    localStorage.setItem(VISUAL_PREFERENCES_KEY, JSON.stringify(visualPreferences))
+  }, [visualPreferences])
 
   useEffect(() => {
     setUnauthorizedHandler(() => handleLogout('Sua sessão expirou. Faça login novamente.'))
@@ -66,104 +96,119 @@ function App() {
     return <AuthPage onLogin={handleLogin} sessionFeedback={sessionFeedback} />
   }
 
-  if (activePage === 'resumo') {
-    return (
+  function renderActivePage() {
+    if (activePage === 'resumo') {
+      return (
       <ResumoPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'perfil') {
-    return (
+    if (activePage === 'perfil') {
+      return (
       <PerfilPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
         onUpdateUser={handleUpdateUser}
+        visualPreferences={visualPreferences}
+        onVisualPreferencesChange={setVisualPreferences}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'insumos') {
-    return (
+    if (activePage === 'insumos') {
+      return (
       <InsumosPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'financeiro' && ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO'].includes(currentUser.perfil)) {
-    return (
+    if (activePage === 'financeiro' && ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO'].includes(currentUser.perfil)) {
+      return (
       <FinanceiroPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'metas') {
-    return (
+    if (activePage === 'metas') {
+      return (
       <MetasPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'lotes') {
-    return (
+    if (activePage === 'lotes') {
+      return (
       <LotesPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'setores') {
-    return (
+    if (activePage === 'setores') {
+      return (
       <SetoresPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'tarefas') {
-    return (
+    if (activePage === 'tarefas') {
+      return (
       <TarefasPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
-    )
-  }
+      )
+    }
 
-  if (activePage === 'configuracoes' && currentUser.perfil === 'ADMINISTRADOR') {
-    return (
+    if (activePage === 'configuracoes' && currentUser.perfil === 'ADMINISTRADOR') {
+      return (
       <ConfiguracoesPage
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigate={setActivePage}
         onUpdateUser={handleUpdateUser}
       />
+      )
+    }
+
+    return (
+      <AnimalPage
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+      />
     )
   }
 
   return (
-    <AnimalPage
+    <AppShell
+      activePage={activePage}
       currentUser={currentUser}
       onLogout={handleLogout}
       onNavigate={setActivePage}
-    />
+    >
+      {renderActivePage()}
+    </AppShell>
   )
 }
 

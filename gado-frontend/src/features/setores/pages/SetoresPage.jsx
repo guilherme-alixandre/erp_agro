@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import SetorFormModal from '../components/SetorFormModal'
 import SetorDetailsModal from '../components/SetorDetailsModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
   listarSetores,
   cadastrarSetor,
@@ -242,9 +243,16 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="page-header">
-          <h1>Setores</h1>
-        </header>
+        <ModuleHeader
+          icon="map"
+          title="Setores da propriedade"
+          description="Veja a capacidade e o uso de cada área para planejar a ocupação com segurança."
+          metrics={[
+            { value: setores.length, label: 'Setores' },
+            { value: filteredSetores.length, label: 'Nesta lista' },
+            { value: canCreateSetor ? 'Gestor' : 'Consulta', label: 'Seu acesso' },
+          ]}
+        />
 
         {feedback.message ? (
           <p

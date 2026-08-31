@@ -57,7 +57,7 @@ function RacaFormModal({ mode, formData, isSaving, feedback, onClose, onChange, 
           </label>
           <p className="form-help">
             Usada para gerar o código do brinco dos animais desta raça (ex.: NE0001, NE0002...).
-            Também cria automaticamente o produto "Gado {formData.nome || '...'}" no catálogo de Insumos.
+            Também cria automaticamente o produto &quot;Gado {formData.nome || '...'}&quot; no catálogo de Insumos.
           </p>
 
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}

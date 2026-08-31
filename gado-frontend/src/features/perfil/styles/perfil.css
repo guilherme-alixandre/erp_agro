@@ -13,8 +13,10 @@
 .perfil-stack {
   margin-top: 18px;
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 14px;
-  max-width: 760px;
+  max-width: 1120px;
 }
 
 .perfil-subtitle {
@@ -61,7 +63,7 @@
 }
 
 .perfil-info dt {
-  font-size: 0.86rem;
+  font-size: 0.94rem;
   color: #787878;
   margin: 0;
 }
@@ -76,8 +78,214 @@
   margin-top: 14px;
 }
 
+.perfil-security-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #d8e0d6;
+}
+
+.perfil-security-section h2 {
+  margin: 0;
+}
+
 .perfil-disabled-input {
   background: #f3f4f6 !important;
   color: #6b7280 !important;
   cursor: not-allowed !important;
+}
+
+.perfil-appearance-card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.perfil-appearance-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.perfil-appearance-card__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  height: 52px;
+  border: 1px solid #b9ceb8;
+  border-radius: 14px;
+  color: #174a2c;
+  background: #e7f1e8;
+  font-size: 1.12rem;
+  font-weight: 850;
+}
+
+.perfil-preference-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.perfil-preference-group legend {
+  margin-bottom: 9px;
+  color: #344139;
+  font-size: 0.96rem;
+  font-weight: 750;
+}
+
+.perfil-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.perfil-choice-grid--font {
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+}
+
+.perfil-choice {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  min-height: 72px;
+  padding: 9px 6px;
+  border: 2px solid #c8d2c5;
+  border-radius: 12px;
+  color: #465149;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+
+.perfil-choice:hover {
+  border-color: #72927a;
+  background: #f6faf4;
+}
+
+.perfil-choice--active {
+  border-color: #28623d;
+  color: #174a2c;
+  background: #e7f1e8;
+  box-shadow: inset 0 0 0 1px #28623d;
+}
+
+.perfil-choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.perfil-choice:has(input:focus-visible) {
+  outline: 4px solid rgba(183, 214, 75, 0.72);
+  outline-offset: 3px;
+}
+
+.perfil-choice strong {
+  font-size: 1.08rem;
+  line-height: 1;
+}
+
+.perfil-choice span {
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.perfil-switch-list {
+  display: grid;
+  gap: 8px;
+}
+
+.perfil-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid #d5ddd2;
+  border-radius: 12px;
+  background: #f8faf6;
+  cursor: pointer;
+}
+
+.perfil-switch-row > span {
+  display: grid;
+  gap: 2px;
+}
+
+.perfil-switch-row strong {
+  color: #263129;
+  font-size: 0.96rem;
+}
+
+.perfil-switch-row small {
+  color: #59675e;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.perfil-switch-row input {
+  position: relative;
+  flex: 0 0 54px;
+  width: 54px;
+  height: 32px;
+  margin: 0;
+  border: 2px solid #78867c;
+  border-radius: 999px;
+  background: #fff;
+  appearance: none;
+}
+
+.perfil-switch-row input::after {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #637168;
+  content: '';
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.perfil-switch-row input:checked {
+  border-color: #174a2c;
+  background: #dceba9;
+}
+
+.perfil-switch-row input:checked::after {
+  background: #174a2c;
+  transform: translateX(22px);
+}
+
+.perfil-reset-appearance {
+  justify-self: start;
+  min-height: 48px;
+}
+
+@media (max-width: 900px) {
+  .perfil-stack {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 420px) {
+  .perfil-choice-grid--font {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perfil-choice {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+    min-height: 56px;
+    padding: 10px 14px;
+  }
 }

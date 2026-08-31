@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { atualizarUsuario, verificarCredenciais } from '../../configuracoes/integration/usuarioApi'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import '../../animais/styles/animais.css'
 import '../styles/perfil.css'
 
@@ -13,7 +14,21 @@ const PERFIL_LABELS = {
   FINANCEIRO: 'Financeiro',
 }
 
-function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
+const DEFAULT_VISUAL_PREFERENCES = {
+  fontSize: 'comfortable',
+  theme: 'light',
+  highContrast: false,
+  reduceMotion: false,
+}
+
+function PerfilPage({
+  currentUser,
+  onLogout,
+  onNavigate,
+  onUpdateUser,
+  visualPreferences = DEFAULT_VISUAL_PREFERENCES,
+  onVisualPreferencesChange,
+}) {
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({ nome: currentUser.nome, perfil: currentUser.perfil })
   const [isSaving, setIsSaving] = useState(false)
@@ -28,6 +43,14 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
   const [showConfirmar, setShowConfirmar] = useState(false)
 
   const isAdmin = currentUser.perfil === 'ADMINISTRADOR'
+
+  function updateVisualPreference(name, value) {
+    onVisualPreferencesChange?.((current) => ({ ...current, [name]: value }))
+  }
+
+  function resetVisualPreferences() {
+    onVisualPreferencesChange?.(DEFAULT_VISUAL_PREFERENCES)
+  }
 
   function handleEditChange(e) {
     const { name, value } = e.target
@@ -171,10 +194,16 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
-          <h1>Perfil</h1>
-          <span>Sessão ativa: {currentUser.nome}</span>
-        </header>
+        <ModuleHeader
+          icon="user"
+          eyebrow="Sua conta"
+          title={currentUser.nome}
+          description="Confira seus dados de acesso e mantenha sua senha atualizada."
+          metrics={[
+            { value: PERFIL_LABELS[currentUser.perfil] ?? currentUser.perfil, label: 'Perfil' },
+            { value: 'Ativa', label: 'Sessão' },
+          ]}
+        />
 
         {feedback.message ? (
           <p
@@ -279,11 +308,10 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                 </div>
               </form>
             )}
-          </article>
 
-          <article className="animal-card perfil-card">
-            <h2>Alterar senha</h2>
-            <p className="perfil-subtitle">Redefina a senha de acesso à sua conta.</p>
+            <section className="perfil-security-section" aria-labelledby="perfil-security-title">
+              <h2 id="perfil-security-title">Alterar senha</h2>
+              <p className="perfil-subtitle">Redefina a senha de acesso à sua conta.</p>
 
             {!senhaMode ? (
               <div className="modal-actions perfil-actions">
@@ -389,6 +417,104 @@ function PerfilPage({ currentUser, onLogout, onNavigate, onUpdateUser }) {
                 </div>
               </form>
             )}
+            </section>
+          </article>
+
+          <article className="animal-card perfil-card perfil-appearance-card">
+            <div className="perfil-appearance-card__header">
+              <div>
+                <h2>Aparência e acessibilidade</h2>
+                <p className="perfil-subtitle">
+                  Ajuste a tela para enxergar e usar o sistema com mais conforto.
+                </p>
+              </div>
+              <span className="perfil-appearance-card__icon" aria-hidden="true">Aa</span>
+            </div>
+
+            <fieldset className="perfil-preference-group">
+              <legend>Tamanho do texto</legend>
+              <div className="perfil-choice-grid perfil-choice-grid--font">
+                {[
+                  { value: 'tiny', label: 'Minúscula', sample: 'A−−' },
+                  { value: 'small', label: 'Pequena', sample: 'A−' },
+                  { value: 'standard', label: 'Normal', sample: 'A' },
+                  { value: 'comfortable', label: 'Confortável', sample: 'A+' },
+                  { value: 'large', label: 'Grande', sample: 'A++' },
+                ].map((option) => (
+                  <label
+                    className={`perfil-choice${visualPreferences.fontSize === option.value ? ' perfil-choice--active' : ''}`}
+                    key={option.value}
+                  >
+                    <input
+                      type="radio"
+                      name="fontSize"
+                      value={option.value}
+                      checked={visualPreferences.fontSize === option.value}
+                      onChange={() => updateVisualPreference('fontSize', option.value)}
+                    />
+                    <strong aria-hidden="true">{option.sample}</strong>
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="perfil-preference-group">
+              <legend>Tema da tela</legend>
+              <div className="perfil-choice-grid">
+                {[
+                  { value: 'light', label: 'Claro', icon: '☀' },
+                  { value: 'dark', label: 'Escuro', icon: '☾' },
+                ].map((option) => (
+                  <label
+                    className={`perfil-choice${visualPreferences.theme === option.value ? ' perfil-choice--active' : ''}`}
+                    key={option.value}
+                  >
+                    <input
+                      type="radio"
+                      name="theme"
+                      value={option.value}
+                      checked={visualPreferences.theme === option.value}
+                      onChange={() => updateVisualPreference('theme', option.value)}
+                    />
+                    <strong aria-hidden="true">{option.icon}</strong>
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="perfil-switch-list">
+              <label className="perfil-switch-row">
+                <span>
+                  <strong>Alto contraste</strong>
+                  <small>Reforça bordas, textos e foco dos botões.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={visualPreferences.highContrast}
+                  onChange={(event) => updateVisualPreference('highContrast', event.target.checked)}
+                />
+              </label>
+
+              <label className="perfil-switch-row">
+                <span>
+                  <strong>Reduzir movimentos</strong>
+                  <small>Diminui animações e transições na tela.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={visualPreferences.reduceMotion}
+                  onChange={(event) => updateVisualPreference('reduceMotion', event.target.checked)}
+                />
+              </label>
+            </div>
+
+            <button type="button" className="btn-secondary perfil-reset-appearance" onClick={resetVisualPreferences}>
+              Restaurar visual padrão
+            </button>
           </article>
         </div>
       </section>

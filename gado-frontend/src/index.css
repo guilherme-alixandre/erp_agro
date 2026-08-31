@@ -120,7 +120,7 @@ input {
   border: 1px solid #d0d0d0;
   border-radius: 8px;
   padding: 8px 10px;
-  font-size: 0.88rem;
+  font-size: 1rem;
   background: #fff;
   color: #1d1d1d;
   outline: none;
@@ -157,7 +157,7 @@ input {
   padding: 10px 14px 10px 0;
   text-align: left;
   font-weight: 700;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6b6b6b;
@@ -222,7 +222,7 @@ input {
 }
 
 .ssm-count {
-  font-size: 0.85rem;
+  font-size: 0.94rem;
   color: #6b6b6b;
   font-weight: 600;
 }
@@ -266,7 +266,7 @@ input {
 
 .ssm-trigger__arrow {
   color: #777;
-  font-size: 0.75rem;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 

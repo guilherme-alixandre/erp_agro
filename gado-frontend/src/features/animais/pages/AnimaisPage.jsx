@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
 import RacaFormModal from '../components/RacaFormModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
     buscarAnimais,
     cadastrarAnimal,
@@ -515,9 +516,16 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
             {/* Content */}
             <section className="animals-content">
-                <header className="page-header">
-                    <h1>Animais</h1>
-                </header>
+                <ModuleHeader
+                    icon="cow"
+                    title="Rebanho"
+                    description="Localize um animal pelo brinco, acompanhe seus dados e mantenha as raças organizadas."
+                    metrics={[
+                        { value: animals.length, label: 'Cadastrados' },
+                        { value: filteredCards.length, label: 'Nesta lista' },
+                        { value: racasDisponiveis.length, label: 'Raças ativas' },
+                    ]}
+                />
 
                 <div className="insumos-tabs">
                     <button
@@ -592,7 +600,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                         <option value="ATIVO">Ativo</option>
                         <option value="OBSERVACAO">Observação</option>
                         <option value="VENDIDO">Vendido</option>
-                        <option value="OBITO">Obito</option>
+                        <option value="OBITO">Óbito</option>
                         <option value="ABATIDO">Abatido</option>
                     </select>
 
@@ -800,7 +808,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                             ) : racas.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="table-empty">
-                                        Nenhuma raça cadastrada. Clique em "+ Nova Raça" para começar.
+                                        Nenhuma raça cadastrada. Clique em &quot;+ Nova Raça&quot; para começar.
                                     </td>
                                 </tr>
                             ) : (

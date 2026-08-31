@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import LoteFormModal from '../components/LoteFormModal'
 import LoteDetailsModal from '../components/LoteDetailsModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
   listarLotes,
   listarAnimaisParaLote,
@@ -362,9 +363,16 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="page-header">
-          <h1>Lotes</h1>
-        </header>
+        <ModuleHeader
+          icon="layers"
+          title="Lotes do rebanho"
+          description="Agrupe os animais como no manejo do dia a dia e acompanhe onde cada lote está alocado."
+          metrics={[
+            { value: lotes.length, label: 'Lotes' },
+            { value: filteredLotes.length, label: 'Nesta lista' },
+            { value: setores.length, label: 'Setores' },
+          ]}
+        />
 
         {feedback.message ? (
           <p

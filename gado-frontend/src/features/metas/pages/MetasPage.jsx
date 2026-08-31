@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import MetaCard from '../components/MetaCard'
 import MetaFormModal from '../components/MetaFormModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import { listarMetasPorSetor, deletarMeta, exportarMetasCSV, exportarMetasPDF } from '../integration/metaSetorApi'
 import { listarSetores } from '../../setores/integration/setorApi'
 import { listarLotes } from '../../lotes/integration/loteApi'
@@ -146,9 +147,16 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="page-header">
-          <h1>Metas de Setores</h1>
-        </header>
+        <ModuleHeader
+          icon="target"
+          title="Metas dos setores"
+          description="Transforme o planejamento em números simples e acompanhe a evolução de cada setor."
+          metrics={[
+            { value: setores.length, label: 'Setores' },
+            { value: metas.length, label: 'Metas exibidas' },
+            { value: lotesDoSetor.length, label: 'Lotes ativos' },
+          ]}
+        />
 
         {feedback.message ? (
           <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>{feedback.message}</p>
@@ -216,7 +224,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
         {!isLoading && setorSelecionado && metas.length === 0 && !feedback.message ? (
           <div className="metas-estado-vazio">
             <p>Nenhuma meta cadastrada para este setor.</p>
-            {podeGerenciar ? <span>Clique em "+ Nova Meta" para cadastrar a primeira meta.</span> : null}
+            {podeGerenciar ? <span>Clique em &quot;+ Nova Meta&quot; para cadastrar a primeira meta.</span> : null}
           </div>
         ) : null}
 

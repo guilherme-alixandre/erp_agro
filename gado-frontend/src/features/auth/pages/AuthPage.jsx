@@ -43,11 +43,11 @@ function AuthPage({ onLogin, sessionFeedback }) {
       <article className="auth-card">
         <div className="auth-brand">
           <span className="auth-logo"><img src="/logo.png" alt="GADO" /></span>
-          <h1>GADO-WebApp</h1>
+          <h1>GADO · Gestão rural</h1>
         </div>
 
         <h2>Entrar</h2>
-        <p className="auth-subtitle">Acesse sua conta para continuar.</p>
+        <p className="auth-subtitle">Sua fazenda organizada em um só lugar.</p>
 
         <form className="animal-form" onSubmit={handleLoginSubmit}>
           <label>

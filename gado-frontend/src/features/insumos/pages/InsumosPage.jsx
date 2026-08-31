@@ -7,6 +7,7 @@ import AlimentarSetoresTab from '../components/AlimentarSetoresTab'
 import ConsumoEstoqueTab from '../components/ConsumoEstoqueTab'
 import VacinarAnimaisTab from '../components/VacinarAnimaisTab'
 import MovimentacoesTab from '../components/MovimentacoesTab'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
   listarEstoque,
   cadastrarInsumoEstoque,
@@ -595,10 +596,16 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       </aside>
 
       <section className="animals-content">
-        <header className="animals-header">
-          <h1>Insumos</h1>
-          <span>{currentUser.email}</span>
-        </header>
+        <ModuleHeader
+          icon="box"
+          title="Estoque e insumos"
+          description="Controle o que entra, o que é aplicado e o que precisa ser reposto na fazenda."
+          metrics={[
+            { value: insumosEstoque.length, label: 'Produtos' },
+            { value: grupos.length, label: 'Grupos' },
+            { value: unidadesGerenciadas.length, label: 'Unidades' },
+          ]}
+        />
 
         <div className="insumos-tabs">
           <button

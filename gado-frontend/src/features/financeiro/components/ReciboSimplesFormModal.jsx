@@ -46,7 +46,7 @@ function ReciboSimplesFormModal({ formData, produtos, isSaving, feedback, onClos
             </select>
           </label>
           <p className="form-help">
-            Não encontrou o produto? Selecione "+ Criar novo produto..." para cadastrá-lo agora.
+            Não encontrou o produto? Selecione &quot;+ Criar novo produto...&quot; para cadastrá-lo agora.
           </p>
 
           <label>

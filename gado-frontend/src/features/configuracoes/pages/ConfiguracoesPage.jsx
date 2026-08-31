@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import UsuarioFormModal from '../components/UsuarioFormModal'
 import UsuarioEditModal from '../components/UsuarioEditModal'
+import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
   atualizarUsuario,
   cadastrarUsuario,
@@ -258,9 +259,16 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
       </aside>
 
       <section className="animals-content">
-        <header className="page-header">
-          <h1>Configurações</h1>
-        </header>
+        <ModuleHeader
+          icon="settings"
+          title="Equipe e acessos"
+          description="Organize quem usa o sistema e defina o nível de acesso de cada pessoa."
+          metrics={[
+            { value: usuarios.length, label: 'Usuários' },
+            { value: usuariosFiltrados.length, label: 'Nesta lista' },
+            { value: new Set(usuarios.map((usuario) => usuario.perfil)).size, label: 'Perfis usados' },
+          ]}
+        />
 
         {feedback.message ? (
           <p
