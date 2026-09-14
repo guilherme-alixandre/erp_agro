@@ -31,6 +31,25 @@ async function cadastrarOcorrencia(animalId, formData) {
   return normalizeOcorrencia(payload)
 }
 
+async function atualizarOcorrencia(ocorrenciaId, formData) {
+  const body = {
+    tipoOcorrencia: formData.tipoOcorrencia,
+    dataOcorrencia: formData.dataOcorrencia || null,
+    observacao: formData.observacao ? formData.observacao.trim() : null,
+  }
+  const payload = await request(`/ocorrenciaAnimal/${encodeURIComponent(ocorrenciaId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  return normalizeOcorrencia(payload)
+}
+
+async function excluirOcorrencia(ocorrenciaId) {
+  await request(`/ocorrenciaAnimal/${encodeURIComponent(ocorrenciaId)}`, {
+    method: 'DELETE',
+  })
+}
+
 const TIPOS_OCORRENCIA = [
   { value: 'NASCIMENTO', label: 'Nascimento' },
   { value: 'OBITO', label: 'Óbito' },
@@ -39,4 +58,10 @@ const TIPOS_OCORRENCIA = [
   { value: 'PESAGEM', label: 'Pesagem' },
 ]
 
-export { listarOcorrenciasPorAnimal, cadastrarOcorrencia, TIPOS_OCORRENCIA }
+export {
+  listarOcorrenciasPorAnimal,
+  cadastrarOcorrencia,
+  atualizarOcorrencia,
+  excluirOcorrencia,
+  TIPOS_OCORRENCIA,
+}

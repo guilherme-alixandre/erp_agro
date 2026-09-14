@@ -296,6 +296,17 @@
   gap: 4px;
 }
 
+.animal-form label.checkbox-field {
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
+  gap: 8px;
+}
+
+.animal-form label.checkbox-field input {
+  width: auto;
+}
+
 .required-marker {
   color: #b12a2a;
   font-weight: 700;
@@ -548,6 +559,16 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 8px 10px;
+}
+
+.vacinas-detail-list li.ocorrencia-item {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vacinas-detail-list li.ocorrencia-item .row-actions {
+  margin-left: auto;
 }
 
 @media (max-width: 600px) {

@@ -22,6 +22,14 @@ async function listarMinhasTarefas() {
   return payload.map(normalizeTarefa)
 }
 
+async function listarTarefasAtribuidasPorMim() {
+  const payload = await request('/tarefas/atribuidas')
+  if (!Array.isArray(payload)) {
+    throw new Error('Resposta inesperada ao listar as tarefas atribuídas.')
+  }
+  return payload.map(normalizeTarefa)
+}
+
 async function atribuirTarefa(dto) {
   const body = {
     descricao: dto.descricao.trim(),
@@ -51,4 +59,11 @@ function excluirTarefa(id) {
   return request(`/tarefas/${id}`, { method: 'DELETE' })
 }
 
-export { listarMinhasTarefas, atribuirTarefa, editarTarefa, concluirTarefa, excluirTarefa }
+export {
+  listarMinhasTarefas,
+  listarTarefasAtribuidasPorMim,
+  atribuirTarefa,
+  editarTarefa,
+  concluirTarefa,
+  excluirTarefa,
+}

@@ -1,6 +1,6 @@
 package br.com.gado.controllers;
 
-import br.com.gado.dto.OcorrenciaAnimalDTO;
+import br.com.gado.dto.ocorrenciaAnimalDto.OcorrenciaAnimalAtualizacaoDto;
 import br.com.gado.dto.ocorrenciaAnimalDto.OcorrenciaAnimalCadastroDto;
 import br.com.gado.dto.ocorrenciaAnimalDto.OcorrenciaAnimalRespostaDto;
 import br.com.gado.services.SOcorrenciaAnimal;
@@ -32,23 +32,16 @@ public class COcorrenciaAnimal {
         return ResponseEntity.status(HttpStatus.CREATED).body(ocorrenciaAnimalService.criarOcorrenciaPorAnimalId(dto));
     }
 
-    @GetMapping("/{ocorrenciaAnimalId}")
-    public OcorrenciaAnimalDTO getMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId) {
-        return ocorrenciaAnimalService.encontrarOcorrenciaAnimalPorId(ocorrenciaAnimalId);
-    }
-
-    @PostMapping("/")
-    public OcorrenciaAnimalDTO postMovimentacaoEsotque(@RequestBody OcorrenciaAnimalDTO ocorrenciaAnimalId) {
-        return ocorrenciaAnimalService.criarOcorrenciaAnimal(ocorrenciaAnimalId);
+    @PutMapping("/{ocorrenciaAnimalId}")
+    public OcorrenciaAnimalRespostaDto atualizar(
+            @PathVariable Long ocorrenciaAnimalId,
+            @Valid @RequestBody OcorrenciaAnimalAtualizacaoDto dto) {
+        return ocorrenciaAnimalService.atualizarOcorrencia(ocorrenciaAnimalId, dto);
     }
 
     @DeleteMapping("/{ocorrenciaAnimalId}")
-    public String deleteMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId) {
-        return ocorrenciaAnimalService.excluirOcorrenciaAnimal(ocorrenciaAnimalId);
-    }
-
-    @PutMapping("/{ocorrenciaAnimalId}")
-    public OcorrenciaAnimalDTO putMovimentacaoEsotque(@PathVariable Long ocorrenciaAnimalId, @RequestBody OcorrenciaAnimalDTO dto) {
-        return ocorrenciaAnimalService.atualizarOcorrenciaAnimal(ocorrenciaAnimalId, dto);
+    public ResponseEntity<Void> excluir(@PathVariable Long ocorrenciaAnimalId) {
+        ocorrenciaAnimalService.excluirOcorrencia(ocorrenciaAnimalId);
+        return ResponseEntity.noContent().build();
     }
 }

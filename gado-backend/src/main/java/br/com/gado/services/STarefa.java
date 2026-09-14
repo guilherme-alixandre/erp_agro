@@ -81,6 +81,16 @@ public class STarefa {
     }
 
     @Transactional
+    public List<TarefaRespostaDto> listarTarefasAtribuidasPorMim(String email) {
+        resolveUsuarioAtivo(email);
+        return tarefaInterface
+                .findByAtribuidoPorEmailIgnoreCaseAndStatusOrderByDataLimiteAsc(email, EnStatus.A)
+                .stream()
+                .map(this::toRespostaDto)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Transactional
     public TarefaRespostaDto editarTarefa(Long tarefaId, TarefaEdicaoDto dto, String email) {
         EUsuario chamador = resolveUsuarioAtivo(email);
         ETarefa tarefa = tarefaInterface.findById(tarefaId)

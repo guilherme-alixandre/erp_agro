@@ -1057,6 +1057,19 @@ button.app-user__identity:hover {
   color: var(--color-danger);
 }
 
+.task-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.task-card__actions .btn-row--edit {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .task-card__delete {
   display: grid;
   place-items: center;
@@ -1068,11 +1081,40 @@ button.app-user__identity:hover {
   color: #8b4a44;
   background: transparent;
   font-size: 1.3rem;
+  align-self: center;
 }
 
 .task-card__delete:hover {
   color: var(--color-danger);
   background: #fff0ee;
+}
+
+/* Tarefas delegadas: o mesmo cartão, mas com um selo de status em vez do check clicável. */
+.task-board--delegated {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #eef2ec;
+}
+
+.task-status-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #aab7ac;
+  border-radius: 8px;
+  color: var(--color-muted);
+  background: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.task-status-badge--done {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
 }
 
 /* Modais: folha de cadastro familiar, com ações fixas no mobile. */
@@ -1918,6 +1960,7 @@ html[data-theme='dark'] .app-page .data-table tbody tr:nth-child(even) td,
 html[data-theme='dark'] .app-page .insumos-tabs,
 html[data-theme='dark'] .app-page .financeiro-tabs,
 html[data-theme='dark'] .task-column,
+html[data-theme='dark'] .task-board--delegated,
 html[data-theme='dark'] .perfil-switch-row {
   color: var(--color-ink);
   border-color: var(--color-border);
@@ -2053,10 +2096,16 @@ html[data-theme='dark'] .task-column__header > strong {
   background: #2a3b30;
 }
 
-html[data-theme='dark'] .task-card__check {
+html[data-theme='dark'] .task-card__check,
+html[data-theme='dark'] .task-status-badge {
   color: #fff;
   border-color: #8aa094;
   background: #17251c;
+}
+
+html[data-theme='dark'] .task-status-badge--done {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
 }
 
 html[data-theme='dark'] .task-card__meta {

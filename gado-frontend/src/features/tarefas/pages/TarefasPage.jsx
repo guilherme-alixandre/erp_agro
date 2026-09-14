@@ -1,23 +1,40 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listarMinhasTarefas, atribuirTarefa, concluirTarefa, excluirTarefa } from '../integration/tarefaApi'
+import {
+  listarMinhasTarefas,
+  listarTarefasAtribuidasPorMim,
+  atribuirTarefa,
+  editarTarefa,
+  concluirTarefa,
+  excluirTarefa,
+} from '../integration/tarefaApi'
 import { listarUsuariosResumo } from '../integration/usuarioResumoApi'
 import AtribuirTarefaModal from '../components/AtribuirTarefaModal'
+import EditarTarefaModal from '../components/EditarTarefaModal'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
 import { formatarData, hojeIso } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 
 const defaultForm = { descricao: '', dataLimite: '', atribuidoParaEmail: '' }
+const defaultEditForm = { descricao: '', dataLimite: '', statusConclusao: false }
 
 function TarefasPage({ currentUser, onLogout, onNavigate }) {
   const [tarefas, setTarefas] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
 
+  const [tarefasAtribuidas, setTarefasAtribuidas] = useState([])
+  const [isLoadingAtribuidas, setIsLoadingAtribuidas] = useState(false)
+
   const [usuarios, setUsuarios] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(defaultForm)
   const [isSaving, setIsSaving] = useState(false)
   const [modalFeedback, setModalFeedback] = useState('')
+
+  const [editModal, setEditModal] = useState({ open: false, tarefa: null })
+  const [editForm, setEditForm] = useState(defaultEditForm)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [editFeedback, setEditFeedback] = useState('')
 
   const fetchTarefas = useCallback(async () => {
     setIsLoading(true)
@@ -32,9 +49,22 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
     }
   }, [])
 
+  const fetchTarefasAtribuidas = useCallback(async () => {
+    setIsLoadingAtribuidas(true)
+    try {
+      const lista = await listarTarefasAtribuidasPorMim()
+      setTarefasAtribuidas(lista)
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao carregar as tarefas atribuídas.' })
+    } finally {
+      setIsLoadingAtribuidas(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchTarefas()
-  }, [fetchTarefas])
+    fetchTarefasAtribuidas()
+  }, [fetchTarefas, fetchTarefasAtribuidas])
 
   function openModal() {
     setForm(defaultForm)
@@ -53,7 +83,7 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
       await atribuirTarefa(form)
       setModalOpen(false)
       setFeedback({ type: 'info', message: 'Tarefa atribuída com sucesso.' })
-      await fetchTarefas()
+      await Promise.all([fetchTarefas(), fetchTarefasAtribuidas()])
     } catch (error) {
       setModalFeedback(error.message || 'Falha ao atribuir a tarefa.')
     } finally {
@@ -64,9 +94,49 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
   async function handleConcluir(tarefa) {
     try {
       await concluirTarefa(tarefa.id, !tarefa.statusConclusao)
-      await fetchTarefas()
+      await Promise.all([fetchTarefas(), fetchTarefasAtribuidas()])
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao atualizar a tarefa.' })
+    }
+  }
+
+  function openEditModal(tarefa) {
+    setEditModal({ open: true, tarefa })
+    setEditForm({
+      descricao: tarefa.descricao,
+      dataLimite: tarefa.dataLimite ? String(tarefa.dataLimite).slice(0, 10) : '',
+      statusConclusao: tarefa.statusConclusao,
+    })
+    setEditFeedback('')
+  }
+
+  function closeEditModal() {
+    setEditModal({ open: false, tarefa: null })
+    setEditForm(defaultEditForm)
+    setEditFeedback('')
+  }
+
+  function handleEditChange(event) {
+    const { name, value, type, checked } = event.target
+    setEditForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  async function handleEditSubmit(event) {
+    event.preventDefault()
+    setIsSavingEdit(true)
+    setEditFeedback('')
+    try {
+      await editarTarefa(editModal.tarefa.id, {
+        descricao: editForm.descricao.trim(),
+        dataLimite: editForm.dataLimite || null,
+        statusConclusao: editForm.statusConclusao,
+      })
+      closeEditModal()
+      await Promise.all([fetchTarefas(), fetchTarefasAtribuidas()])
+    } catch (error) {
+      setEditFeedback(error.message || 'Falha ao salvar as alterações.')
+    } finally {
+      setIsSavingEdit(false)
     }
   }
 
@@ -75,7 +145,7 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
     if (!confirmar) return
     try {
       await excluirTarefa(tarefa.id)
-      await fetchTarefas()
+      await Promise.all([fetchTarefas(), fetchTarefasAtribuidas()])
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao excluir a tarefa.' })
     }
@@ -83,6 +153,11 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
 
   const pendentes = tarefas.filter((t) => !t.statusConclusao)
   const concluidas = tarefas.filter((t) => t.statusConclusao)
+
+  // Tarefas que este usuário delegou a outra pessoa (as que ele atribuiu a si mesmo já aparecem acima).
+  const delegadas = tarefasAtribuidas.filter(
+    (t) => t.atribuidoParaEmail?.toLowerCase() !== currentUser.email?.toLowerCase(),
+  )
 
   function renderCard(tarefa) {
     const souAtribuidor = tarefa.atribuidoPorEmail?.toLowerCase() === currentUser.email?.toLowerCase()
@@ -120,6 +195,49 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
         >
           ×
         </button>
+      </article>
+    )
+  }
+
+  function renderDelegatedCard(tarefa) {
+    const diaLimite = tarefa.dataLimite ? String(tarefa.dataLimite).slice(0, 10) : null
+    const atrasada = !tarefa.statusConclusao && diaLimite !== null && diaLimite < hojeIso()
+    return (
+      <article className={`task-card${tarefa.statusConclusao ? ' task-card--done' : ''}`} key={tarefa.id}>
+        <span
+          className={`task-status-badge ${tarefa.statusConclusao ? 'task-status-badge--done' : 'task-status-badge--pending'}`}
+          title={tarefa.statusConclusao ? 'Concluída' : 'Pendente'}
+        >
+          {tarefa.statusConclusao ? '✓' : '•'}
+        </span>
+        <div className="task-card__body">
+          <strong>{tarefa.descricao}</strong>
+          <div className="task-card__meta">
+            <span className={atrasada ? 'task-card__due task-card__due--late' : 'task-card__due'}>
+              {diaLimite ? `${atrasada ? 'Atrasada' : 'Prazo'} · ${formatarData(diaLimite)}` : 'Sem prazo'}
+            </span>
+            <span>Para {tarefa.atribuidoParaNome || tarefa.atribuidoParaEmail}</span>
+            <span>{tarefa.statusConclusao ? 'Concluída' : 'Pendente'}</span>
+          </div>
+        </div>
+        <div className="task-card__actions">
+          <button
+            type="button"
+            className="btn-row btn-row--edit"
+            onClick={() => openEditModal(tarefa)}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            className="task-card__delete"
+            onClick={() => handleExcluir(tarefa)}
+            aria-label="Excluir tarefa"
+            title="Excluir tarefa"
+          >
+            ×
+          </button>
+        </div>
       </article>
     )
   }
@@ -231,6 +349,21 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
             </div>
           </section>
         </div>
+
+        <section className="task-board--delegated">
+          <header className="task-column__header">
+            <span className="task-column__dot task-column__dot--pending" />
+            <h2>Tarefas que você atribuiu a outras pessoas</h2>
+            <strong>{delegadas.length}</strong>
+          </header>
+          <div className="task-column__list">
+            {isLoadingAtribuidas ? (
+              <p className="task-column__empty">Carregando tarefas...</p>
+            ) : delegadas.length === 0 ? (
+              <p className="task-column__empty">Você ainda não atribuiu tarefas a outras pessoas.</p>
+            ) : delegadas.map(renderDelegatedCard)}
+          </div>
+        </section>
       </section>
 
       {modalOpen ? (
@@ -242,6 +375,17 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
           onClose={() => setModalOpen(false)}
           onChange={(e) => setForm((c) => ({ ...c, [e.target.name]: e.target.value }))}
           onSubmit={handleSubmit}
+        />
+      ) : null}
+
+      {editModal.open ? (
+        <EditarTarefaModal
+          formData={editForm}
+          isSaving={isSavingEdit}
+          feedback={editFeedback}
+          onClose={closeEditModal}
+          onChange={handleEditChange}
+          onSubmit={handleEditSubmit}
         />
       ) : null}
     </main>

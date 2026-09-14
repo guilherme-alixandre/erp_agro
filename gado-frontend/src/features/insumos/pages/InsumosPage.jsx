@@ -34,6 +34,8 @@ import { formatarMoeda } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 import '../styles/insumos.css'
 
+const ROWS_PER_PAGE = 10
+
 const PERFIS_GESTAO_ESTOQUE = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 // Grupos e unidades seguem a regra do backend (@PreAuthorize em CGrupoProduto e CUnidadeMedida).
 const PERFIS_GESTAO_CADASTROS = ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO']
@@ -368,6 +370,13 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   const [entradaFeedback, setEntradaFeedback] = useState('')
   const [isSavingEntrada, setIsSavingEntrada] = useState(false)
   const [estoqueStatusFiltro, setEstoqueStatusFiltro] = useState('ATIVO')
+  const [estoquePage, setEstoquePage] = useState(0)
+
+  const totalEstoquePages = Math.max(1, Math.ceil(insumosEstoque.length / ROWS_PER_PAGE))
+  const paginatedInsumosEstoque = insumosEstoque.slice(
+    estoquePage * ROWS_PER_PAGE,
+    (estoquePage + 1) * ROWS_PER_PAGE,
+  )
 
   const fetchEstoque = useCallback(async (termo, statusFiltro) => {
     setIsLoadingEstoque(true)
@@ -405,18 +414,21 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
     event.preventDefault()
     const termo = estoqueSearch.trim()
     setEstoqueActiveSearch(termo)
+    setEstoquePage(0)
     fetchEstoque(termo, estoqueStatusFiltro)
   }
 
   function handleEstoqueClearSearch() {
     setEstoqueSearch('')
     setEstoqueActiveSearch('')
+    setEstoquePage(0)
     fetchEstoque('', estoqueStatusFiltro)
   }
 
   function handleEstoqueStatusFiltroChange(event) {
     const novoStatus = event.target.value
     setEstoqueStatusFiltro(novoStatus)
+    setEstoquePage(0)
     fetchEstoque(estoqueActiveSearch, novoStatus)
   }
 
@@ -749,7 +761,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                       </td>
                     </tr>
                   ) : (
-                    insumosEstoque.map((insumo) => (
+                    paginatedInsumosEstoque.map((insumo) => (
                       <tr key={insumo.id}>
                         <td className="codigo-produto">{insumo.codigoProduto || '—'}</td>
                         <td>
@@ -825,6 +837,35 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                 </tbody>
               </table>
             </div>
+
+            <footer className="data-pagination">
+              <span className="pagination-info">
+                {isLoadingEstoque
+                  ? ''
+                  : `${insumosEstoque.length} ${insumosEstoque.length === 1 ? 'registro' : 'registros'}`}
+              </span>
+              <div className="pagination-controls">
+                <button
+                  type="button"
+                  className="pagination-btn"
+                  disabled={estoquePage === 0}
+                  onClick={() => setEstoquePage((p) => p - 1)}
+                >
+                  ← Anterior
+                </button>
+                <span className="pagination-pages">
+                  Página {estoquePage + 1} de {totalEstoquePages}
+                </span>
+                <button
+                  type="button"
+                  className="pagination-btn"
+                  disabled={estoquePage >= totalEstoquePages - 1}
+                  onClick={() => setEstoquePage((p) => p + 1)}
+                >
+                  Próximo →
+                </button>
+              </div>
+            </footer>
           </>
         ) : null}
 

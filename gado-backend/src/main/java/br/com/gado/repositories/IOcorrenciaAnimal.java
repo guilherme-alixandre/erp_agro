@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface IOcorrenciaAnimal extends JpaRepository<EOcorrenciaAnimal, Long> {
-    Optional<EOcorrenciaAnimal> findById(Long id);
+    Optional<EOcorrenciaAnimal> findByIdAndStatus(Long id, EnStatus status);
 
     List<EOcorrenciaAnimal> findByIdAnimal_IdAndStatusOrderByDataOcorrenciaDesc(Long animalId, EnStatus status);
 }

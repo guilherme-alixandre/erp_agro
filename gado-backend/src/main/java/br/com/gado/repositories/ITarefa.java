@@ -13,4 +13,5 @@ public interface ITarefa extends JpaRepository<ETarefa, Long> {
     Optional<ETarefa> findById(Long tarefaId);
     void deleteById(Long tarefaId);
     List<ETarefa> findByListasTarefaId_Usuario_EmailAndStatusOrderByDataLimiteAsc(String email, EnStatus status);
+    List<ETarefa> findByAtribuidoPorEmailIgnoreCaseAndStatusOrderByDataLimiteAsc(String email, EnStatus status);
 }

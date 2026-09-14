@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { listarVacinacoesPorAnimal } from '../../insumos/integration/vacinacaoAnimalApi'
-import { listarOcorrenciasPorAnimal, cadastrarOcorrencia, TIPOS_OCORRENCIA } from '../integration/ocorrenciaAnimalApi'
+import {
+  listarOcorrenciasPorAnimal,
+  cadastrarOcorrencia,
+  atualizarOcorrencia,
+  excluirOcorrencia,
+  TIPOS_OCORRENCIA,
+} from '../integration/ocorrenciaAnimalApi'
 import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
 const STATUS_LABELS = {
@@ -22,6 +28,12 @@ const TIPO_OCORRENCIA_LABELS = TIPOS_OCORRENCIA.reduce((acc, t) => ({ ...acc, [t
 
 const defaultOcorrenciaForm = { tipoOcorrencia: 'DOENCA', dataOcorrencia: '', observacao: '' }
 
+function toDateInputValue(valor) {
+  if (!valor) return ''
+  const partes = /^(\d{4}-\d{2}-\d{2})/.exec(String(valor))
+  return partes ? partes[1] : ''
+}
+
 function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
   const [vacinacoes, setVacinacoes] = useState([])
   const [isLoadingVacinacoes, setIsLoadingVacinacoes] = useState(false)
@@ -32,6 +44,8 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
   const [ocorrenciaForm, setOcorrenciaForm] = useState(defaultOcorrenciaForm)
   const [isSavingOcorrencia, setIsSavingOcorrencia] = useState(false)
   const [ocorrenciaErro, setOcorrenciaErro] = useState('')
+  const [editingOcorrenciaId, setEditingOcorrenciaId] = useState(null)
+  const [deletingOcorrenciaId, setDeletingOcorrenciaId] = useState(null)
 
   useEffect(() => {
     if (!animal.id) {
@@ -83,14 +97,55 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
     setIsSavingOcorrencia(true)
     setOcorrenciaErro('')
     try {
-      await cadastrarOcorrencia(animal.id, ocorrenciaForm)
+      if (editingOcorrenciaId) {
+        await atualizarOcorrencia(editingOcorrenciaId, ocorrenciaForm)
+      } else {
+        await cadastrarOcorrencia(animal.id, ocorrenciaForm)
+      }
       setOcorrenciaForm(defaultOcorrenciaForm)
+      setEditingOcorrenciaId(null)
       setIsAddingOcorrencia(false)
       carregarOcorrencias()
     } catch (error) {
-      setOcorrenciaErro(error.message || 'Falha ao registrar a ocorrência.')
+      setOcorrenciaErro(error.message || 'Falha ao salvar a ocorrência.')
     } finally {
       setIsSavingOcorrencia(false)
+    }
+  }
+
+  function handleEditarOcorrencia(ocorrencia) {
+    setEditingOcorrenciaId(ocorrencia.id)
+    setOcorrenciaForm({
+      tipoOcorrencia: ocorrencia.tipoOcorrencia,
+      dataOcorrencia: toDateInputValue(ocorrencia.dataOcorrencia),
+      observacao: ocorrencia.observacao ?? '',
+    })
+    setOcorrenciaErro('')
+    setIsAddingOcorrencia(true)
+  }
+
+  function handleCancelarFormOcorrencia() {
+    setIsAddingOcorrencia(false)
+    setEditingOcorrenciaId(null)
+    setOcorrenciaErro('')
+    setOcorrenciaForm(defaultOcorrenciaForm)
+  }
+
+  async function handleExcluirOcorrencia(ocorrencia) {
+    const confirmar = window.confirm('Deseja excluir esta ocorrência?')
+    if (!confirmar) return
+
+    setDeletingOcorrenciaId(ocorrencia.id)
+    try {
+      await excluirOcorrencia(ocorrencia.id)
+      if (editingOcorrenciaId === ocorrencia.id) {
+        handleCancelarFormOcorrencia()
+      }
+      carregarOcorrencias()
+    } catch (error) {
+      setOcorrenciaErro(error.message || 'Falha ao excluir a ocorrência.')
+    } finally {
+      setDeletingOcorrenciaId(null)
     }
   }
 
@@ -174,12 +229,29 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
         ) : ocorrencias.length > 0 ? (
           <ul className="vacinas-detail-list">
             {ocorrencias.map((o) => (
-              <li key={o.id}>
+              <li key={o.id} className="ocorrencia-item">
                 <strong>{TIPO_OCORRENCIA_LABELS[o.tipoOcorrencia] ?? o.tipoOcorrencia}</strong>
                 <span>
                   {formatarData(o.dataOcorrencia)}
                   {o.observacao ? ` — ${o.observacao}` : ''}
                 </span>
+                <div className="row-actions">
+                  <button
+                    type="button"
+                    className="btn-row btn-row--edit"
+                    onClick={() => handleEditarOcorrencia(o)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-row btn-row--danger"
+                    onClick={() => handleExcluirOcorrencia(o)}
+                    disabled={deletingOcorrenciaId === o.id}
+                  >
+                    {deletingOcorrenciaId === o.id ? 'Excluindo...' : 'Excluir'}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -215,19 +287,15 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
             </label>
             {ocorrenciaErro ? <p className="feedback feedback--error">{ocorrenciaErro}</p> : null}
             <div className="modal-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  setIsAddingOcorrencia(false)
-                  setOcorrenciaErro('')
-                  setOcorrenciaForm(defaultOcorrenciaForm)
-                }}
-              >
+              <button type="button" className="btn-secondary" onClick={handleCancelarFormOcorrencia}>
                 Cancelar
               </button>
               <button type="submit" className="btn-primary" disabled={isSavingOcorrencia}>
-                {isSavingOcorrencia ? 'Salvando...' : 'Salvar ocorrência'}
+                {isSavingOcorrencia
+                  ? 'Salvando...'
+                  : editingOcorrenciaId
+                    ? 'Salvar alterações'
+                    : 'Salvar ocorrência'}
               </button>
             </div>
           </form>

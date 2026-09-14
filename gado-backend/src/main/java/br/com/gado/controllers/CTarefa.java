@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Cada usuário tem uma lista de tarefas própria; qualquer usuário pode atribuir uma tarefa a qualquer outro. */
+/**
+ * Cada usuário tem uma lista de tarefas própria; qualquer usuário pode atribuir uma tarefa a qualquer outro.
+ * Quem atribui uma tarefa também pode acompanhar sua conclusão e excluí-la, mesmo não sendo o dono da lista.
+ */
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/tarefas")
@@ -27,6 +30,11 @@ public class CTarefa {
     @GetMapping
     public List<TarefaRespostaDto> listarMinhasTarefas() {
         return tarefaService.listarMinhasTarefas(SecurityUtils.currentUserEmail());
+    }
+
+    @GetMapping("/atribuidas")
+    public List<TarefaRespostaDto> listarTarefasAtribuidasPorMim() {
+        return tarefaService.listarTarefasAtribuidasPorMim(SecurityUtils.currentUserEmail());
     }
 
     @PostMapping
