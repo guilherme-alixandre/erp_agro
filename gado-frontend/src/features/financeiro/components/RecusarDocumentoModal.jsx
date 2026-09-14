@@ -1,17 +1,19 @@
+import { formatarMoeda } from '../../../utils/formatters'
+
 function RecusarDocumentoModal({ documento, justificativa, isSaving, feedback, onClose, onChange, onSubmit }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
         <div className="modal-header">
           <h2>Recusar documento</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <p className="form-info">
           {documento.itens?.[0]?.descricaoXml || documento.numeroDocumento || 'Este documento'} —
-          valor R$ {Number(documento.valorTotal ?? 0).toFixed(2)}. Recusar não pode ser desfeito.
+          valor {formatarMoeda(documento.valorTotal)}. Recusar não pode ser desfeito.
         </p>
 
         <form className="animal-form" onSubmit={onSubmit}>

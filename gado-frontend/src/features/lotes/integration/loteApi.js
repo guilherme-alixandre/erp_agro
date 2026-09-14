@@ -1,4 +1,4 @@
-import { API_BASE_URL, request } from '../../../integration/apiClient'
+import { downloadFile, request } from '../../../integration/apiClient'
 
 function sanitize(value) {
   return String(value ?? '').trim()
@@ -174,7 +174,7 @@ function exportarLotesCSV(lotes) {
 }
 
 function exportarLotesPDF() {
-  window.open(`${API_BASE_URL}/lotes/pdf`, '_blank')
+  return downloadFile('/lotes/pdf', 'relatorio-lotes.pdf')
 }
 
 async function buscarCustoRacaoLote(loteId) {

@@ -141,17 +141,17 @@ function SetorCard({
   }
 
   return (
-    <div className="setor-card">
-      <div className="setor-card__header">
-        <strong className="setor-card__nome">{setor.nome}</strong>
+    <div className="aloc-card">
+      <div className="aloc-card__header">
+        <strong className="aloc-card__nome">{setor.nome}</strong>
         <span
-          className={`setor-card__capacidade${excedido ? ' setor-card__capacidade--excedido' : ''}`}
+          className={`aloc-card__capacidade${excedido ? ' aloc-card__capacidade--excedido' : ''}`}
         >
           {ocupacao}/{capacidade} animais
         </span>
         <button
           type="button"
-          className="setor-card__remover"
+          className="aloc-card__remover"
           onClick={onRemove}
           aria-label={`Remover setor ${setor.nome}`}
         >
@@ -159,7 +159,7 @@ function SetorCard({
         </button>
       </div>
 
-      <div className="setor-card__label">
+      <div className="aloc-card__label">
         <span>
           {isEditExisting
             ? canTransfer
@@ -191,14 +191,14 @@ function SetorCard({
       </div>
 
       {excedido ? (
-        <p className="setor-card__aviso">
+        <p className="aloc-card__aviso">
           Atenção: capacidade máxima ({capacidade}) excedida.
         </p>
       ) : null}
 
       {isEditExisting && canTransfer && selectedForTransfer.length > 0 ? (
-        <div className="setor-card__transferencia">
-          <p className="setor-card__transferencia-info">
+        <div className="aloc-card__transferencia">
+          <p className="aloc-card__transferencia-info">
             {selectedForTransfer.length}{' '}
             {selectedForTransfer.length === 1
               ? 'animal selecionado'
@@ -260,7 +260,7 @@ function SetorCard({
             <p className="feedback feedback--error">{transferenciaError}</p>
           ) : null}
 
-          <div className="setor-card__transferencia-actions">
+          <div className="aloc-card__transferencia-actions">
             <button
               type="button"
               className="btn-secondary"
@@ -371,7 +371,7 @@ function LoteFormModal({
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>{title}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

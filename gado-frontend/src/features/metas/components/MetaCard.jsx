@@ -161,6 +161,7 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
 
           {showMedicoes ? (
             meta.medicoes.length > 0 ? (
+              <div className="meta-medicoes__table-wrapper">
               <table className="meta-medicoes__table">
                 <thead>
                   <tr>
@@ -169,7 +170,7 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
                     <th>Lançado</th>
                     <th>Convertido</th>
                     <th>Criado por</th>
-                    <th></th>
+                    <th aria-label="Ações" />
                   </tr>
                 </thead>
                 <tbody>
@@ -186,31 +187,34 @@ function MetaCard({ meta, lotes, currentUser, podeGerenciar, onEditar, onDeletar
                       <td>{m.criadoPorNome || m.criadoPorEmail || '—'}</td>
                       <td>
                         {podeEditarMedicao(m) ? (
-                          <button
-                            type="button"
-                            className="btn-edit-medicao"
-                            onClick={() => setMedicaoEditando(m)}
-                            aria-label="Editar medição"
-                          >
-                            ✎
-                          </button>
-                        ) : null}
-                        {podeEditarMedicao(m) ? (
-                          <button
-                            type="button"
-                            className="btn-del-medicao"
-                            onClick={() => handleDeletarMedicao(m.id)}
-                            disabled={deletandoMedicao === m.id}
-                            aria-label="Remover medição"
-                          >
-                            {deletandoMedicao === m.id ? '...' : '✕'}
-                          </button>
+                          <div className="meta-medicoes__actions">
+                            <button
+                              type="button"
+                              className="btn-edit-medicao"
+                              onClick={() => setMedicaoEditando(m)}
+                              aria-label="Editar medição"
+                              title="Editar medição"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-del-medicao"
+                              onClick={() => handleDeletarMedicao(m.id)}
+                              disabled={deletandoMedicao === m.id}
+                              aria-label="Remover medição"
+                              title="Remover medição"
+                            >
+                              {deletandoMedicao === m.id ? '...' : '✕'}
+                            </button>
+                          </div>
                         ) : null}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : (
               <p className="meta-medicoes__empty">Nenhuma medição registrada ainda.</p>
             )

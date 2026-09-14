@@ -8,10 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-
-function formatarMoeda(valor) {
-  return `R$ ${Number(valor ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
+import { formatarMoeda } from '../../../utils/formatters'
 
 function formatarEixoY(valor) {
   const numero = Number(valor ?? 0)

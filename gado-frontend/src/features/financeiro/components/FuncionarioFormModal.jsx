@@ -14,7 +14,7 @@ function FuncionarioFormModal({ mode = 'create', formData, isSaving, feedback, o
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>{isEdit ? 'Editar funcionário' : 'Cadastrar funcionário'}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

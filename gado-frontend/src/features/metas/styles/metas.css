@@ -2,7 +2,7 @@
    metas.css — Módulo de Metas de Setores
    Herda o layout base (animals-layout, sidebar, header, data-toolbar,
    modal-card, btn-*) de animais.css. Define apenas o que é específico
-   deste módulo.
+   deste módulo. Cores vêm dos tokens do sistema visual (tema claro/escuro).
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Lista de metas ───────────────────────────────────────────────── */
@@ -18,16 +18,17 @@
 
 .meta-card {
   width: 100%;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
 }
 
 .meta-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* ── Cabeçalho do card ────────────────────────────────────────────── */
@@ -51,12 +52,12 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-ink);
 }
 
 .meta-card__subtitle {
   font-size: 0.92rem;
-  color: #6b7280;
+  color: var(--color-muted);
 }
 
 .meta-card__badge {
@@ -64,26 +65,31 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
+  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 0.86rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .meta-card__badge--leite {
-  background: #dbeafe;
+  background: #e3edff;
+  border-color: #bcd0f7;
   color: #1d4ed8;
 }
 
 .meta-card__badge--arroba {
   background: #fef3c7;
+  border-color: #f3d774;
   color: #92400e;
 }
 
 /* ── Barra de progresso ───────────────────────────────────────────── */
 
 .meta-progress {
+  display: grid;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
 }
 
@@ -91,24 +97,28 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.5rem;
+  gap: 0.75rem;
+}
+
+.meta-progress__bar-track + .meta-progress__header {
+  margin-top: 0.5rem;
 }
 
 .meta-progress__label {
   font-size: 0.92rem;
-  color: #374151;
+  color: var(--color-muted);
   font-weight: 500;
 }
 
 .meta-progress__pct {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-ink);
 }
 
 .meta-progress__bar-track {
   height: 10px;
-  background: #e5e7eb;
+  background: var(--color-surface-muted);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -142,25 +152,25 @@
 }
 
 .meta-stat {
-  background: #f9fafb;
-  border: 1px solid #f3f4f6;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
 }
 
 .meta-stat__label {
-  font-size: 0.86rem;
-  color: #9ca3af;
+  font-size: 0.82rem;
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.2rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .meta-stat__value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-ink);
 }
 
 /* ── Tabela de medições ───────────────────────────────────────────── */
@@ -170,25 +180,32 @@
 }
 
 .meta-medicoes__toggle {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  margin-bottom: 0.5rem;
+  padding: 0 0.25rem;
   border: none;
+  background: none;
   cursor: pointer;
   font-size: 0.94rem;
-  color: #4b5563;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
 }
 
 .meta-medicoes__toggle:hover {
-  color: #111827;
+  color: var(--color-ink);
+}
+
+.meta-medicoes__table-wrapper {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 .meta-medicoes__table {
   width: 100%;
+  min-width: 560px;
   border-collapse: collapse;
   font-size: 0.94rem;
 }
@@ -199,24 +216,32 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
-  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--color-border);
   padding: 0.4rem 0.6rem;
 }
 
 .meta-medicoes__table td {
   padding: 0.5rem 0.6rem;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
 }
 
 .meta-medicoes__table tr:last-child td {
   border-bottom: none;
 }
 
+.meta-medicoes__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
 .meta-medicoes__empty {
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-muted);
   font-size: 0.92rem;
   padding: 1rem 0;
   font-style: italic;
@@ -224,35 +249,35 @@
 
 /* ── Botões de ação em linha da medição ───────────────────────────── */
 
-.btn-edit-medicao {
+.btn-edit-medicao,
+.btn-del-medicao {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: none;
-  border: none;
   cursor: pointer;
-  color: #3b82f6;
-  font-size: 0.94rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
+  font-size: 1rem;
   transition: background 0.15s;
-  margin-right: 0.25rem;
+}
+
+.btn-edit-medicao {
+  color: var(--color-brand);
 }
 
 .btn-edit-medicao:hover {
-  background: #dbeafe;
+  background: var(--color-brand-soft);
 }
 
 .btn-del-medicao {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #ef4444;
-  font-size: 0.94rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  transition: background 0.15s;
+  color: var(--color-danger-text);
 }
 
-.btn-del-medicao:hover {
-  background: #fee2e2;
+.btn-del-medicao:hover:not(:disabled) {
+  background: rgba(180, 35, 24, 0.1);
 }
 
 /* ── Ações do card ────────────────────────────────────────────────── */
@@ -262,7 +287,7 @@
   gap: 0.6rem;
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 
@@ -273,23 +298,20 @@
   align-items: center;
   gap: 0.65rem;
   flex: 1;
+  min-width: 0;
 }
 
 .metas-setor-filter label {
   font-size: 0.96rem;
-  color: #374151;
-  font-weight: 500;
+  color: var(--color-label);
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .metas-setor-filter select {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 0 0.75rem;
   font-size: 1rem;
-  color: #111827;
-  background: #fff;
   min-width: 180px;
   max-width: 340px;
 }
@@ -302,14 +324,18 @@
   align-items: center;
   gap: 0.5rem;
   padding: 3rem 1rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   text-align: center;
-  color: #6b7280;
+  color: var(--color-muted);
 }
 
 .metas-estado-vazio p {
   margin: 0;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-ink);
 }
 
 .metas-estado-vazio span {
@@ -320,8 +346,12 @@
 
 .meta-form__subtitle {
   font-size: 0.94rem;
-  color: #6b7280;
+  color: var(--color-muted);
   margin: -4px 0 12px;
+}
+
+.meta-form {
+  margin-top: 12px;
 }
 
 .meta-form .form-group {
@@ -329,32 +359,35 @@
   flex-direction: column;
   gap: 0.3rem;
   margin-bottom: 1rem;
+  min-width: 0;
 }
 
-.meta-form label span {
+.meta-form label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+/* Só o título do campo: o asterisco e a mensagem de erro são spans internos com estilo próprio. */
+.meta-form label > span:first-child {
   font-size: 0.96rem;
-  font-weight: 600;
-  color: #374151;
-  display: block;
-  margin-bottom: 0.25rem;
+  font-weight: 700;
+  color: var(--color-label);
 }
 
 .meta-form input,
 .meta-form select {
   width: 100%;
   padding: 0.55rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   font-size: 1rem;
-  color: #111827;
-  background: #fff;
   box-sizing: border-box;
   transition: border-color 0.15s;
 }
 
-.meta-form input.field-error,
-.meta-form select.field-error {
-  border-color: #ef4444;
+.app-page .meta-form input.field-error,
+.app-page .meta-form select.field-error {
+  border-color: var(--color-danger);
 }
 
 .meta-form__row {

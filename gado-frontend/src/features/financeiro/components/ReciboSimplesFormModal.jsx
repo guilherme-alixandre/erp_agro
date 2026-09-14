@@ -14,7 +14,7 @@ function ReciboSimplesFormModal({ formData, produtos, isSaving, feedback, onClos
       <div className="modal-card">
         <div className="modal-header">
           <h2>Novo recibo (documento não fiscal)</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

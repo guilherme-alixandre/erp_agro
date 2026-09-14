@@ -4,7 +4,7 @@ function AtribuirTarefaModal({ formData, usuarios, isSaving, feedback, onClose, 
       <div className="modal-card">
         <div className="modal-header">
           <h2>Atribuir tarefa</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

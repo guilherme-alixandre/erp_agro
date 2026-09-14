@@ -16,6 +16,13 @@ import '../styles/setores.css'
 const PERFIS_COM_CRIACAO_EDICAO_SETOR = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
 const PERFIS_COM_EXCLUSAO_SETOR = ['ADMINISTRADOR', 'GERENTE']
 
+const TIPO_SETOR_LABELS = {
+  PASTO: 'Pasto',
+  GALPAO: 'Galpão',
+  CONFINAMENTO: 'Confinamento',
+  PATIO: 'Pátio',
+}
+
 const defaultForm = {
   nome: '',
   capacidadeMaxima: '',
@@ -62,8 +69,10 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   }
 
   function handleExportarPDF() {
-    exportarSetoresPDF()
     setExportMenuOpen(false)
+    exportarSetoresPDF().catch((error) => {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao gerar o PDF de setores.' })
+    })
   }
 
   const filteredSetores = useMemo(() => {
@@ -85,7 +94,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
 
   const fetchSetores = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarSetores()
       setSetores(list)
@@ -264,7 +273,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
 
         <div className="data-toolbar">
           <form className="toolbar-search" onSubmit={handleSearchSubmit}>
-            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <span className="toolbar-search__icon" aria-hidden="true" />
             <input
               type="text"
               value={search}
@@ -351,7 +360,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
                 paginatedSetores.map((setor) => (
                   <tr key={setor.id}>
                     <td>{setor.nome}</td>
-                    <td>{setor.tipo || '—'}</td>
+                    <td>{TIPO_SETOR_LABELS[setor.tipo] ?? (setor.tipo || '—')}</td>
                     <td>{setor.capacidadeMaxima ?? '—'}</td>
                     <td>{setor.lotes.length > 0 ? setor.lotes.length : '—'}</td>
                     <td className="td-truncate">{setor.metaTexto || '—'}</td>

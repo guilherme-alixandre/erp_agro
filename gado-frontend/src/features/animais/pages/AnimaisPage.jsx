@@ -75,22 +75,31 @@ function toCardAnimal(animal) {
     return {
         ...animal,
         idadeLabel: calcAgeLabel(animal.dataNascimento),
-        pesoLabel: `${Number(animal.pesoAtual || 0).toFixed(0)} KG`,
+        pesoLabel: `${Number(animal.pesoAtual || 0).toFixed(0)} kg`,
     }
 }
 
+const STATUS_ANIMAL = {
+    ATIVO: { label: 'Ativo', pill: 'status-pill--ativo' },
+    OBSERVACAO: { label: 'Em observação', pill: 'status-pill--pendente' },
+    VENDIDO: { label: 'Vendido', pill: 'status-pill--neutro' },
+    ABATIDO: { label: 'Abatido', pill: 'status-pill--neutro' },
+    OBITO: { label: 'Óbito', pill: 'status-pill--inativo' },
+}
+
 function exportAnimaisCSV(animais) {
-    const headers = ['Código Brinco', 'Raça', 'Sexo', 'Peso (KG)', 'Nascimento', 'Status']
+    const headers = ['Código Brinco', 'Raça', 'Sexo', 'Peso (kg)', 'Nascimento', 'Status']
     const rows = animais.map((a) => [
         a.codigoBrinco,
         a.racaNome || '',
         a.sexo === 'M' ? 'Macho' : 'Fêmea',
         Number(a.pesoAtual || 0).toFixed(0),
         a.dataNascimento || '',
-        a.statusAnimal,
+        STATUS_ANIMAL[a.statusAnimal]?.label ?? a.statusAnimal,
     ])
+    // Ponto e vírgula, como nos demais exports: é o separador que o Excel em português abre em colunas.
     const csvContent = [headers, ...rows]
-        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
         .join('\n')
     const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -174,7 +183,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     const fetchAnimals = useCallback(async (termo) => {
         setIsLoading(true)
-        setFeedback({ type: '', message: '' })
+        setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
 
         try {
             const list = await buscarAnimais(termo)
@@ -200,7 +209,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     const fetchRacas = useCallback(async (termo, statusFiltro) => {
         setIsLoadingRacas(true)
-        setRacasFeedback({ type: '', message: '' })
+        setRacasFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
         try {
             const lista = await listarRacas(termo ?? '', statusFiltro ?? 'ATIVO')
             setRacas(lista)
@@ -556,7 +565,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                 {/* Toolbar: busca + filtros + ações */}
                 <div className="data-toolbar">
                     <form className="toolbar-search" onSubmit={handleSearchSubmit}>
-                        <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                        <span className="toolbar-search__icon" aria-hidden="true" />
                         <input
                             type="text"
                             value={search}
@@ -681,14 +690,8 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
                                         <td>{animal.pesoLabel}</td>
                                         <td>{animal.idadeLabel}</td>
                                         <td>
-                                            <span
-                                                className={`status-pill ${
-                                                    animal.statusAnimal === 'ATIVO'
-                                                        ? 'status-pill--ativo'
-                                                        : 'status-pill--inativo'
-                                                }`}
-                                            >
-                                                {animal.statusAnimal}
+                                            <span className={`status-pill ${STATUS_ANIMAL[animal.statusAnimal]?.pill ?? 'status-pill--neutro'}`}>
+                                                {STATUS_ANIMAL[animal.statusAnimal]?.label ?? animal.statusAnimal}
                                             </span>
                                         </td>
                                         <td>
@@ -755,7 +758,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
                 <div className="data-toolbar">
                     <form className="toolbar-search" onSubmit={handleRacaSearchSubmit}>
-                        <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                        <span className="toolbar-search__icon" aria-hidden="true" />
                         <input
                             type="text"
                             value={racaSearch}

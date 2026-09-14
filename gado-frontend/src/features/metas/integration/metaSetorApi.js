@@ -1,4 +1,4 @@
-import { API_BASE_URL, request } from '../../../integration/apiClient'
+import { downloadFile, request } from '../../../integration/apiClient'
 
 // Autenticação agora é feita via o token JWT anexado automaticamente pelo apiClient.
 function usuarioHeaders() {
@@ -208,7 +208,7 @@ function exportarMetasCSV(metas) {
 }
 
 function exportarMetasPDF(setorId) {
-  window.open(`${API_BASE_URL}/metas-setor/pdf?setorId=${setorId}`, '_blank')
+  return downloadFile(`/metas-setor/pdf?setorId=${encodeURIComponent(setorId)}`, 'relatorio-metas.pdf')
 }
 
 export {

@@ -59,6 +59,8 @@ function AuthPage({ onLogin, sessionFeedback }) {
               name="email"
               value={loginForm.email}
               onChange={handleLoginChange}
+              autoComplete="username"
+              inputMode="email"
               required
             />
           </label>

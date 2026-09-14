@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listarMovimentacoes, TIPO_LABEL } from '../integration/movimentacaoEstoqueApi'
-
-function formatarData(iso) {
-  if (!iso) return '—'
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return iso
-  return data.toLocaleString('pt-BR')
-}
+import { formatarDataHora, formatarMoeda } from '../../../utils/formatters'
 
 function origemDestino(m) {
   if (m.parceiroNome) return m.parceiroNome
@@ -76,11 +70,11 @@ function MovimentacoesTab() {
             ) : (
               movimentacoes.map((m) => (
                 <tr key={m.id}>
-                  <td>{formatarData(m.dataMovimentacao)}</td>
+                  <td>{formatarDataHora(m.dataMovimentacao)}</td>
                   <td>{TIPO_LABEL[m.tipo] ?? m.tipo}</td>
                   <td>{m.insumoNome || '—'}</td>
                   <td>{m.quantidade} {m.unidadeMedidaSigla}</td>
-                  <td>R$ {Number(m.valorUnitario ?? 0).toFixed(2)}</td>
+                  <td>{formatarMoeda(m.valorUnitario)}</td>
                   <td>{origemDestino(m)}</td>
                 </tr>
               ))

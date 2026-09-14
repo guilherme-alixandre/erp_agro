@@ -137,7 +137,6 @@ function SearchSelectModal({
                           onChange={() => toggleItem(item.id)}
                           onClick={(e) => e.stopPropagation()}
                           disabled={itemDisabled}
-                          style={{ accentColor: '#4f7f2f' }}
                           aria-label={`Selecionar ${String(item[columns[0]?.key] ?? item.id)}`}
                         />
                       </td>

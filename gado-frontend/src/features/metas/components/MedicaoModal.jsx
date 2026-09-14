@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { cadastrarMedicao, atualizarMedicao, validarFormMedicao, labelQuantidade } from '../integration/metaSetorApi'
 import SearchSelectModal from '../../../components/shared/SearchSelectModal'
+import { hojeIso } from '../../../utils/formatters'
 
 function RequiredLabel({ children }) {
   return (
@@ -114,7 +115,7 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
       <div className="modal-card">
         <div className="modal-header">
           <h2>{modoEdicao ? 'Editar medição' : 'Adicionar medição'}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -152,7 +153,7 @@ function MedicaoModal({ meta, lotes, emailUsuario, medicaoParaEditar, onClose, o
                 value={form.dataMedicao}
                 onChange={handleChange}
                 className={erros.dataMedicao ? 'field-error' : ''}
-                max={new Date().toISOString().slice(0, 10)}
+                max={hojeIso()}
               />
               {erros.dataMedicao ? <span className="field-error-msg">{erros.dataMedicao}</span> : null}
             </label>

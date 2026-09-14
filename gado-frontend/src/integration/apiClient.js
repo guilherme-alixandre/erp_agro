@@ -21,7 +21,7 @@ function setUnauthorizedHandler(handler) {
 
 const ERROR_MESSAGES = {
     400: 'Não foi possível concluir a operação. Verifique os dados e tente novamente.',
-    401: 'Você não tem permissão para realizar esta ação.',
+    401: 'Sua sessão expirou. Faça login novamente.',
     403: 'Você não tem permissão para realizar esta ação.',
     404: 'Recurso não encontrado.',
     408: 'Tempo de resposta esgotado. Tente novamente.',
@@ -30,6 +30,9 @@ const ERROR_MESSAGES = {
     500: 'O servidor encontrou um problema. Tente novamente em instantes.',
     default: 'Não foi possível concluir a operação. Tente novamente.',
 }
+
+const CONNECTION_ERROR_MESSAGE =
+    'Não foi possível conectar ao servidor. Verifique sua conexão e se o backend está rodando.'
 
 // detecta se o texto parece um erro Java (stacktrace)
 function looksLikeStacktrace(text) {
@@ -96,9 +99,7 @@ async function request(path, options = {}) {
             },
         })
     } catch {
-        throw new Error(
-            'Não foi possível conectar ao servidor. Verifique sua conexão e se o backend está rodando.'
-        )
+        throw new Error(CONNECTION_ERROR_MESSAGE)
     }
 
     if (response.status === 401 && onUnauthorized) {
@@ -134,4 +135,36 @@ async function request(path, options = {}) {
     return payload
 }
 
-export { API_BASE_URL, request, setAuthToken, setUnauthorizedHandler }
+// Baixa um arquivo protegido (ex: relatórios em PDF). Abrir a URL direto numa aba não enviaria o token JWT.
+async function downloadFile(path, fileName) {
+    let response
+
+    try {
+        response = await fetch(`${API_BASE_URL}${path}`, {
+            headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {},
+        })
+    } catch {
+        throw new Error(CONNECTION_ERROR_MESSAGE)
+    }
+
+    if (response.status === 401 && onUnauthorized) {
+        onUnauthorized()
+    }
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        const backendMessage = extractBackendMessage(tryParseJson(text) ?? text)
+        throw new Error(backendMessage || (ERROR_MESSAGES[response.status] ?? ERROR_MESSAGES.default))
+    }
+
+    const url = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export { API_BASE_URL, downloadFile, request, setAuthToken, setUnauthorizedHandler }

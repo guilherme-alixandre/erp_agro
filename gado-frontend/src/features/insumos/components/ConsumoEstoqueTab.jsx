@@ -8,18 +8,12 @@ import {
 } from '../integration/consumoEstoqueApi'
 import CancelarConsumoEstoqueModal from './CancelarConsumoEstoqueModal'
 import EditarConsumoEstoqueModal from './EditarConsumoEstoqueModal'
+import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
 const defaultItem = { insumoId: '', quantidade: '', unidadeMedidaId: '' }
 const defaultForm = { motivo: '', dataConsumo: '', itens: [{ ...defaultItem }] }
 
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
-
-function formatarData(iso) {
-  if (!iso) return '—'
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return iso
-  return data.toLocaleString('pt-BR')
-}
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -437,7 +431,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
               ) : (
                 historico.map((c) => (
                   <tr key={c.id}>
-                    <td>{formatarData(c.dataConsumo)}</td>
+                    <td>{formatarDataHora(c.dataConsumo)}</td>
                     <td>
                       {c.itens.map((item) => (
                         <div key={item.id}>
@@ -453,7 +447,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
                           <span className="consumo-estoque__status--cancelado">Cancelado</span>
                           <span className="consumo-estoque__cancelamento-motivo">
                             {c.motivoCancelamento} — {c.canceladoPorNome || c.canceladoPorEmail} em{' '}
-                            {formatarData(c.canceladoEm)}
+                            {formatarDataHora(c.canceladoEm)}
                           </span>
                         </>
                       ) : (
@@ -516,7 +510,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
           <div className="modal-card">
             <div className="modal-header">
               <h2>Resumo de consumo de estoque</h2>
-              <button type="button" className="modal-close" onClick={() => setResumoAberto(false)}>
+              <button type="button" className="modal-close" aria-label="Fechar" onClick={() => setResumoAberto(false)}>
                 ✕
               </button>
             </div>

@@ -3,14 +3,14 @@ function EstornarPagamentoModal({ pagamento, motivoEstorno, isSaving, feedback, 
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
         <div className="modal-header">
-          <h2>Extornar pagamento</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <h2>Estornar pagamento</h2>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <p className="form-info">
-          Esta ação irá extornar o pagamento de <strong>{pagamento.funcionarioNome}</strong> referente a{' '}
+          Esta ação irá estornar o pagamento de <strong>{pagamento.funcionarioNome}</strong> referente a{' '}
           {String(pagamento.mesReferencia).padStart(2, '0')}/{pagamento.anoReferencia}, removendo-o do
           lançamento financeiro do mês.
         </p>
@@ -30,7 +30,7 @@ function EstornarPagamentoModal({ pagamento, motivoEstorno, isSaving, feedback, 
               Voltar
             </button>
             <button type="submit" className="btn-primary" disabled={isSaving}>
-              {isSaving ? 'Extornando...' : 'Confirmar extorno'}
+              {isSaving ? 'Estornando...' : 'Confirmar estorno'}
             </button>
           </div>
         </form>

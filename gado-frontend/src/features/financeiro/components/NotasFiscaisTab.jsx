@@ -20,6 +20,7 @@ import VincularItensModal from './VincularItensModal'
 import EditarNfeModal from './EditarNfeModal'
 import InsumoEstoqueFormModal from '../../insumos/components/InsumoEstoqueFormModal'
 import RegistrarVendaModal from './RegistrarVendaModal'
+import { formatarMoeda } from '../../../utils/formatters'
 
 const PERFIS_GERENCIAIS = ['ADMINISTRADOR', 'GERENTE']
 const PERFIS_EXCLUSAO_NF = ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO']
@@ -118,7 +119,7 @@ function NotasFiscaisTab({ currentUser }) {
 
   const fetchDocumentos = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const [entradas, unificado] = await Promise.all([
         listarDocumentos(currentUser.email),
@@ -311,7 +312,7 @@ function NotasFiscaisTab({ currentUser }) {
 
       <div className="data-toolbar">
         <form className="toolbar-search" onSubmit={handleFiltrarSubmit}>
-          <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+          <span className="toolbar-search__icon" aria-hidden="true" />
           <input
             type="text"
             value={numeroInput}
@@ -320,7 +321,7 @@ function NotasFiscaisTab({ currentUser }) {
           />
         </form>
         <form className="toolbar-search" onSubmit={handleFiltrarSubmit}>
-          <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+          <span className="toolbar-search__icon" aria-hidden="true" />
           <input
             type="text"
             value={chaveInput}
@@ -393,14 +394,14 @@ function NotasFiscaisTab({ currentUser }) {
                     <td>{nf.numeroDocumento || '—'}</td>
                     <td className="codigo-produto">{nf.chaveAcesso || '—'}</td>
                     <td>{formatarData(nf.dataEmissao)}</td>
-                    <td>R$ {Number(nf.valorTotal ?? 0).toFixed(2)}</td>
+                    <td>{formatarMoeda(nf.valorTotal)}</td>
                     <td>
                       {nf.direcao === 'ENTRADA' ? (
                         <span className={`financeiro-status ${STATUS_CLASS[nf.status] ?? ''}`}>
                           {STATUS_LABEL[nf.status] ?? nf.status}
                         </span>
                       ) : (
-                        <span className="financeiro-status financeiro-status--aprovado">Confirmado</span>
+                        <span className="financeiro-status financeiro-status--confirmado">Confirmado</span>
                       )}
                     </td>
                     <td>

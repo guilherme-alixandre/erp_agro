@@ -27,7 +27,7 @@ function GrupoProdutoFormModal({
       <div className="modal-card">
         <div className="modal-header">
           <h2>{title}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

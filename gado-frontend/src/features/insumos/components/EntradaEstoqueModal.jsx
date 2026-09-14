@@ -1,17 +1,19 @@
+import { formatarMoeda } from '../../../utils/formatters'
+
 function EntradaEstoqueModal({ insumo, formData, isSaving, feedback, onClose, onChange, onSubmit }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
         <div className="modal-header">
           <h2>Registrar entrada de estoque</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <p className="form-info">
           <strong>{insumo.nome}</strong> — saldo atual: {insumo.saldoAtual} {insumo.unidadeMedidaPrimariaSigla}
-          {insumo.precoCompraMedio != null ? ` · preço médio atual: R$ ${insumo.precoCompraMedio.toFixed(2)}` : ''}
+          {insumo.precoCompraMedio != null ? ` · preço médio atual: ${formatarMoeda(insumo.precoCompraMedio)}` : ''}
         </p>
 
         <form className="animal-form" onSubmit={onSubmit}>

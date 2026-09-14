@@ -1,19 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { buscarResumo } from '../integration/resumoApi'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
+import { formatarData, formatarMoeda } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 import '../styles/resumo.css'
-
-function formatarMoeda(valor) {
-  return Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function formatarData(dateText) {
-  if (!dateText) return '—'
-  const data = new Date(dateText)
-  if (Number.isNaN(data.getTime())) return dateText
-  return data.toLocaleDateString('pt-BR')
-}
 
 function ResumoPage({ currentUser, onLogout, onNavigate }) {
   const [resumo, setResumo] = useState(null)
@@ -37,7 +27,21 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
     fetchResumo()
   }, [fetchResumo])
 
-  const lucroPositivo = (resumo?.lucroLiquido ?? 0) >= 0
+  const lucroLiquido = resumo?.lucroLiquido ?? 0
+  const lucroPositivo = lucroLiquido >= 0
+
+  // O backend só envia os totais do rebanho para quem vê o financeiro (Administrador e Gerente).
+  const plural = (quantidade, singular, varios) => (quantidade === 1 ? singular : varios)
+  const metricas = resumo && !resumo.financeiroVisivel
+    ? [
+        { value: resumo.alertasEstoque.length, label: plural(resumo.alertasEstoque.length, 'Alerta', 'Alertas') },
+        { value: resumo.tarefasPendentes.length, label: plural(resumo.tarefasPendentes.length, 'Tarefa', 'Tarefas') },
+      ]
+    : [
+        { value: resumo?.totalAnimais ?? '—', label: plural(resumo?.totalAnimais, 'Animal', 'Animais') },
+        { value: resumo?.totalLotes ?? '—', label: plural(resumo?.totalLotes, 'Lote', 'Lotes') },
+        { value: resumo?.tarefasPendentes?.length ?? '—', label: plural(resumo?.tarefasPendentes?.length, 'Tarefa', 'Tarefas') },
+      ]
 
   return (
     <main className="animals-layout">
@@ -94,11 +98,7 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
           eyebrow={`Olá, ${currentUser.nome?.split(' ')[0] || 'produtor'}`}
           title="Resumo da fazenda"
           description="O que precisa da sua atenção hoje, reunido em uma visão simples."
-          metrics={[
-            { value: resumo?.totalAnimais ?? '—', label: 'Animais' },
-            { value: resumo?.totalLotes ?? '—', label: 'Lotes' },
-            { value: resumo?.tarefasPendentes?.length ?? '—', label: 'Tarefas' },
-          ]}
+          metrics={metricas}
         />
 
         {feedback.message ? (
@@ -123,37 +123,41 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
               <>
                 <div className="resumo-grid">
                   <button type="button" className="resumo-card" onClick={() => onNavigate('animais')}>
-                    <p className="resumo-card__label">Quantidade de Animais</p>
+                    <p className="resumo-card__label">Quantidade de animais</p>
                     <p className="resumo-card__value">{resumo.totalAnimais}</p>
                   </button>
                   <button type="button" className="resumo-card" onClick={() => onNavigate('lotes')}>
-                    <p className="resumo-card__label">Quantidade de Lotes</p>
+                    <p className="resumo-card__label">Quantidade de lotes</p>
                     <p className="resumo-card__value">{resumo.totalLotes}</p>
                   </button>
                   <button type="button" className="resumo-card" onClick={() => onNavigate('setores')}>
-                    <p className="resumo-card__label">Quantidade de Setores</p>
+                    <p className="resumo-card__label">Quantidade de setores</p>
                     <p className="resumo-card__value">{resumo.totalSetores}</p>
                   </button>
                 </div>
 
                 <div className="resumo-grid">
                   <button type="button" className="resumo-card" onClick={() => onNavigate('financeiro')}>
-                    <p className="resumo-card__label">Vendas Mensais</p>
+                    <p className="resumo-card__label">Vendas do mês</p>
                     <p className="resumo-card__value resumo-card__value--positive">
                       + {formatarMoeda(resumo.vendasMensais)}
                     </p>
-                    {resumo.maiorFonteReceitaLabel ? (
-                      <span className="resumo-card__tag">Maior Fonte de Renda: {resumo.maiorFonteReceitaLabel}</span>
+                    {resumo.maiorFonteReceitaLabel || resumo.menorFonteReceitaLabel ? (
+                      <span className="resumo-card__tags">
+                        {resumo.maiorFonteReceitaLabel ? (
+                          <span className="resumo-card__tag">Maior fonte: {resumo.maiorFonteReceitaLabel}</span>
+                        ) : null}
+                        {resumo.menorFonteReceitaLabel && resumo.menorFonteReceitaLabel !== resumo.maiorFonteReceitaLabel ? (
+                          <span className="resumo-card__tag">Menor fonte: {resumo.menorFonteReceitaLabel}</span>
+                        ) : null}
+                      </span>
                     ) : null}
                   </button>
                   <button type="button" className="resumo-card" onClick={() => onNavigate('financeiro')}>
-                    <p className="resumo-card__label">Gastos Mensais</p>
+                    <p className="resumo-card__label">Gastos do mês</p>
                     <p className="resumo-card__value resumo-card__value--negative">
                       - {formatarMoeda(resumo.gastosMensais)}
                     </p>
-                    {resumo.menorFonteReceitaLabel ? (
-                      <span className="resumo-card__tag">Menor Fonte de Renda: {resumo.menorFonteReceitaLabel}</span>
-                    ) : null}
                   </button>
                 </div>
 
@@ -162,20 +166,23 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
                   className={`resumo-lucro-bar ${lucroPositivo ? 'resumo-lucro-bar--positivo' : 'resumo-lucro-bar--negativo'}`}
                   onClick={() => onNavigate('financeiro')}
                 >
-                  {lucroPositivo ? '+' : '-'} {formatarMoeda(Math.abs(resumo.lucroLiquido ?? 0))} de lucro líquido este mês
+                  {lucroPositivo
+                    ? `Lucro líquido de ${formatarMoeda(lucroLiquido)} este mês`
+                    : `Prejuízo de ${formatarMoeda(Math.abs(lucroLiquido))} este mês`}
                 </button>
               </>
             ) : null}
 
             <div className="resumo-section">
-              <h3>Alerta de Estoque</h3>
+              <h3>Alertas de estoque</h3>
               {resumo.alertasEstoque.length === 0 ? (
                 <p className="animals-count">Nenhum produto abaixo do estoque mínimo.</p>
               ) : (
                 resumo.alertasEstoque.map((a) => (
                   <div className="resumo-alerta-row" key={a.insumoId}>
                     <span>
-                      Sem estoque suficiente de &quot;{a.insumoNome}&quot; — {a.saldoAtual} {a.unidadeMedidaSigla} (mínimo: {a.estoqueMinimo})
+                      <strong>{a.insumoNome}</strong> abaixo do mínimo: {a.saldoAtual} {a.unidadeMedidaSigla}{' '}
+                      (mínimo: {a.estoqueMinimo} {a.unidadeMedidaSigla})
                     </span>
                     <button type="button" className="btn-row" onClick={() => onNavigate('insumos')}>
                       Ir ao estoque
@@ -186,15 +193,15 @@ function ResumoPage({ currentUser, onLogout, onNavigate }) {
             </div>
 
             <div className="resumo-section">
-              <h3>Tarefas Diárias</h3>
+              <h3>Tarefas pendentes</h3>
               {resumo.tarefasPendentes.length === 0 ? (
                 <p className="animals-count">Nenhuma tarefa pendente.</p>
               ) : (
                 resumo.tarefasPendentes.map((t) => (
-                  <div className="resumo-tarefa-row" key={t.id} onClick={() => onNavigate('tarefas')}>
-                    <span>{t.descricao}</span>
-                    <span>Prazo: {formatarData(t.dataLimite)}</span>
-                  </div>
+                  <button type="button" className="resumo-tarefa-row" key={t.id} onClick={() => onNavigate('tarefas')}>
+                    <strong>{t.descricao}</strong>
+                    <span className="resumo-tarefa-row__prazo">Prazo: {formatarData(t.dataLimite)}</span>
+                  </button>
                 ))
               )}
             </div>

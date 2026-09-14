@@ -10,6 +10,7 @@ import {
 import FuncionarioFormModal from './FuncionarioFormModal'
 import LancarPagamentoModal from './LancarPagamentoModal'
 import EstornarPagamentoModal from './EstornarPagamentoModal'
+import { formatarMoeda } from '../../../utils/formatters'
 
 const PERFIS_GERENCIAIS = ['ADMINISTRADOR', 'GERENTE']
 
@@ -71,7 +72,7 @@ function FuncionariosTab({ currentUser }) {
 
   const fetchFuncionarios = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const lista = await listarFuncionarios(currentUser.email)
       setFuncionarios(lista)
@@ -186,10 +187,10 @@ function FuncionariosTab({ currentUser }) {
     try {
       await estornarPagamento(pagamentoParaEstornar.id, currentUser.email, motivoEstorno)
       setPagamentoParaEstornar(null)
-      setFeedback({ type: 'info', message: 'Pagamento extornado com sucesso.' })
+      setFeedback({ type: 'info', message: 'Pagamento estornado com sucesso.' })
       await fetchPagamentosDoMes()
     } catch (error) {
-      setEstornoFeedback(error.message || 'Falha ao extornar o pagamento.')
+      setEstornoFeedback(error.message || 'Falha ao estornar o pagamento.')
     } finally {
       setIsEstornando(false)
     }
@@ -240,7 +241,7 @@ function FuncionariosTab({ currentUser }) {
                   <td>{f.nomeCompleto}</td>
                   <td>{f.cpf}</td>
                   <td>{CARGO_LABEL[f.cargo] ?? f.cargo}</td>
-                  <td>R$ {Number(f.salarioBase ?? 0).toFixed(2)}</td>
+                  <td>{formatarMoeda(f.salarioBase)}</td>
                   <td>
                     {isGerencial ? (
                       <div className="row-actions">
@@ -266,16 +267,21 @@ function FuncionariosTab({ currentUser }) {
         <div className="data-toolbar">
           <h3>Pagamentos do mês</h3>
           <div className="financeiro-bloco-selector">
-            <select value={bloco.mes} onChange={(e) => setBloco((c) => ({ ...c, mes: Number(e.target.value) }))}>
+            <select
+              aria-label="Mês"
+              value={bloco.mes}
+              onChange={(e) => setBloco((c) => ({ ...c, mes: Number(e.target.value) }))}
+            >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
                 <option key={mes} value={mes}>{String(mes).padStart(2, '0')}</option>
               ))}
             </select>
             <input
               type="number"
+              className="financeiro-bloco-selector__ano"
+              aria-label="Ano"
               value={bloco.ano}
               onChange={(e) => setBloco((c) => ({ ...c, ano: Number(e.target.value) }))}
-              style={{ width: '90px' }}
             />
           </div>
         </div>
@@ -306,13 +312,13 @@ function FuncionariosTab({ currentUser }) {
                 pagamentosDoMes.map((p) => (
                   <tr key={p.id}>
                     <td>{p.funcionarioNome}</td>
-                    <td>R$ {Number(p.valorBruto ?? 0).toFixed(2)}</td>
-                    <td>R$ {Number(p.descontoInss ?? 0).toFixed(2)}</td>
-                    <td>R$ {Number(p.valorBonus ?? 0).toFixed(2)}</td>
-                    <td>R$ {Number(p.valorLiquido ?? 0).toFixed(2)}</td>
+                    <td>{formatarMoeda(p.valorBruto)}</td>
+                    <td>{formatarMoeda(p.descontoInss)}</td>
+                    <td>{formatarMoeda(p.valorBonus)}</td>
+                    <td>{formatarMoeda(p.valorLiquido)}</td>
                     <td>
                       {p.estornado ? (
-                        <span className="consumo-estoque__status--cancelado">Extornado</span>
+                        <span className="consumo-estoque__status--cancelado">Estornado</span>
                       ) : (
                         STATUS_LABEL[p.statusPagamento] ?? p.statusPagamento
                       )}
@@ -320,7 +326,7 @@ function FuncionariosTab({ currentUser }) {
                     <td>
                       {isGerencial && !p.estornado ? (
                         <button type="button" className="btn-row btn-row--danger" onClick={() => abrirEstorno(p)}>
-                          Extornar
+                          Estornar
                         </button>
                       ) : (
                         <span>—</span>

@@ -4,7 +4,7 @@ function EditarConsumoInsumoModal({ consumo, formData, isSaving, feedback, onClo
       <div className="modal-card">
         <div className="modal-header">
           <h2>Editar lançamento — {consumo.insumoNome}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

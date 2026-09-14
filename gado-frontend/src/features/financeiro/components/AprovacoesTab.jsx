@@ -2,19 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { aprovarDocumento, listarPendentesAprovacao, recusarDocumento } from '../integration/documentoEntradaApi'
 import RecusarDocumentoModal from './RecusarDocumentoModal'
 import AprovarDocumentoModal from './AprovarDocumentoModal'
+import { formatarData, formatarMoeda } from '../../../utils/formatters'
 
 const PERFIS_GERENCIAIS = ['ADMINISTRADOR', 'GERENTE']
-
-/**
- * Formata uma data-only ISO ("2026-08-20") sem passar por Date — `new Date(iso)` interpreta
- * strings sem hora como UTC meia-noite, e toLocaleDateString depois renderiza no fuso local,
- * o que mostra um dia a menos em fusos atrás de UTC (ex.: Brasil).
- */
-function formatarData(iso) {
-  if (!iso) return '—'
-  const [ano, mes, dia] = String(iso).split('-')
-  return ano && mes && dia ? `${dia}/${mes}/${ano}` : iso
-}
 
 function AprovacoesTab({ currentUser }) {
   const isGerencial = PERFIS_GERENCIAIS.includes(currentUser?.perfil)
@@ -34,7 +24,7 @@ function AprovacoesTab({ currentUser }) {
 
   const fetchPendentes = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const lista = await listarPendentesAprovacao(currentUser.email)
       setPendentes(lista)
@@ -92,8 +82,10 @@ function AprovacoesTab({ currentUser }) {
     event.preventDefault()
     setIsRecusando(true)
     setRecusaFeedback('')
+    setFeedback({ type: '', message: '' })
     try {
       await recusarDocumento(recusaAlvo.id, currentUser.email, justificativa)
+      setFeedback({ type: 'info', message: 'Documento recusado.' })
       fecharRecusa()
       await fetchPendentes()
     } catch (error) {
@@ -148,7 +140,7 @@ function AprovacoesTab({ currentUser }) {
               pendentes.map((doc) => (
                 <tr key={doc.id}>
                   <td>{doc.itens?.[0]?.descricaoXml || doc.numeroDocumento || '—'}</td>
-                  <td>R$ {Number(doc.valorTotal ?? 0).toFixed(2)}</td>
+                  <td>{formatarMoeda(doc.valorTotal)}</td>
                   <td>{formatarData(doc.dataEmissao)}</td>
                   <td>{doc.criadoPorEmail}</td>
                   <td>

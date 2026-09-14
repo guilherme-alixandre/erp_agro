@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listarEstoque } from '../../insumos/integration/insumoApi'
+import { formatarMoeda } from '../../../utils/formatters'
 
 const NATUREZA_LABEL = { CUSTO: 'Custo', GASTO: 'Gasto' }
 
@@ -25,7 +26,7 @@ function VincularItensModal({ documento, onClose, onVincular, vinculandoItemId, 
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>Vincular itens ao catálogo</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -53,7 +54,7 @@ function VincularItensModal({ documento, onClose, onVincular, vinculandoItemId, 
                 <tr key={item.id}>
                   <td>{item.descricaoXml}</td>
                   <td>{item.quantidade}</td>
-                  <td>R$ {Number(item.valorTotal ?? 0).toFixed(2)}</td>
+                  <td>{formatarMoeda(item.valorTotal)}</td>
                   <td>
                     {item.vinculado ? (
                       item.produtoNome

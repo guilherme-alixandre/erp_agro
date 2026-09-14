@@ -30,10 +30,21 @@ import {
   reativarGrupoProduto,
   listarGruposProduto,
 } from '../integration/grupoProdutoApi'
+import { formatarMoeda } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 import '../styles/insumos.css'
 
 const PERFIS_GESTAO_ESTOQUE = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR_CHEFE']
+// Grupos e unidades seguem a regra do backend (@PreAuthorize em CGrupoProduto e CUnidadeMedida).
+const PERFIS_GESTAO_CADASTROS = ['ADMINISTRADOR', 'GERENTE', 'FINANCEIRO']
+
+const TIPO_INSUMO_LABELS = {
+  RACAO: 'Ração',
+  VACINA: 'Vacina',
+  MEDICAMENTO: 'Medicamento',
+  OUTROS: 'Outros',
+  ANIMAL: 'Animal',
+}
 
 const defaultGrupoForm = {
   id: null,
@@ -73,6 +84,7 @@ const defaultEntradaForm = {
 function InsumosPage({ currentUser, onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('estoque')
   const canGerenciarEstoque = PERFIS_GESTAO_ESTOQUE.includes(currentUser?.perfil)
+  const canGerenciarCadastros = PERFIS_GESTAO_CADASTROS.includes(currentUser?.perfil)
 
   // ── Grupos de Produto ────────────────────────────────────────────────
 
@@ -90,7 +102,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
   const fetchGrupos = useCallback(async (termo, statusFiltro) => {
     setIsLoadingGrupos(true)
-    setGruposFeedback({ type: '', message: '' })
+    setGruposFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarGruposProduto(termo ?? '', statusFiltro ?? 'ATIVO')
       setGrupos(list)
@@ -167,7 +179,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
         setGruposFeedback({ type: 'info', message: 'Grupo atualizado com sucesso.' })
       }
       closeGrupoModal()
-      await fetchGrupos()
+      await fetchGrupos(grupoActiveSearch, grupoStatusFiltro)
     } catch (error) {
       setGrupoFormFeedback(error.message || 'Falha ao salvar o grupo.')
     } finally {
@@ -222,7 +234,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
   const fetchUnidadesGerenciadas = useCallback(async (termo, statusFiltro) => {
     setIsLoadingUnidadesGerenciadas(true)
-    setUnidadesFeedback({ type: '', message: '' })
+    setUnidadesFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarUnidadesMedida(termo ?? '', statusFiltro ?? 'ATIVO')
       setUnidadesGerenciadas(list)
@@ -359,7 +371,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
   const fetchEstoque = useCallback(async (termo, statusFiltro) => {
     setIsLoadingEstoque(true)
-    setEstoqueFeedback({ type: '', message: '' })
+    setEstoqueFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarEstoque(termo, statusFiltro ?? 'ATIVO')
       setInsumosEstoque(list)
@@ -671,7 +683,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
             <div className="data-toolbar">
               <form className="toolbar-search" onSubmit={handleEstoqueSearchSubmit}>
-                <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                <span className="toolbar-search__icon" aria-hidden="true" />
                 <input
                   type="text"
                   value={estoqueSearch}
@@ -752,7 +764,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                           ) : null}
                         </td>
                         <td>{insumo.grupoProdutoNome || '—'}</td>
-                        <td>{insumo.tipo}</td>
+                        <td>{TIPO_INSUMO_LABELS[insumo.tipo] ?? (insumo.tipo || '—')}</td>
                         <td>
                           {insumo.saldoAtual} {insumo.unidadeMedidaPrimariaSigla}
                         </td>
@@ -763,7 +775,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                         </td>
                         <td>
                           {insumo.precoCompraMedio != null
-                            ? `R$ ${insumo.precoCompraMedio.toFixed(2)}`
+                            ? formatarMoeda(insumo.precoCompraMedio)
                             : '—'}
                         </td>
                         <td>
@@ -828,7 +840,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
             <div className="data-toolbar">
               <form className="toolbar-search" onSubmit={handleGrupoSearchSubmit}>
-                <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                <span className="toolbar-search__icon" aria-hidden="true" />
                 <input
                   type="text"
                   value={grupoSearch}
@@ -863,7 +875,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   : `${grupos.length} ${grupos.length === 1 ? 'grupo cadastrado' : 'grupos cadastrados'}`}
               </p>
 
-              {canGerenciarEstoque ? (
+              {canGerenciarCadastros ? (
                 <button type="button" className="btn-new-entity" onClick={openCreateGrupoModal}>
                   + Novo Grupo
                 </button>
@@ -888,7 +900,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   ) : grupos.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="table-empty">
-                        {canGerenciarEstoque
+                        {canGerenciarCadastros
                           ? 'Nenhum grupo cadastrado. Clique em "+ Novo Grupo" para começar.'
                           : 'Nenhum grupo cadastrado.'}
                       </td>
@@ -906,7 +918,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                         <td>{grupo.naturezaFinanceira === 'CUSTO' ? 'Custo' : 'Gasto'}</td>
                         <td>
                           <div className="row-actions">
-                            {canGerenciarEstoque ? (
+                            {canGerenciarCadastros ? (
                               grupo.status === 'INATIVO' ? (
                                 <button
                                   type="button"
@@ -959,7 +971,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
             <div className="data-toolbar">
               <form className="toolbar-search" onSubmit={handleUnidadeSearchSubmit}>
-                <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+                <span className="toolbar-search__icon" aria-hidden="true" />
                 <input
                   type="text"
                   value={unidadeSearch}
@@ -994,7 +1006,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   : `${unidadesGerenciadas.length} ${unidadesGerenciadas.length === 1 ? 'unidade cadastrada' : 'unidades cadastradas'}`}
               </p>
 
-              {canGerenciarEstoque ? (
+              {canGerenciarCadastros ? (
                 <button type="button" className="btn-new-entity" onClick={openCreateUnidadeModal}>
                   + Nova Unidade
                 </button>
@@ -1017,7 +1029,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   ) : unidadesGerenciadas.length === 0 ? (
                     <tr>
                       <td colSpan={2} className="table-empty">
-                        {canGerenciarEstoque
+                        {canGerenciarCadastros
                           ? 'Nenhuma unidade cadastrada. Clique em "+ Nova Unidade" para começar.'
                           : 'Nenhuma unidade cadastrada.'}
                       </td>
@@ -1033,7 +1045,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                         </td>
                         <td>
                           <div className="row-actions">
-                            {canGerenciarEstoque ? (
+                            {canGerenciarCadastros ? (
                               unidade.status === 'INATIVO' ? (
                                 <button
                                   type="button"

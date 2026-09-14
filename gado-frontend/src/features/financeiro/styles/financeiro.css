@@ -34,6 +34,12 @@
   border: 1px solid #f0a99f;
 }
 
+.financeiro-status--confirmado {
+  background: #e3edff;
+  color: #1d4ed8;
+  border: 1px solid #bcd0f7;
+}
+
 .financeiro-item-feedback {
   margin: 4px 0 0;
   font-size: 0.92rem;
@@ -41,13 +47,13 @@
 
 /* ── Edição segura de NF-e (dupla validação por senha) ─────────────────── */
 
-.financeiro-senha-gate__aviso {
+.form-info.financeiro-senha-gate__aviso {
   background: #fff1c2;
   border: 1px solid #f3d774;
   color: #6a4a00;
 }
 
-.financeiro-senha-gate__ok {
+.form-info.financeiro-senha-gate__ok {
   background: #d9f2df;
   border: 1px solid #9fd8b1;
   color: #1a7f37;
@@ -72,7 +78,7 @@
 .financeiro-subsection {
   margin-top: 28px;
   padding-top: 18px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border);
 }
 
 .financeiro-subsection h3 {
@@ -81,25 +87,29 @@
 
 .financeiro-bloco-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 
 .financeiro-bloco-selector select,
 .financeiro-bloco-selector input {
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   padding: 0 10px;
   font-size: 1rem;
-  background: #fff;
-  color: #1d1d1d;
+  background: var(--color-surface);
+  color: var(--color-ink);
   outline: none;
   height: 48px;
+}
+
+.financeiro-bloco-selector select {
   cursor: pointer;
 }
 
-.financeiro-bloco-selector input[type='number'] {
-  cursor: text;
+.financeiro-bloco-selector__ano {
+  width: 6.5rem;
 }
 
 /* ── Dashboard ────────────────────────────────────────────────────────── */
@@ -112,8 +122,8 @@
 }
 
 .financeiro-kpi-card {
-  background: #fff;
-  border: 1px solid #cfcfcf;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -123,26 +133,26 @@
 
 .financeiro-kpi-card__label {
   font-size: 0.92rem;
-  color: #6a6a6a;
+  color: var(--color-muted);
   font-weight: 600;
 }
 
 .financeiro-kpi-card__value {
   font-size: 1.5rem;
-  color: #244011;
+  color: var(--color-ink);
 }
 
 .financeiro-kpi-card__value--positivo {
-  color: #1a7f37;
+  color: var(--color-success-text);
 }
 
 .financeiro-kpi-card__value--negativo {
-  color: #b42318;
+  color: var(--color-danger-text);
 }
 
 .financeiro-chart-card {
-  background: #fff;
-  border: 1px solid #cfcfcf;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
   margin-top: 8px;
@@ -150,4 +160,25 @@
 
 .financeiro-chart-card h3 {
   margin: 0 0 12px;
+}
+
+/* Recharts desenha em SVG: cores de grade, eixos e tooltip acompanham o tema. */
+.financeiro-chart-card .recharts-cartesian-grid line {
+  stroke: var(--color-border);
+}
+
+.financeiro-chart-card .recharts-cartesian-axis-line,
+.financeiro-chart-card .recharts-cartesian-axis-tick-line {
+  stroke: var(--color-border-strong);
+}
+
+.financeiro-chart-card .recharts-cartesian-axis-tick-value {
+  fill: var(--color-muted);
+}
+
+.financeiro-chart-card .recharts-default-tooltip {
+  border-color: var(--color-border) !important;
+  border-radius: 8px;
+  background: var(--color-surface) !important;
+  color: var(--color-ink);
 }

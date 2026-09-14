@@ -65,7 +65,7 @@ function EditarNfeModal({ documento, isSaving, feedback, onClose, onSubmit }) {
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>Editar NF-e {documento.numeroDocumento ? `#${documento.numeroDocumento}` : ''}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

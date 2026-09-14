@@ -7,6 +7,7 @@ import {
   resumoPorSetorEPeriodo,
 } from '../integration/consumoInsumoApi'
 import EditarConsumoInsumoModal from './EditarConsumoInsumoModal'
+import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
 const defaultForm = {
   setorId: '',
@@ -17,13 +18,6 @@ const defaultForm = {
 }
 
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
-
-function formatarData(iso) {
-  if (!iso) return '—'
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return iso
-  return data.toLocaleString('pt-BR')
-}
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -179,7 +173,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
         ...defaultForm,
         setorId: current.setorId, // mantém o setor selecionado para facilitar novos lançamentos
       }))
-      await fetchHistorico(form.setorId)
+      await fetchHistorico(form.setorId, filtroDataInicio, filtroDataFim)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao registrar o consumo.' })
     } finally {
@@ -372,7 +366,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
               ) : (
                 historico.map((c) => (
                   <tr key={c.id}>
-                    <td>{formatarData(c.dataConsumo)}</td>
+                    <td>{formatarDataHora(c.dataConsumo)}</td>
                     <td>{c.insumoNome}</td>
                     <td>
                       {c.quantidadeRegistrada} {c.unidadeRegistroSigla}
@@ -418,7 +412,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
           <div className="modal-card">
             <div className="modal-header">
               <h2>Resumo de consumo por setor</h2>
-              <button type="button" className="modal-close" onClick={() => setResumoAberto(false)}>
+              <button type="button" className="modal-close" aria-label="Fechar" onClick={() => setResumoAberto(false)}>
                 ✕
               </button>
             </div>

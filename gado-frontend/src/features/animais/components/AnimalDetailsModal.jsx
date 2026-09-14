@@ -1,25 +1,21 @@
 import { useEffect, useState } from 'react'
 import { listarVacinacoesPorAnimal } from '../../insumos/integration/vacinacaoAnimalApi'
 import { listarOcorrenciasPorAnimal, cadastrarOcorrencia, TIPOS_OCORRENCIA } from '../integration/ocorrenciaAnimalApi'
+import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
-function formatDate(dateText) {
-  if (!dateText) return '-'
-  const [year, month, day] = dateText.split('-')
-  return `${day}/${month}/${year}`
-}
-
-function formatDateTime(iso) {
-  if (!iso) return '—'
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return iso
-  return data.toLocaleString('pt-BR')
+const STATUS_LABELS = {
+  ATIVO: 'Ativo',
+  OBSERVACAO: 'Em observação',
+  VENDIDO: 'Vendido',
+  OBITO: 'Óbito',
+  ABATIDO: 'Abatido',
 }
 
 function formatCm(value) {
-  if (value === null || value === undefined || value === '') return '-'
+  if (value === null || value === undefined || value === '') return '—'
   const num = Number(value)
-  if (!Number.isFinite(num)) return '-'
-  return `${num} cm`
+  if (!Number.isFinite(num)) return '—'
+  return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} cm`
 }
 
 const TIPO_OCORRENCIA_LABELS = TIPOS_OCORRENCIA.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {})
@@ -103,7 +99,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
       <div className="modal-card">
         <div className="modal-header">
           <h2>Detalhes do animal</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -115,7 +111,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </div>
           <div>
             <dt>Data de nascimento</dt>
-            <dd>{formatDate(animal.dataNascimento)}</dd>
+            <dd>{formatarData(animal.dataNascimento)}</dd>
           </div>
           <div>
             <dt>Peso</dt>
@@ -147,7 +143,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </div>
           <div>
             <dt>Status</dt>
-            <dd>{animal.statusAnimal}</dd>
+            <dd>{STATUS_LABELS[animal.statusAnimal] ?? animal.statusAnimal}</dd>
           </div>
         </dl>
 
@@ -163,7 +159,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
                   {v.cancelado ? ' (cancelada)' : ''}
                 </strong>
                 <span>
-                  {formatDateTime(v.dataAplicacao)} — {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
+                  {formatarDataHora(v.dataAplicacao)} — {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
                 </span>
               </li>
             ))}
@@ -181,7 +177,7 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
               <li key={o.id}>
                 <strong>{TIPO_OCORRENCIA_LABELS[o.tipoOcorrencia] ?? o.tipoOcorrencia}</strong>
                 <span>
-                  {formatDateTime(o.dataOcorrencia)}
+                  {formatarData(o.dataOcorrencia)}
                   {o.observacao ? ` — ${o.observacao}` : ''}
                 </span>
               </li>

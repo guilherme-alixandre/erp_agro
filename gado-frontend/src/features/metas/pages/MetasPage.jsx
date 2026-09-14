@@ -49,8 +49,10 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
   }
 
   function handleExportarPDF() {
-    exportarMetasPDF(setorSelecionado)
     setExportMenuOpen(false)
+    exportarMetasPDF(setorSelecionado).catch((error) => {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao gerar o PDF de metas.' })
+    })
   }
 
   const fetchMetas = useCallback(async (setorId) => {
@@ -59,7 +61,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
       return
     }
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const lista = await listarMetasPorSetor(setorId)
       setMetas(lista)

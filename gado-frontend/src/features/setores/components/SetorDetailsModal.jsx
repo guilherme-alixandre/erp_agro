@@ -13,7 +13,7 @@ function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting, canEd
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>Detalhes do setor</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

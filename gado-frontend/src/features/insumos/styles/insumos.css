@@ -34,8 +34,7 @@
 }
 
 .codigo-produto {
-  font-family: 'Courier New', monospace;
-  letter-spacing: 0.03em;
+  font-family: 'Cascadia Mono', Consolas, monospace;
   white-space: nowrap;
 }
 
@@ -56,12 +55,12 @@
 
 .insumos-placeholder {
   margin-top: 22px;
-  background: #efefef;
-  border: 1px dashed #c0c0c0;
+  background: var(--color-surface-soft);
+  border: 1px dashed var(--color-border-strong);
   border-radius: 12px;
   padding: 22px;
   text-align: center;
-  color: #6a6a6a;
+  color: var(--color-muted);
 }
 
 /* ── Estoque ──────────────────────────────────────────────────────────── */
@@ -76,13 +75,18 @@
   margin-top: 18px;
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   align-items: start;
 }
 
+/* Sem isso a largura mínima das tabelas do histórico empurra a coluna e a página rola na horizontal. */
+.insumos-split-layout > * {
+  min-width: 0;
+}
+
 .insumos-split-layout__form-card {
-  background: #fff;
-  border: 1px solid #cfcfcf;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
 }
@@ -94,7 +98,7 @@
 .insumos-split-layout__resultado {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border);
 }
 
 .insumos-split-layout__historico h3 {
@@ -105,13 +109,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 10px;
 }
 
 @media (max-width: 1100px) {
   .insumos-split-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -124,11 +129,19 @@
   margin: 4px 0 12px;
 }
 
+/* Produto ocupa a linha inteira; quantidade e remover ficam logo abaixo. */
 .consumo-estoque__item-row {
   display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 3fr) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'produto produto'
+    'quantidade remover';
+  gap: 8px 10px;
   align-items: end;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
 }
 
 .consumo-estoque__item-row > * {
@@ -139,12 +152,23 @@
   margin: 0;
 }
 
+.consumo-estoque__item-produto {
+  grid-area: produto;
+}
+
+.consumo-estoque__item-quantidade {
+  grid-area: quantidade;
+}
+
+.consumo-estoque__remove-item {
+  grid-area: remover;
+}
+
 .consumo-estoque__item-row select,
 .consumo-estoque__item-row input {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  height: 40px;
 }
 
 .consumo-estoque__quantidade-group {
@@ -161,37 +185,41 @@
 .consumo-estoque__unidade-inline {
   flex: 0 0 auto;
   width: auto;
-  max-width: 72px;
+  max-width: 110px;
+}
+
+.consumo-estoque__item-row .consumo-estoque__unidade-inline {
+  width: auto;
 }
 
 .consumo-estoque__unidade-sufixo {
   flex: 0 0 auto;
-  color: #707070;
+  color: var(--color-muted);
   font-size: 0.92rem;
   white-space: nowrap;
 }
 
 .btn-icon {
-  height: 40px;
-  width: 40px;
+  height: 48px;
+  width: 48px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  border: 1px solid #d8d8d8;
-  background: #f5f5f5;
-  color: #333;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
   cursor: pointer;
 }
 
 .btn-icon:hover:not(:disabled) {
-  background: #e8e8e8;
+  background: var(--color-surface-soft);
 }
 
 .btn-icon:disabled {
   opacity: 0.5;
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .btn-icon--danger {
@@ -209,18 +237,20 @@
 }
 
 .consumo-estoque__status--ativo {
-  color: #1a7f37;
+  color: var(--color-success-text);
   font-weight: 600;
 }
 
 .consumo-estoque__status--cancelado {
-  color: #b42318;
+  color: var(--color-danger-text);
   font-weight: 600;
 }
 
 .consumo-estoque__cancelamento-motivo {
   display: block;
-  font-size: 0.92em;
-  color: #6a6a6a;
+  min-width: 14rem;
   margin-top: 2px;
+  font-size: 0.92em;
+  color: var(--color-muted);
+  white-space: normal;
 }

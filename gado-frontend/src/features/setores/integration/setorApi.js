@@ -1,4 +1,4 @@
-import { API_BASE_URL, request } from '../../../integration/apiClient'
+import { downloadFile, request } from '../../../integration/apiClient'
 
 function sanitize(value) {
   return String(value ?? '').trim()
@@ -107,7 +107,7 @@ function exportarSetoresCSV(setores) {
 }
 
 function exportarSetoresPDF() {
-  window.open(`${API_BASE_URL}/setores/pdf`, '_blank')
+  return downloadFile('/setores/pdf', 'relatorio-setores.pdf')
 }
 
 export {

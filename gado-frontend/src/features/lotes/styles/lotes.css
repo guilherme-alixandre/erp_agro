@@ -103,7 +103,7 @@
 
 .lote-form input,
 .lote-form select {
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   padding: 10px;
 }
@@ -111,22 +111,31 @@
 /* ── Fieldset de Setores ──────────────────────────────────────────── */
 
 .setores-fieldset {
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 10px 12px;
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .setores-fieldset legend {
   padding: 0 6px;
   font-weight: 700;
-  color: #244011;
+  color: var(--color-brand-strong);
 }
 
 .setores-fieldset__select {
   display: grid;
   gap: 4px;
+}
+
+/* Mesmo peso visual dos rótulos de <label>, usado quando o campo é um botão de seleção. */
+.setores-fieldset__select > span {
+  color: var(--color-label);
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 .setores-cards {
@@ -137,9 +146,9 @@
 /* ── Card de alocação (setor + animais) dentro do formulário ───────── */
 
 .aloc-card {
-  border: 1px solid #c8dfb1;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #f5faf0;
+  background: var(--color-surface-soft);
   padding: 10px 12px;
   display: grid;
   gap: 8px;
@@ -153,37 +162,47 @@
 
 .aloc-card__nome {
   flex: 1;
+  min-width: 0;
   font-size: 1.05rem;
-  color: #244011;
+  color: var(--color-brand-strong);
 }
 
 .aloc-card__capacidade {
   font-size: 0.9rem;
   font-weight: 700;
   padding: 3px 10px;
+  border: 1px solid #b9e0a4;
   border-radius: 999px;
-  background: #dff5cc;
+  background: #e8f5e2;
   color: #2a5a0e;
   white-space: nowrap;
 }
 
 .aloc-card__capacidade--excedido {
+  border-color: #f3bdbd;
   background: #ffeaea;
   color: #8e2222;
 }
 
 .aloc-card__remover {
-  border: 0;
-  background: #e8e8e8;
-  border-radius: 6px;
-  width: 48px;
-  height: 48px;
-  font-size: 0.9rem;
-  color: #555;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  font-size: 0.95rem;
+  color: var(--color-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.aloc-card__remover:hover {
+  border-color: #f3bdbd;
+  background: #fdf0f0;
+  color: #b42929;
 }
 
 .aloc-card__label {
@@ -192,18 +211,24 @@
   font-size: 0.9rem;
 }
 
+.aloc-card__label > span:first-child {
+  color: var(--color-label);
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
 .aloc-card__aviso {
   margin: 0;
   font-size: 0.9rem;
-  color: #8e2222;
+  color: var(--color-danger-text);
   font-weight: 600;
 }
 
 .aloc-card__transferencia {
   margin-top: 4px;
   padding: 10px 12px;
-  background: #eaf5e0;
-  border: 1px solid #b8d99c;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   display: grid;
   gap: 8px;
@@ -212,7 +237,7 @@
 .aloc-card__transferencia-info {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #244011;
+  color: var(--color-brand-strong);
   margin: 0;
 }
 
@@ -226,13 +251,13 @@
 .ssm-trigger--readonly {
   display: flex;
   align-items: center;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   padding: 10px 12px;
-  background: #f7f7f7;
-  color: #555;
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
   font-size: 1rem;
-  min-height: 42px;
+  min-height: 48px;
 }
 
 /* ── MultiSelectDropdown ──────────────────────────────────────────── */
@@ -321,9 +346,9 @@
 }
 
 .lote-alocacao {
-  border: 1px solid #c8dfb1;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #f5faf0;
+  background: var(--color-surface-soft);
   padding: 10px 12px;
 }
 
@@ -339,8 +364,9 @@
   font-size: 0.9rem;
   font-weight: 700;
   padding: 3px 10px;
+  border: 1px solid #b9e0a4;
   border-radius: 999px;
-  background: #dff5cc;
+  background: #e8f5e2;
   color: #2a5a0e;
   white-space: nowrap;
 }
@@ -354,8 +380,8 @@
 }
 
 .lote-alocacao__animais li {
-  background: #fff;
-  border: 1px solid #d8ecc4;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 0.9rem;

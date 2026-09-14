@@ -4,7 +4,7 @@ function CancelarConsumoEstoqueModal({ consumo, justificativa, isSaving, feedbac
       <div className="modal-card">
         <div className="modal-header">
           <h2>Cancelar movimentação</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

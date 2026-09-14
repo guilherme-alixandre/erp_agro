@@ -1,17 +1,19 @@
+import { formatarMoeda } from '../../../utils/formatters'
+
 function AprovarDocumentoModal({ documento, isSaving, feedback, onClose, onConfirm }) {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
         <div className="modal-header">
           <h2>Aprovar documento</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <p className="form-info">
           {documento.itens?.[0]?.descricaoXml || documento.numeroDocumento || 'Este documento'} —
-          valor R$ {Number(documento.valorTotal ?? 0).toFixed(2)}. Ao aprovar, ele passa a compor
+          valor {formatarMoeda(documento.valorTotal)}. Ao aprovar, ele passa a compor
           o resumo financeiro do mês.
         </p>
 

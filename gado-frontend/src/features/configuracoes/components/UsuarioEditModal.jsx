@@ -50,7 +50,7 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
       <div className="modal-card">
         <div className="modal-header">
           <h2>Editar usuário</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -76,7 +76,7 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
               type="email"
               value={usuario.email}
               disabled
-              style={{ background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}
+              className="perfil-disabled-input"
             />
           </label>
 

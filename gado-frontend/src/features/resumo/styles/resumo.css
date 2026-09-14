@@ -6,13 +6,16 @@
 }
 
 .resumo-card {
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-color, #e2e2e2);
+  display: block;
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 16px 20px;
+  color: var(--color-ink);
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .resumo-card:hover {
@@ -25,7 +28,7 @@
 
 .resumo-card__label {
   font-size: 0.94rem;
-  color: #666;
+  color: var(--color-muted);
   margin: 0 0 4px;
 }
 
@@ -36,27 +39,37 @@
 }
 
 .resumo-card__value--positive {
-  color: #1a8f4c;
+  color: var(--color-success-text);
 }
 
 .resumo-card__value--negative {
-  color: #c0392b;
+  color: var(--color-danger-text);
+}
+
+.resumo-card__tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .resumo-card__tag {
   display: inline-block;
-  margin-top: 8px;
-  padding: 2px 10px;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: #f0f0f0;
+  background: var(--color-surface-soft);
   font-size: 0.88rem;
-  color: #444;
+  color: var(--color-muted);
 }
 
 .resumo-lucro-bar {
   display: block;
   width: 100%;
   padding: 14px;
+  border: 0;
   border-radius: 10px;
   text-align: center;
   font-weight: 700;
@@ -67,16 +80,16 @@
 }
 
 .resumo-lucro-bar--positivo {
-  background: #1ec96b;
+  background: #237044;
 }
 
 .resumo-lucro-bar--negativo {
-  background: #c0392b;
+  background: #a63b31;
 }
 
 .resumo-section {
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-color, #e2e2e2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 16px 20px;
   margin-bottom: 20px;
@@ -92,7 +105,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .resumo-alerta-row:last-child {
@@ -104,11 +117,31 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
 .resumo-tarefa-row:last-child {
   border-bottom: none;
+}
+
+.resumo-tarefa-row strong {
+  font-weight: 600;
+}
+
+.resumo-tarefa-row:hover strong {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+
+.resumo-tarefa-row__prazo {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
 }

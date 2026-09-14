@@ -6,7 +6,7 @@ const SIDEBAR_MAX_WIDTH = 420
 
 function loadSidebarWidth() {
   const savedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY))
-  if (!Number.isFinite(savedWidth)) return 274
+  if (!savedWidth || !Number.isFinite(savedWidth)) return 274
   return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, savedWidth))
 }
 
@@ -21,6 +21,14 @@ const PAGE_META = {
   tarefas: { label: 'Tarefas', hint: 'Rotina da equipe', icon: 'check' },
   perfil: { label: 'Meu perfil', hint: 'Dados e segurança', icon: 'user' },
   configuracoes: { label: 'Equipe', hint: 'Usuários e permissões', icon: 'settings' },
+}
+
+const PERFIL_LABELS = {
+  ADMINISTRADOR: 'Administrador',
+  GERENTE: 'Gerente',
+  CUIDADOR: 'Cuidador',
+  CUIDADOR_CHEFE: 'Cuidador Chefe',
+  FINANCEIRO: 'Financeiro',
 }
 
 export function AppIcon({ name, size = 20 }) {
@@ -53,6 +61,25 @@ export function AppIcon({ name, size = 20 }) {
   }
 
   return <svg {...common}>{paths[name]}</svg>
+}
+
+// Fora do AppShell para não recriar o componente (e remontar os botões) a cada renderização.
+function NavButton({ page, active, compact = false, onSelect }) {
+  const meta = PAGE_META[page]
+  return (
+    <button
+      type="button"
+      className={`app-nav__item${active ? ' app-nav__item--active' : ''}${compact ? ' app-nav__item--compact' : ''}`}
+      onClick={() => onSelect(page)}
+      aria-current={active ? 'page' : undefined}
+    >
+      <span className="app-nav__icon"><AppIcon name={meta.icon} size={compact ? 22 : 24} /></span>
+      <span className="app-nav__copy">
+        <strong>{meta.label}</strong>
+        {!compact ? <small>{meta.hint}</small> : null}
+      </span>
+    </button>
+  )
 }
 
 function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
@@ -132,6 +159,7 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
 
   const initials = (currentUser?.nome || currentUser?.email || 'U')
     .split(/\s+/)
+    .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0])
     .join('')
@@ -140,25 +168,6 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
   function navigate(page) {
     onNavigate(page)
     setDrawerOpen(false)
-  }
-
-  function NavButton({ page, compact = false }) {
-    const meta = PAGE_META[page]
-    const active = activePage === page
-    return (
-      <button
-        type="button"
-        className={`app-nav__item${active ? ' app-nav__item--active' : ''}${compact ? ' app-nav__item--compact' : ''}`}
-        onClick={() => navigate(page)}
-        aria-current={active ? 'page' : undefined}
-      >
-        <span className="app-nav__icon"><AppIcon name={meta.icon} size={compact ? 22 : 24} /></span>
-        <span className="app-nav__copy">
-          <strong>{meta.label}</strong>
-          {!compact ? <small>{meta.hint}</small> : null}
-        </span>
-      </button>
-    )
   }
 
   const primaryMobile = ['resumo', 'animais', 'tarefas', 'insumos']
@@ -176,13 +185,18 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
 
         <div className="app-sidebar__label">Sua fazenda</div>
         <nav className="app-nav">
-          {navItems.map((page) => <NavButton key={page} page={page} />)}
+          {navItems.map((page) => (
+            <NavButton key={page} page={page} active={activePage === page} onSelect={navigate} />
+          ))}
         </nav>
 
         <div className="app-user">
-          <button type="button" className="app-user__identity" onClick={() => navigate('perfil')}>
+          <button type="button" className="app-user__identity" onClick={() => navigate('perfil')} title={currentUser.nome}>
             <span className="app-user__avatar">{initials}</span>
-            <span className="app-user__copy"><strong>{currentUser.nome}</strong><small>{currentUser.perfil?.replaceAll('_', ' ')}</small></span>
+            <span className="app-user__copy">
+              <strong>{currentUser.nome}</strong>
+              <small>{PERFIL_LABELS[currentUser.perfil] ?? currentUser.perfil}</small>
+            </span>
           </button>
           <button type="button" className="app-user__logout" onClick={onLogout} aria-label="Sair da conta" title="Sair">
             <AppIcon name="logout" size={19} />
@@ -212,7 +226,13 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
             <strong>{PAGE_META[activePage]?.label ?? 'GADO'}</strong>
             <span>{PAGE_META[activePage]?.hint ?? 'Gestão rural'}</span>
           </div>
-          <button type="button" className="app-menu-button" onClick={() => setDrawerOpen(true)} aria-label="Abrir menu">
+          <button
+            type="button"
+            className="app-menu-button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menu"
+            aria-expanded={drawerOpen}
+          >
             <AppIcon name="menu" size={24} />
           </button>
         </header>
@@ -220,11 +240,14 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
         <div className="app-page">{children}</div>
 
         <nav className="app-bottom-nav" aria-label="Atalhos principais">
-          {primaryMobile.map((page) => <NavButton key={page} page={page} compact />)}
+          {primaryMobile.map((page) => (
+            <NavButton key={page} page={page} active={activePage === page} compact onSelect={navigate} />
+          ))}
           <button
             type="button"
             className={`app-nav__item app-nav__item--compact${drawerOpen ? ' app-nav__item--active' : ''}`}
             onClick={() => setDrawerOpen(true)}
+            aria-expanded={drawerOpen}
           >
             <span className="app-nav__icon"><AppIcon name="menu" size={21} /></span>
             <span className="app-nav__copy"><strong>Mais</strong></span>
@@ -246,7 +269,9 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
           </div>
           <div className="app-drawer__label">Todos os módulos</div>
           <nav className="app-nav app-drawer__nav">
-            {navItems.map((page) => <NavButton key={page} page={page} />)}
+            {navItems.map((page) => (
+              <NavButton key={page} page={page} active={activePage === page} onSelect={navigate} />
+            ))}
           </nav>
           <button type="button" className="app-drawer__logout" onClick={onLogout}>
             <AppIcon name="logout" size={19} /> Sair da conta

@@ -3,15 +3,10 @@ import { listarMinhasTarefas, atribuirTarefa, concluirTarefa, excluirTarefa } fr
 import { listarUsuariosResumo } from '../integration/usuarioResumoApi'
 import AtribuirTarefaModal from '../components/AtribuirTarefaModal'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
+import { formatarData, hojeIso } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 
 const defaultForm = { descricao: '', dataLimite: '', atribuidoParaEmail: '' }
-
-function formatDate(dateText) {
-  if (!dateText) return '—'
-  const [year, month, day] = dateText.split('-')
-  return `${day}/${month}/${year}`
-}
 
 function TarefasPage({ currentUser, onLogout, onNavigate }) {
   const [tarefas, setTarefas] = useState([])
@@ -26,7 +21,7 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
 
   const fetchTarefas = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const lista = await listarMinhasTarefas()
       setTarefas(lista)
@@ -91,8 +86,9 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
 
   function renderCard(tarefa) {
     const souAtribuidor = tarefa.atribuidoPorEmail?.toLowerCase() === currentUser.email?.toLowerCase()
-    const prazo = tarefa.dataLimite ? new Date(`${tarefa.dataLimite}T23:59:59`) : null
-    const atrasada = !tarefa.statusConclusao && prazo && prazo < new Date()
+    // dataLimite chega como java.util.Date ("2026-09-20T00:00:00.000Z"): o que vale é o dia, não o instante.
+    const diaLimite = tarefa.dataLimite ? String(tarefa.dataLimite).slice(0, 10) : null
+    const atrasada = !tarefa.statusConclusao && diaLimite !== null && diaLimite < hojeIso()
     return (
       <article className={`task-card${tarefa.statusConclusao ? ' task-card--done' : ''}`} key={tarefa.id}>
         <button
@@ -108,7 +104,7 @@ function TarefasPage({ currentUser, onLogout, onNavigate }) {
           <strong>{tarefa.descricao}</strong>
           <div className="task-card__meta">
             <span className={atrasada ? 'task-card__due task-card__due--late' : 'task-card__due'}>
-              {atrasada ? 'Atrasada · ' : 'Prazo · '}{formatDate(tarefa.dataLimite)}
+              {diaLimite ? `${atrasada ? 'Atrasada' : 'Prazo'} · ${formatarData(diaLimite)}` : 'Sem prazo'}
             </span>
             <span>
               {souAtribuidor ? `Para ${tarefa.atribuidoParaNome || tarefa.atribuidoParaEmail}` : `De ${tarefa.atribuidoPorNome || tarefa.atribuidoPorEmail}`}

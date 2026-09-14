@@ -13,6 +13,7 @@ import {
   exportarLotesPDF,
 } from '../integration/loteApi'
 import { listarSetores } from '../../setores/integration/setorApi'
+import { formatarData } from '../../../utils/formatters'
 import '../../animais/styles/animais.css'
 import '../styles/lotes.css'
 
@@ -29,12 +30,6 @@ const defaultForm = {
   alocacoes: [],
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const parts = dateStr.split('-')
-  if (parts.length !== 3) return dateStr
-  return `${parts[2]}/${parts[1]}/${parts[0]}`
-}
 
 const ROWS_PER_PAGE = 10
 
@@ -78,8 +73,10 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
   }
 
   function handleExportarPDF() {
-    exportarLotesPDF()
     setExportMenuOpen(false)
+    exportarLotesPDF().catch((error) => {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao gerar o PDF de lotes.' })
+    })
   }
 
   const filteredLotes = useMemo(() => {
@@ -101,7 +98,7 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
 
   const fetchLotes = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarLotes()
       setLotes(list)
@@ -384,7 +381,7 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
 
         <div className="data-toolbar">
           <form className="toolbar-search" onSubmit={handleSearchSubmit}>
-            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <span className="toolbar-search__icon" aria-hidden="true" />
             <input
               type="text"
               value={search}
@@ -480,7 +477,7 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
                       <td>{lote.racaPredominante || '—'}</td>
                       <td>{lote.alocacoes.length}</td>
                       <td>{totalAnimais}</td>
-                      <td>{formatDate(lote.dataCriacao)}</td>
+                      <td>{formatarData(lote.dataCriacao)}</td>
                       <td>
                         <div className="row-actions">
                           <button

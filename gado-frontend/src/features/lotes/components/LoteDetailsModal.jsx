@@ -1,17 +1,6 @@
 import { useEffect, useState } from 'react'
 import { buscarCustoRacaoLote } from '../integration/loteApi'
-
-function formatDate(value) {
-  if (!value) return '-'
-  if (typeof value === 'string' && value.includes('-')) {
-    const parts = value.split('-')
-    if (parts.length === 3) {
-      const [year, month, day] = parts
-      return `${day}/${month}/${year}`
-    }
-  }
-  return String(value)
-}
+import { formatarData, formatarMoeda } from '../../../utils/formatters'
 
 function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   const [custoRacao, setCustoRacao] = useState(null)
@@ -35,7 +24,7 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>Detalhes do lote</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -63,7 +52,7 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
           </div>
           <div>
             <dt>Data de criação</dt>
-            <dd>{formatDate(lote.dataCriacao)}</dd>
+            <dd>{formatarData(lote.dataCriacao)}</dd>
           </div>
           <div>
             <dt>Total de animais</dt>
@@ -73,11 +62,11 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
             <>
               <div>
                 <dt>Custo de ração acumulado</dt>
-                <dd>R$ {Number(custoRacao.custoTotalAcumulado ?? 0).toFixed(2)}</dd>
+                <dd>{formatarMoeda(custoRacao.custoTotalAcumulado)}</dd>
               </div>
               <div>
                 <dt>Custo de ração por animal</dt>
-                <dd>R$ {Number(custoRacao.custoPorAnimal ?? 0).toFixed(2)}</dd>
+                <dd>{formatarMoeda(custoRacao.custoPorAnimal)}</dd>
               </div>
             </>
           ) : null}

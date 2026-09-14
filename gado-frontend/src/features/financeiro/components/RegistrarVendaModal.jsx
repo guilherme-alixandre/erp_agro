@@ -114,7 +114,7 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
       <div className="modal-card modal-card--wide">
         <div className="modal-header">
           <h2>Registrar venda</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

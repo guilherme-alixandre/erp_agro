@@ -4,7 +4,7 @@ function CancelarVacinacaoAnimalModal({ vacinacao, justificativa, isSaving, feed
       <div className="modal-card">
         <div className="modal-header">
           <h2>Cancelar aplicação</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>

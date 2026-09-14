@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { gerarResumoMensal, gerarResumoUltimosMeses } from '../integration/lancamentoFinanceiroApi'
+import { formatarMoeda } from '../../../utils/formatters'
 import DreLineChart from './DreLineChart'
 
 const agora = new Date()
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-
-function formatarMoeda(valor) {
-  return `R$ ${Number(valor ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
 
 function DashboardTab({ currentUser }) {
   const [bloco, setBloco] = useState({ ano: agora.getFullYear(), mes: agora.getMonth() + 1 })
@@ -49,9 +46,13 @@ function DashboardTab({ currentUser }) {
   return (
     <>
       <div className="data-toolbar">
-        <p className="animals-count">Bloco Ano/Mês</p>
+        <p className="animals-count">Período</p>
         <div className="financeiro-bloco-selector">
-          <select value={bloco.mes} onChange={(e) => setBloco((c) => ({ ...c, mes: Number(e.target.value) }))}>
+          <select
+            value={bloco.mes}
+            onChange={(e) => setBloco((c) => ({ ...c, mes: Number(e.target.value) }))}
+            aria-label="Mês"
+          >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
               <option key={mes} value={mes}>{MESES_ABREV[mes - 1]}</option>
             ))}
@@ -60,7 +61,8 @@ function DashboardTab({ currentUser }) {
             type="number"
             value={bloco.ano}
             onChange={(e) => setBloco((c) => ({ ...c, ano: Number(e.target.value) }))}
-            style={{ width: '90px' }}
+            className="financeiro-bloco-selector__ano"
+            aria-label="Ano"
           />
         </div>
       </div>
@@ -69,25 +71,25 @@ function DashboardTab({ currentUser }) {
 
       <div className="financeiro-kpi-grid">
         <div className="financeiro-kpi-card">
-          <span className="financeiro-kpi-card__label">Total Entradas</span>
+          <span className="financeiro-kpi-card__label">Total de entradas</span>
           <strong className="financeiro-kpi-card__value financeiro-kpi-card__value--positivo">
             {isLoading ? '...' : formatarMoeda(resumo?.totalEntradas)}
           </strong>
         </div>
         <div className="financeiro-kpi-card">
-          <span className="financeiro-kpi-card__label">Saídas — Custo</span>
+          <span className="financeiro-kpi-card__label">Saídas — custo</span>
           <strong className="financeiro-kpi-card__value">
             {isLoading ? '...' : formatarMoeda(resumo?.totalSaidasCusto)}
           </strong>
         </div>
         <div className="financeiro-kpi-card">
-          <span className="financeiro-kpi-card__label">Saídas — Despesa</span>
+          <span className="financeiro-kpi-card__label">Saídas — despesa</span>
           <strong className="financeiro-kpi-card__value">
             {isLoading ? '...' : formatarMoeda(resumo?.totalSaidasDespesa)}
           </strong>
         </div>
         <div className="financeiro-kpi-card">
-          <span className="financeiro-kpi-card__label">Lucro Líquido</span>
+          <span className="financeiro-kpi-card__label">Lucro líquido</span>
           <strong
             className={`financeiro-kpi-card__value ${lucroPositivo ? 'financeiro-kpi-card__value--positivo' : 'financeiro-kpi-card__value--negativo'}`}
           >
@@ -97,7 +99,7 @@ function DashboardTab({ currentUser }) {
       </div>
 
       <div className="financeiro-chart-card">
-        <h3>Custo vs Despesa vs Receita — últimos 6 meses</h3>
+        <h3>Custo, despesa e receita — últimos 6 meses</h3>
         <DreLineChart data={chartData} />
       </div>
     </>

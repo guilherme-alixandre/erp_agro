@@ -1,3 +1,5 @@
+import { formatarMoeda } from '../../../utils/formatters'
+
 const MESES = [
   '01 - Janeiro', '02 - Fevereiro', '03 - Março', '04 - Abril', '05 - Maio', '06 - Junho',
   '07 - Julho', '08 - Agosto', '09 - Setembro', '10 - Outubro', '11 - Novembro', '12 - Dezembro',
@@ -9,13 +11,13 @@ function LancarPagamentoModal({ funcionario, formData, isSaving, feedback, onClo
       <div className="modal-card">
         <div className="modal-header">
           <h2>Lançar pagamento — {funcionario.nomeCompleto}</h2>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <p className="form-info">
-          Salário base R$ {Number(funcionario.salarioBase ?? 0).toFixed(2)}. O bruto, o desconto de
+          Salário base {formatarMoeda(funcionario.salarioBase)}. O bruto, o desconto de
           INSS, o encargo de FGTS e o líquido são calculados automaticamente a partir do cadastro
           do funcionário.
         </p>

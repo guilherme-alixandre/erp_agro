@@ -11,6 +11,7 @@ import {
 } from '../integration/vacinacaoAnimalApi'
 import EditarVacinacaoAnimalModal from './EditarVacinacaoAnimalModal'
 import CancelarVacinacaoAnimalModal from './CancelarVacinacaoAnimalModal'
+import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
 const ANIMAL_COLUMNS = [
   { key: 'codigoBrinco', label: 'Código' },
@@ -30,13 +31,6 @@ const defaultForm = {
 }
 
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
-
-function formatarData(iso) {
-  if (!iso) return '—'
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return iso
-  return data.toLocaleString('pt-BR')
-}
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -469,7 +463,7 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
               ) : (
                 historico.map((v) => (
                   <tr key={v.id}>
-                    <td>{formatarData(v.dataAplicacao)}</td>
+                    <td>{formatarDataHora(v.dataAplicacao)}</td>
                     <td>{v.insumoNome}</td>
                     <td>
                       {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
@@ -553,7 +547,7 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
           <div className="modal-card">
             <div className="modal-header">
               <h2>Resumo de vacinação</h2>
-              <button type="button" className="modal-close" onClick={() => setResumoAberto(false)}>
+              <button type="button" className="modal-close" aria-label="Fechar" onClick={() => setResumoAberto(false)}>
                 ✕
               </button>
             </div>

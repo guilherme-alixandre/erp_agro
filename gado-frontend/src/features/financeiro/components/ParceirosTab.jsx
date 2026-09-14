@@ -24,7 +24,7 @@ function ParceirosTab({ currentUser }) {
 
   const fetchParceiros = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const lista = await listarParceiros()
       setParceiros(lista)

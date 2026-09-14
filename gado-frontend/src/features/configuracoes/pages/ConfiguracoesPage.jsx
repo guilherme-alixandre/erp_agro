@@ -46,7 +46,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
 
   const fetchUsuarios = useCallback(async () => {
     setIsLoading(true)
-    setFeedback({ type: '', message: '' })
+    setFeedback((atual) => (atual.type === 'error' ? { type: '', message: '' } : atual))
     try {
       const list = await listarUsuarios()
       setUsuarios(list)
@@ -280,7 +280,7 @@ function ConfiguracoesPage({ currentUser, onNavigate, onLogout, onUpdateUser }) 
 
         <div className="data-toolbar">
           <form className="toolbar-search" onSubmit={handleSearchSubmit}>
-            <span className="toolbar-search__icon" aria-hidden="true">🔍</span>
+            <span className="toolbar-search__icon" aria-hidden="true" />
             <input
               type="text"
               value={search}
