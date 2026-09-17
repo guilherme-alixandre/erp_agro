@@ -6,6 +6,7 @@ import {
   editarConsumo,
   resumoPorSetorEPeriodo,
 } from '../integration/consumoInsumoApi'
+import RegistrarConsumoInsumoModal from './RegistrarConsumoInsumoModal'
 import EditarConsumoInsumoModal from './EditarConsumoInsumoModal'
 import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
@@ -18,6 +19,9 @@ const defaultForm = {
 }
 
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
+
+// Cabeças de animal só saem por venda no Financeiro, e vacinas só pela página "Vacinar Animais".
+const TIPOS_NAO_CONSUMIVEIS = new Set(['ANIMAL', 'VACINA'])
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -36,10 +40,11 @@ function hojeIso() {
 
 function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   const [setores, setSetores] = useState([])
+  const [filtroSetorId, setFiltroSetorId] = useState('')
+  const [registrarAberto, setRegistrarAberto] = useState(false)
   const [form, setForm] = useState(defaultForm)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
-  const [resultado, setResultado] = useState(null)
   const [historico, setHistorico] = useState([])
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false)
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
@@ -60,6 +65,11 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
       .then(setSetores)
       .catch(() => setSetores([]))
   }, [])
+
+  const insumosConsumiveis = useMemo(
+    () => insumosEstoque.filter((i) => !TIPOS_NAO_CONSUMIVEIS.has(i.tipo)),
+    [insumosEstoque],
+  )
 
   const insumoSelecionado = useMemo(
     () => insumosEstoque.find((i) => String(i.id) === String(form.insumoId)) ?? null,
@@ -83,8 +93,8 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   }, [])
 
   useEffect(() => {
-    fetchHistorico(form.setorId, filtroDataInicio, filtroDataFim)
-  }, [form.setorId, filtroDataInicio, filtroDataFim, fetchHistorico])
+    fetchHistorico(filtroSetorId, filtroDataInicio, filtroDataFim)
+  }, [filtroSetorId, filtroDataInicio, filtroDataFim, fetchHistorico])
 
   function podeEditar(consumo) {
     if (PERFIS_EDICAO_LIVRE.includes(currentUser?.perfil)) return true
@@ -120,7 +130,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
     try {
       await editarConsumo(editando.id, currentUser.email, editForm)
       fecharEdicao()
-      await fetchHistorico(form.setorId, filtroDataInicio, filtroDataFim)
+      await fetchHistorico(filtroSetorId, filtroDataInicio, filtroDataFim)
     } catch (error) {
       setEditFeedback(error.message || 'Falha ao salvar a edição.')
     } finally {
@@ -131,7 +141,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   async function handleAbrirResumo() {
     setResumoAberto(true)
     setResumoFeedback('')
-    if (!form.setorId) {
+    if (!filtroSetorId) {
       setResumoFeedback('Selecione um setor para gerar o resumo.')
       return
     }
@@ -139,13 +149,23 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
     const fim = filtroDataFim || hojeIso()
     setIsLoadingResumo(true)
     try {
-      const lista = await resumoPorSetorEPeriodo(form.setorId, inicio, fim)
+      const lista = await resumoPorSetorEPeriodo(filtroSetorId, inicio, fim)
       setResumo(lista)
     } catch (error) {
       setResumoFeedback(error.message || 'Falha ao gerar o resumo.')
     } finally {
       setIsLoadingResumo(false)
     }
+  }
+
+  function abrirRegistrar() {
+    setForm({ ...defaultForm, setorId: filtroSetorId || '' })
+    setFeedback({ type: '', message: '' })
+    setRegistrarAberto(true)
+  }
+
+  function fecharRegistrar() {
+    setRegistrarAberto(false)
   }
 
   function handleChange(event) {
@@ -157,22 +177,27 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
       }
       return next
     })
-    setResultado(null)
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setFeedback({ type: '', message: '' })
-    setResultado(null)
     setIsSaving(true)
     try {
       const registrado = await registrarConsumo(currentUser.email, form)
-      setResultado(registrado)
-      setFeedback({ type: 'info', message: 'Consumo registrado com sucesso.' })
-      setForm((current) => ({
-        ...defaultForm,
-        setorId: current.setorId, // mantém o setor selecionado para facilitar novos lançamentos
-      }))
+      const porAnimalTexto =
+        registrado.consumoPorAnimal != null
+          ? `, ${registrado.consumoPorAnimal.toFixed(3)} ${registrado.unidadeRegistroSigla} por animal`
+          : ''
+      setFeedback({
+        type: 'info',
+        message:
+          `Consumo registrado. Baixa: ${registrado.quantidadeBaixaUnidadePrimaria} ${registrado.unidadeMedidaPrimariaSigla}. ` +
+          `Saldo restante: ${registrado.saldoAtualAposConsumo} ${registrado.unidadeMedidaPrimariaSigla}. ` +
+          `${registrado.totalAnimaisSetor} animal(is) no setor${porAnimalTexto}.`,
+      })
+      setFiltroSetorId(form.setorId)
+      setRegistrarAberto(false)
       await fetchHistorico(form.setorId, filtroDataInicio, filtroDataFim)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao registrar o consumo.' })
@@ -182,218 +207,132 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   }
 
   return (
-    <div className="insumos-split-layout">
-      <div className="insumos-split-layout__form-card">
-        <h2>Alimentar Setores</h2>
-        <p className="perfil-subtitle">
-          Registra o consumo de um insumo em um Setor, dá baixa automática no estoque e
-          calcula o rateio entre os animais alocados naquele setor.
+    <div className="insumos-tab-content">
+      <p className="perfil-subtitle">
+        Consumo de insumos por setor: dá baixa automática no estoque e calcula o rateio entre
+        os animais alocados em cada setor.
+      </p>
+
+      {feedback.message ? (
+        <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
+          {feedback.message}
         </p>
+      ) : null}
 
-        <form className="animal-form" onSubmit={handleSubmit}>
-          <label>
-            <span>
-              Setor <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <select name="setorId" value={form.setorId} onChange={handleChange} required>
-              <option value="">Selecione o setor...</option>
-              {setores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nome}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="data-toolbar">
+        <select
+          className="toolbar-select"
+          value={filtroSetorId}
+          onChange={(e) => setFiltroSetorId(e.target.value)}
+        >
+          <option value="">Selecione o setor...</option>
+          {setores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nome}
+            </option>
+          ))}
+        </select>
 
-          <label>
-            <span>
-              Insumo <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <select name="insumoId" value={form.insumoId} onChange={handleChange} required>
-              <option value="">Selecione o insumo...</option>
-              {insumosEstoque.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nome} (saldo: {i.saldoAtual} {i.unidadeMedidaPrimariaSigla})
-                </option>
-              ))}
-            </select>
-          </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">De</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataInicio}
+            max={filtroDataFim || undefined}
+            onChange={(e) => setFiltroDataInicio(e.target.value)}
+          />
+        </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">Até</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataFim}
+            min={filtroDataInicio || undefined}
+            onChange={(e) => setFiltroDataFim(e.target.value)}
+          />
+        </label>
 
-          <label>
-            <span>
-              Quantidade consumida <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <input
-              type="number"
-              name="quantidade"
-              value={form.quantidade}
-              onChange={handleChange}
-              min="0.01"
-              step="0.01"
-              required
-            />
-          </label>
-
-          {insumoSelecionado?.unidadeMedidaSecundariaId ? (
-            <label>
-              <span>Unidade informada</span>
-              <select name="unidadeMedidaId" value={form.unidadeMedidaId} onChange={handleChange}>
-                <option value={insumoSelecionado.unidadeMedidaPrimariaId}>
-                  {insumoSelecionado.unidadeMedidaPrimariaSigla} (unidade de estoque)
-                </option>
-                <option value={insumoSelecionado.unidadeMedidaSecundariaId}>
-                  {insumoSelecionado.unidadeMedidaSecundariaSigla}
-                </option>
-              </select>
-            </label>
-          ) : insumoSelecionado ? (
-            <p className="form-help">
-              Unidade: {insumoSelecionado.unidadeMedidaPrimariaSigla}
-            </p>
-          ) : null}
-
-          <label>
-            <span>Data do consumo</span>
-            <input
-              type="datetime-local"
-              name="dataConsumo"
-              value={form.dataConsumo}
-              max={maxDataConsumo}
-              onChange={handleChange}
-            />
-          </label>
-
-          {feedback.message ? (
-            <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
-              {feedback.message}
-            </p>
-          ) : null}
-
-          <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={isSaving}>
-              {isSaving ? 'Registrando...' : 'Registrar consumo'}
-            </button>
-          </div>
-        </form>
-
-        {resultado ? (
-          <dl className="details-grid insumos-split-layout__resultado">
-            <div>
-              <dt>Baixa no estoque</dt>
-              <dd>
-                {resultado.quantidadeBaixaUnidadePrimaria} {resultado.unidadeMedidaPrimariaSigla}
-              </dd>
-            </div>
-            <div>
-              <dt>Saldo restante</dt>
-              <dd>
-                {resultado.saldoAtualAposConsumo} {resultado.unidadeMedidaPrimariaSigla}
-              </dd>
-            </div>
-            <div>
-              <dt>Animais no setor</dt>
-              <dd>{resultado.totalAnimaisSetor}</dd>
-            </div>
-            <div>
-              <dt>Consumo por animal</dt>
-              <dd>
-                {resultado.consumoPorAnimal != null
-                  ? `${resultado.consumoPorAnimal.toFixed(3)} ${resultado.unidadeRegistroSigla}`
-                  : 'sem animais alocados'}
-              </dd>
-            </div>
-          </dl>
-        ) : null}
+        <button type="button" className="btn-row" onClick={handleAbrirResumo}>
+          Resumo
+        </button>
+        <button type="button" className="btn-new-entity" onClick={abrirRegistrar}>
+          + Registrar consumo
+        </button>
       </div>
 
-      <div className="insumos-split-layout__historico">
-        <div className="insumos-historico__header">
-          <h3>Histórico do setor</h3>
-          <button type="button" className="btn-row" onClick={handleAbrirResumo}>
-            Resumo
-          </button>
-        </div>
-
-        <div className="data-toolbar">
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">De</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataInicio}
-              max={filtroDataFim || undefined}
-              onChange={(e) => setFiltroDataInicio(e.target.value)}
-            />
-          </label>
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">Até</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataFim}
-              min={filtroDataInicio || undefined}
-              onChange={(e) => setFiltroDataFim(e.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
+      <div className="data-table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Insumo</th>
+              <th>Quantidade</th>
+              <th>Animais</th>
+              <th>Por animal</th>
+              <th>Registrado por</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!filtroSetorId ? (
               <tr>
-                <th>Data</th>
-                <th>Insumo</th>
-                <th>Quantidade</th>
-                <th>Animais</th>
-                <th>Por animal</th>
-                <th>Registrado por</th>
-                <th>Ações</th>
+                <td colSpan={7} className="table-empty">Selecione um setor para ver o histórico.</td>
               </tr>
-            </thead>
-            <tbody>
-              {!form.setorId ? (
-                <tr>
-                  <td colSpan={7} className="table-empty">Selecione um setor para ver o histórico.</td>
+            ) : isLoadingHistorico ? (
+              <tr>
+                <td colSpan={7} className="table-loading">Carregando...</td>
+              </tr>
+            ) : historico.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="table-empty">Nenhum consumo registrado neste setor.</td>
+              </tr>
+            ) : (
+              historico.map((c) => (
+                <tr key={c.id}>
+                  <td>{formatarDataHora(c.dataConsumo)}</td>
+                  <td>{c.insumoNome}</td>
+                  <td>
+                    {c.quantidadeRegistrada} {c.unidadeRegistroSigla}
+                  </td>
+                  <td>{c.totalAnimaisSetor}</td>
+                  <td>
+                    {c.consumoPorAnimal != null
+                      ? `${c.consumoPorAnimal.toFixed(3)} ${c.unidadeRegistroSigla}`
+                      : '—'}
+                  </td>
+                  <td>{c.registradoPorNome || c.registradoPorEmail || '—'}</td>
+                  <td>
+                    {podeEditar(c) ? (
+                      <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
+                        Editar
+                      </button>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
-              ) : isLoadingHistorico ? (
-                <tr>
-                  <td colSpan={7} className="table-loading">Carregando...</td>
-                </tr>
-              ) : historico.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="table-empty">Nenhum consumo registrado neste setor.</td>
-                </tr>
-              ) : (
-                historico.map((c) => (
-                  <tr key={c.id}>
-                    <td>{formatarDataHora(c.dataConsumo)}</td>
-                    <td>{c.insumoNome}</td>
-                    <td>
-                      {c.quantidadeRegistrada} {c.unidadeRegistroSigla}
-                    </td>
-                    <td>{c.totalAnimaisSetor}</td>
-                    <td>
-                      {c.consumoPorAnimal != null
-                        ? `${c.consumoPorAnimal.toFixed(3)} ${c.unidadeRegistroSigla}`
-                        : '—'}
-                    </td>
-                    <td>{c.registradoPorNome || c.registradoPorEmail || '—'}</td>
-                    <td>
-                      {podeEditar(c) ? (
-                        <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
-                          Editar
-                        </button>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {registrarAberto ? (
+        <RegistrarConsumoInsumoModal
+          formData={form}
+          setores={setores}
+          insumosEstoque={insumosConsumiveis}
+          insumoSelecionado={insumoSelecionado}
+          maxDataConsumo={maxDataConsumo}
+          isSaving={isSaving}
+          feedback={feedback.type === 'error' ? feedback.message : ''}
+          onClose={fecharRegistrar}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+        />
+      ) : null}
 
       {editando && editForm ? (
         <EditarConsumoInsumoModal
@@ -418,7 +357,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
             </div>
 
             <p className="form-help">
-              Setor: {setores.find((s) => String(s.id) === String(form.setorId))?.nome ?? '—'} · Período:{' '}
+              Setor: {setores.find((s) => String(s.id) === String(filtroSetorId))?.nome ?? '—'} · Período:{' '}
               {formatarData(filtroDataInicio || hojeIso())} a {formatarData(filtroDataFim || hojeIso())}
             </p>
 

@@ -321,14 +321,12 @@ public class DataInitializer implements CommandLineRunner {
         criarAlocacaoSeed(lote5, setorPatio, List.of(ne4, br3, gi6));
 
         // ── 8. GRUPOS DE PRODUTO (Catálogo de Insumos) ───────────────────────────────
-        // O grupo "Animais" (prefixo 01) já vem semeado pela migration V23 — não recriar aqui
-        // (a raça já o usa desde a seção 3).
+        // Os grupos "Animais" (prefixo 01) e "Vacinas" (prefixo 02) já vêm semeados pelas
+        // migrations V23 e V29 — não recriar aqui (a raça já usa "Animais" desde a seção 3).
 
-        EGrupoProduto grupoVacinas = new EGrupoProduto();
-        grupoVacinas.setNome("Vacinas");
-        grupoVacinas.setCodigoPrefixo("02");
-        grupoVacinas.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
-        grupoVacinas = iGrupoProduto.save(grupoVacinas);
+        EGrupoProduto grupoVacinas = iGrupoProduto.findFirstByNomeIgnoreCase("Vacinas")
+                .orElseThrow(() -> new IllegalStateException(
+                        "Grupo de produto \"Vacinas\" não encontrado — verifique a migration V29."));
 
         EGrupoProduto grupoRacao = new EGrupoProduto();
         grupoRacao.setNome("Ração");

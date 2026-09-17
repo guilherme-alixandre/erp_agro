@@ -14,6 +14,7 @@ import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoInsumo;
 import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IConsumoEstoque;
 import br.com.gado.repositories.IInsumo;
@@ -104,6 +105,23 @@ public class SConsumoEstoque {
         }
     }
 
+    /**
+     * Cabeças de animal só podem ser baixadas por uma venda/abate (Financeiro) e vacinas só pela
+     * aplicação em "Vacinar Animais" — nenhum dos dois pode ter saída registrada como Consumo de Estoque.
+     */
+    private void validaTipoConsumivel(EInsumo insumo) {
+        if (insumo.getTipo() == EnTipoInsumo.ANIMAL) {
+            throw new IllegalArgumentException(String.format(
+                    "O produto \"%s\" é uma cabeça de animal e só pode ser baixado por uma venda no Financeiro.",
+                    insumo.getNome()));
+        }
+        if (insumo.getTipo() == EnTipoInsumo.VACINA) {
+            throw new IllegalArgumentException(String.format(
+                    "O produto \"%s\" é uma vacina e só pode ser baixado pela página \"Vacinar Animais\".",
+                    insumo.getNome()));
+        }
+    }
+
     // ── Consumo de Estoque ───────────────────────────────────────────────
 
     @Transactional
@@ -121,6 +139,8 @@ public class SConsumoEstoque {
         for (ConsumoEstoqueItemCadastroDto itemDto : dto.getItens()) {
             EInsumo insumo = insumoInterface.findByIdAndStatus(itemDto.getInsumoId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou inativo."));
+
+            validaTipoConsumivel(insumo);
 
             if (insumo.getUnidadeMedidaPrimaria() == null) {
                 throw new IllegalArgumentException(String.format(
@@ -230,6 +250,8 @@ public class SConsumoEstoque {
         for (ConsumoEstoqueItemCadastroDto itemDto : dto.getItens()) {
             EInsumo insumo = insumoInterface.findByIdAndStatus(itemDto.getInsumoId(), EnStatus.A)
                     .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou inativo."));
+
+            validaTipoConsumivel(insumo);
 
             if (insumo.getUnidadeMedidaPrimaria() == null) {
                 throw new IllegalArgumentException(String.format(

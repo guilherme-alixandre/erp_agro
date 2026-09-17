@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   cancelarConsumoEstoque,
   editarConsumoEstoque,
@@ -6,6 +6,7 @@ import {
   registrarConsumoEstoque,
   resumoConsumoEstoquePorPeriodo,
 } from '../integration/consumoEstoqueApi'
+import RegistrarConsumoEstoqueModal from './RegistrarConsumoEstoqueModal'
 import CancelarConsumoEstoqueModal from './CancelarConsumoEstoqueModal'
 import EditarConsumoEstoqueModal from './EditarConsumoEstoqueModal'
 import { formatarData, formatarDataHora } from '../../../utils/formatters'
@@ -14,6 +15,9 @@ const defaultItem = { insumoId: '', quantidade: '', unidadeMedidaId: '' }
 const defaultForm = { motivo: '', dataConsumo: '', itens: [{ ...defaultItem }] }
 
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
+
+// Cabeças de animal só saem por venda no Financeiro, e vacinas só pela página "Vacinar Animais".
+const TIPOS_NAO_CONSUMIVEIS = new Set(['ANIMAL', 'VACINA'])
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -31,10 +35,12 @@ function hojeIso() {
 }
 
 function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
+  const [registrarAberto, setRegistrarAberto] = useState(false)
   const [form, setForm] = useState(defaultForm)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
 
+  const [filtroInsumoId, setFiltroInsumoId] = useState('')
   const [historico, setHistorico] = useState([])
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false)
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
@@ -56,6 +62,11 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
   const [resumoFeedback, setResumoFeedback] = useState('')
 
   const maxDataConsumo = agoraDatetimeLocal()
+
+  const insumosConsumiveis = useMemo(
+    () => insumosEstoque.filter((i) => !TIPOS_NAO_CONSUMIVEIS.has(i.tipo)),
+    [insumosEstoque],
+  )
 
   const podeCancelar = useCallback(
     (consumo) =>
@@ -96,13 +107,14 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
     fetchHistorico(filtroDataInicio, filtroDataFim)
   }, [filtroDataInicio, filtroDataFim, fetchHistorico])
 
+  const historicoFiltrado = useMemo(() => {
+    if (!filtroInsumoId) return historico
+    return historico.filter((c) => c.itens.some((item) => String(item.insumoId) === String(filtroInsumoId)))
+  }, [historico, filtroInsumoId])
+
   function handleFormChange(event) {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
-  }
-
-  function insumoPorId(insumoId) {
-    return insumosEstoque.find((i) => String(i.id) === String(insumoId)) ?? null
   }
 
   function handleItemChange(index, event) {
@@ -131,6 +143,16 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
     }))
   }
 
+  function abrirRegistrar() {
+    setForm(defaultForm)
+    setFeedback({ type: '', message: '' })
+    setRegistrarAberto(true)
+  }
+
+  function fecharRegistrar() {
+    setRegistrarAberto(false)
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setFeedback({ type: '', message: '' })
@@ -138,7 +160,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
     try {
       await registrarConsumoEstoque(currentUser.email, form)
       setFeedback({ type: 'info', message: 'Saída de estoque registrada com sucesso.' })
-      setForm(defaultForm)
+      setRegistrarAberto(false)
       await fetchHistorico(filtroDataInicio, filtroDataFim)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao registrar a saída de estoque.' })
@@ -256,226 +278,145 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
   }
 
   return (
-    <div className="insumos-split-layout">
-      <div className="insumos-split-layout__form-card">
-        <h2>Consumo de Estoque</h2>
-        <p className="perfil-subtitle">
-          Registra a saída de um ou mais produtos do próprio estoque, com o motivo/finalidade
-          da retirada. Dá baixa automática no saldo dos produtos selecionados.
+    <div className="insumos-tab-content">
+      <p className="perfil-subtitle">
+        Saídas de estoque com motivo/finalidade da retirada e baixa automática no saldo dos
+        produtos selecionados.
+      </p>
+
+      {feedback.message ? (
+        <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
+          {feedback.message}
         </p>
+      ) : null}
 
-        <form className="animal-form" onSubmit={handleSubmit}>
-          <div className="consumo-estoque__itens">
-            {form.itens.map((item, index) => {
-              const insumoSelecionado = insumoPorId(item.insumoId)
-              return (
-                <div className="consumo-estoque__item-row" key={index}>
-                  <label className="consumo-estoque__item-produto">
-                    <span>
-                      Produto <span className="required-marker" aria-hidden="true">*</span>
-                    </span>
-                    <select name="insumoId" value={item.insumoId} onChange={(e) => handleItemChange(index, e)} required>
-                      <option value="">Selecione...</option>
-                      {insumosEstoque.map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.nome} (saldo: {i.saldoAtual} {i.unidadeMedidaPrimariaSigla})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+      <div className="data-toolbar">
+        <select
+          className="toolbar-select"
+          value={filtroInsumoId}
+          onChange={(e) => setFiltroInsumoId(e.target.value)}
+        >
+          <option value="">Todos os produtos</option>
+          {insumosConsumiveis.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.nome}
+            </option>
+          ))}
+        </select>
 
-                  <label className="consumo-estoque__item-quantidade">
-                    <span>
-                      Quantidade <span className="required-marker" aria-hidden="true">*</span>
-                    </span>
-                    <div className="consumo-estoque__quantidade-group">
-                      <input
-                        type="number"
-                        name="quantidade"
-                        value={item.quantidade}
-                        onChange={(e) => handleItemChange(index, e)}
-                        min="0.01"
-                        step="0.01"
-                        required
-                      />
-                      {insumoSelecionado?.unidadeMedidaSecundariaId ? (
-                        <select
-                          name="unidadeMedidaId"
-                          className="consumo-estoque__unidade-inline"
-                          value={item.unidadeMedidaId}
-                          onChange={(e) => handleItemChange(index, e)}
-                        >
-                          <option value={insumoSelecionado.unidadeMedidaPrimariaId}>
-                            {insumoSelecionado.unidadeMedidaPrimariaSigla}
-                          </option>
-                          <option value={insumoSelecionado.unidadeMedidaSecundariaId}>
-                            {insumoSelecionado.unidadeMedidaSecundariaSigla}
-                          </option>
-                        </select>
-                      ) : insumoSelecionado ? (
-                        <span className="consumo-estoque__unidade-sufixo">
-                          {insumoSelecionado.unidadeMedidaPrimariaSigla}
-                        </span>
-                      ) : null}
-                    </div>
-                  </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">De</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataInicio}
+            max={filtroDataFim || undefined}
+            onChange={(e) => setFiltroDataInicio(e.target.value)}
+          />
+        </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">Até</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataFim}
+            min={filtroDataInicio || undefined}
+            onChange={(e) => setFiltroDataFim(e.target.value)}
+          />
+        </label>
 
-                  <button
-                    type="button"
-                    className="btn-icon btn-icon--danger consumo-estoque__remove-item"
-                    onClick={() => removeItem(index)}
-                    disabled={form.itens.length === 1}
-                    aria-label="Remover produto"
-                    title="Remover produto"
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                      <path
-                        fill="currentColor"
-                        d="M9 3a1 1 0 0 0-1 1v1H4a1 1 0 1 0 0 2h1v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7h1a1 1 0 1 0 0-2h-4V4a1 1 0 0 0-1-1H9zm1 2h4v0h-4v0zM7 7h10v13H7V7zm3 2a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0v-7a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0v-7a1 1 0 0 0-1-1z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              )
-            })}
-
-            <button type="button" className="btn-secondary consumo-estoque__add-item" onClick={addItem}>
-              + Adicionar produto
-            </button>
-          </div>
-
-          <label>
-            <span>
-              Motivo / finalidade da saída <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <textarea name="motivo" value={form.motivo} onChange={handleFormChange} rows={2} required />
-          </label>
-
-          <label>
-            <span>Data do consumo</span>
-            <input
-              type="datetime-local"
-              name="dataConsumo"
-              value={form.dataConsumo}
-              max={maxDataConsumo}
-              onChange={handleFormChange}
-            />
-          </label>
-
-          {feedback.message ? (
-            <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
-              {feedback.message}
-            </p>
-          ) : null}
-
-          <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={isSaving}>
-              {isSaving ? 'Registrando...' : 'Registrar saída'}
-            </button>
-          </div>
-        </form>
+        <button type="button" className="btn-row" onClick={handleAbrirResumo}>
+          Resumo
+        </button>
+        <button type="button" className="btn-new-entity" onClick={abrirRegistrar}>
+          + Registrar saída
+        </button>
       </div>
 
-      <div className="insumos-split-layout__historico">
-        <div className="insumos-historico__header">
-          <h3>Log de movimentações</h3>
-          <button type="button" className="btn-row" onClick={handleAbrirResumo}>
-            Resumo
-          </button>
-        </div>
-
-        <div className="data-toolbar">
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">De</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataInicio}
-              max={filtroDataFim || undefined}
-              onChange={(e) => setFiltroDataInicio(e.target.value)}
-            />
-          </label>
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">Até</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataFim}
-              min={filtroDataInicio || undefined}
-              onChange={(e) => setFiltroDataFim(e.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
+      <div className="data-table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Produtos</th>
+              <th>Motivo</th>
+              <th>Registrado por</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoadingHistorico ? (
               <tr>
-                <th>Data</th>
-                <th>Produtos</th>
-                <th>Motivo</th>
-                <th>Registrado por</th>
-                <th>Status</th>
-                <th>Ações</th>
+                <td colSpan={6} className="table-loading">Carregando...</td>
               </tr>
-            </thead>
-            <tbody>
-              {isLoadingHistorico ? (
-                <tr>
-                  <td colSpan={6} className="table-loading">Carregando...</td>
-                </tr>
-              ) : historico.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="table-empty">Nenhuma saída de estoque registrada.</td>
-                </tr>
-              ) : (
-                historico.map((c) => (
-                  <tr key={c.id}>
-                    <td>{formatarDataHora(c.dataConsumo)}</td>
-                    <td>
-                      {c.itens.map((item) => (
-                        <div key={item.id}>
-                          {item.insumoNome}: {item.quantidadeRegistrada} {item.unidadeRegistroSigla}
-                        </div>
-                      ))}
-                    </td>
-                    <td>{c.motivo}</td>
-                    <td>{c.criadoPorNome || c.criadoPorEmail || '—'}</td>
-                    <td>
-                      {c.cancelado ? (
-                        <>
-                          <span className="consumo-estoque__status--cancelado">Cancelado</span>
-                          <span className="consumo-estoque__cancelamento-motivo">
-                            {c.motivoCancelamento} — {c.canceladoPorNome || c.canceladoPorEmail} em{' '}
-                            {formatarDataHora(c.canceladoEm)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="consumo-estoque__status--ativo">Ativo</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        {podeEditar(c) ? (
-                          <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
-                            Editar
-                          </button>
-                        ) : null}
-                        {podeCancelar(c) ? (
-                          <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(c)}>
-                            Cancelar
-                          </button>
-                        ) : null}
-                        {!podeEditar(c) && !podeCancelar(c) ? <span>—</span> : null}
+            ) : historicoFiltrado.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="table-empty">Nenhuma saída de estoque registrada.</td>
+              </tr>
+            ) : (
+              historicoFiltrado.map((c) => (
+                <tr key={c.id}>
+                  <td>{formatarDataHora(c.dataConsumo)}</td>
+                  <td>
+                    {c.itens.map((item) => (
+                      <div key={item.id}>
+                        {item.insumoNome}: {item.quantidadeRegistrada} {item.unidadeRegistroSigla}
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    ))}
+                  </td>
+                  <td>{c.motivo}</td>
+                  <td>{c.criadoPorNome || c.criadoPorEmail || '—'}</td>
+                  <td>
+                    {c.cancelado ? (
+                      <>
+                        <span className="consumo-estoque__status--cancelado">Cancelado</span>
+                        <span className="consumo-estoque__cancelamento-motivo">
+                          {c.motivoCancelamento} — {c.canceladoPorNome || c.canceladoPorEmail} em{' '}
+                          {formatarDataHora(c.canceladoEm)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="consumo-estoque__status--ativo">Ativo</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="row-actions">
+                      {podeEditar(c) ? (
+                        <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
+                          Editar
+                        </button>
+                      ) : null}
+                      {podeCancelar(c) ? (
+                        <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(c)}>
+                          Cancelar
+                        </button>
+                      ) : null}
+                      {!podeEditar(c) && !podeCancelar(c) ? <span>—</span> : null}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {registrarAberto ? (
+        <RegistrarConsumoEstoqueModal
+          formData={form}
+          insumosEstoque={insumosConsumiveis}
+          maxDataConsumo={maxDataConsumo}
+          isSaving={isSaving}
+          feedback={feedback.type === 'error' ? feedback.message : ''}
+          onClose={fecharRegistrar}
+          onChange={handleFormChange}
+          onItemChange={handleItemChange}
+          onAddItem={addItem}
+          onRemoveItem={removeItem}
+          onSubmit={handleSubmit}
+        />
+      ) : null}
 
       {consumoParaCancelar ? (
         <CancelarConsumoEstoqueModal
@@ -493,7 +434,7 @@ function ConsumoEstoqueTab({ currentUser, insumosEstoque }) {
         <EditarConsumoEstoqueModal
           consumo={editando}
           formData={editForm}
-          insumosEstoque={insumosEstoque}
+          insumosEstoque={insumosConsumiveis}
           isSaving={isSavingEdit}
           feedback={editFeedback}
           onClose={fecharEdicao}

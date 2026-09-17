@@ -9,6 +9,7 @@ import {
   cancelarVacinacao,
   resumoVacinacaoPorPeriodo,
 } from '../integration/vacinacaoAnimalApi'
+import RegistrarVacinacaoModal from './RegistrarVacinacaoModal'
 import EditarVacinacaoAnimalModal from './EditarVacinacaoAnimalModal'
 import CancelarVacinacaoAnimalModal from './CancelarVacinacaoAnimalModal'
 import { formatarData, formatarDataHora } from '../../../utils/formatters'
@@ -50,12 +51,13 @@ function hojeIso() {
 function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
   const [animais, setAnimais] = useState([])
   const [lotes, setLotes] = useState([])
+  const [registrarAberto, setRegistrarAberto] = useState(false)
   const [form, setForm] = useState(defaultForm)
   const [selecaoModalOpen, setSelecaoModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
-  const [resultado, setResultado] = useState(null)
 
+  const [filtroInsumoId, setFiltroInsumoId] = useState('')
   const [historico, setHistorico] = useState([])
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false)
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
@@ -118,6 +120,11 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
     fetchHistorico(filtroDataInicio, filtroDataFim)
   }, [filtroDataInicio, filtroDataFim, fetchHistorico])
 
+  const historicoFiltrado = useMemo(() => {
+    if (!filtroInsumoId) return historico
+    return historico.filter((v) => String(v.insumoId) === String(filtroInsumoId))
+  }, [historico, filtroInsumoId])
+
   function podeEditar(vacinacao) {
     if (vacinacao.cancelado) return false
     if (PERFIS_EDICAO_LIVRE.includes(currentUser?.perfil)) return true
@@ -143,7 +150,6 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
       }
       return next
     })
-    setResultado(null)
   }
 
   function handleLoteSelecionado(event) {
@@ -154,27 +160,32 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
       : []
     const idsElegiveis = idsDoLote.filter((id) => animaisVacinaveis.some((a) => a.id === id))
     setForm((current) => ({ ...current, loteId, animalIds: idsElegiveis }))
-    setResultado(null)
   }
 
-  const itensParaSelecao = form.modoSelecao === 'LOTE' && form.loteId
-    ? animaisVacinaveis.filter((a) => {
-        const lote = lotes.find((l) => String(l.id) === String(form.loteId))
-        const idsDoLote = lote ? lote.alocacoes.flatMap((aloc) => aloc.animais.map((x) => x.id)) : []
-        return idsDoLote.includes(a.id)
-      })
-    : animaisVacinaveis
+  function abrirRegistrar() {
+    setForm(defaultForm)
+    setFeedback({ type: '', message: '' })
+    setRegistrarAberto(true)
+  }
+
+  function fecharRegistrar() {
+    setRegistrarAberto(false)
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setFeedback({ type: '', message: '' })
-    setResultado(null)
     setIsSaving(true)
     try {
       const registrado = await registrarVacinacao(currentUser.email, form)
-      setResultado(registrado)
-      setFeedback({ type: 'info', message: 'Aplicação registrada com sucesso.' })
-      setForm(defaultForm)
+      setFeedback({
+        type: 'info',
+        message:
+          `Aplicação registrada. Baixa total: ${registrado.quantidadeTotalBaixaUnidadePrimaria} ${registrado.unidadeMedidaPrimariaSigla}. ` +
+          `Saldo restante: ${registrado.saldoAtualAposAplicacao} ${registrado.unidadeMedidaPrimariaSigla}. ` +
+          `${registrado.totalAnimais} animal(is) cobertos.`,
+      })
+      setRegistrarAberto(false)
       await fetchHistorico(filtroDataInicio, filtroDataFim)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao registrar a aplicação.' })
@@ -271,237 +282,151 @@ function VacinarAnimaisTab({ currentUser, insumosEstoque }) {
     return restante > 0 ? `${codigos} +${restante}` : codigos
   }
 
+  const itensParaSelecao = form.modoSelecao === 'LOTE' && form.loteId
+    ? animaisVacinaveis.filter((a) => {
+        const lote = lotes.find((l) => String(l.id) === String(form.loteId))
+        const idsDoLote = lote ? lote.alocacoes.flatMap((aloc) => aloc.animais.map((x) => x.id)) : []
+        return idsDoLote.includes(a.id)
+      })
+    : animaisVacinaveis
+
   return (
-    <div className="insumos-split-layout">
-      <div className="insumos-split-layout__form-card">
-        <h2>Vacinar Animais</h2>
-        <p className="perfil-subtitle">
-          Registra a aplicação de um produto (vacina) em um ou mais animais, ou em um lote
-          inteiro, com baixa automática no estoque (dose x nº de animais).
+    <div className="insumos-tab-content">
+      <p className="perfil-subtitle">
+        Aplicação de vacinas em animais individuais ou em um lote inteiro, com baixa automática
+        no estoque (dose x nº de animais).
+      </p>
+
+      {feedback.message ? (
+        <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
+          {feedback.message}
         </p>
+      ) : null}
 
-        <form className="animal-form" onSubmit={handleSubmit}>
-          <label>
-            <span>
-              Vacina <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <select name="insumoId" value={form.insumoId} onChange={handleChange} required>
-              <option value="">Selecione o produto...</option>
-              {vacinasDisponiveis.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nome} (saldo: {i.saldoAtual} {i.unidadeMedidaPrimariaSigla})
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="data-toolbar">
+        <select
+          className="toolbar-select"
+          value={filtroInsumoId}
+          onChange={(e) => setFiltroInsumoId(e.target.value)}
+        >
+          <option value="">Todas as vacinas</option>
+          {vacinasDisponiveis.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.nome}
+            </option>
+          ))}
+        </select>
 
-          <label>
-            <span>
-              Dose por animal <span className="required-marker" aria-hidden="true">*</span>
-            </span>
-            <input
-              type="number"
-              name="quantidadePorAnimal"
-              value={form.quantidadePorAnimal}
-              onChange={handleChange}
-              min="0.01"
-              step="0.01"
-              required
-            />
-          </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">De</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataInicio}
+            max={filtroDataFim || undefined}
+            onChange={(e) => setFiltroDataInicio(e.target.value)}
+          />
+        </label>
+        <label className="toolbar-date-label">
+          <span className="toolbar-date-label__text">Até</span>
+          <input
+            type="date"
+            className="toolbar-date"
+            value={filtroDataFim}
+            min={filtroDataInicio || undefined}
+            onChange={(e) => setFiltroDataFim(e.target.value)}
+          />
+        </label>
 
-          {insumoSelecionado?.unidadeMedidaSecundariaId ? (
-            <label>
-              <span>Unidade informada</span>
-              <select name="unidadeMedidaId" value={form.unidadeMedidaId} onChange={handleChange}>
-                <option value={insumoSelecionado.unidadeMedidaPrimariaId}>
-                  {insumoSelecionado.unidadeMedidaPrimariaSigla} (unidade de estoque)
-                </option>
-                <option value={insumoSelecionado.unidadeMedidaSecundariaId}>
-                  {insumoSelecionado.unidadeMedidaSecundariaSigla}
-                </option>
-              </select>
-            </label>
-          ) : insumoSelecionado ? (
-            <p className="form-help">Unidade: {insumoSelecionado.unidadeMedidaPrimariaSigla}</p>
-          ) : null}
-
-          <label>
-            <span>Seleção</span>
-            <select name="modoSelecao" value={form.modoSelecao} onChange={handleChange}>
-              <option value="ANIMAIS">Animais individuais</option>
-              <option value="LOTE">Um lote inteiro</option>
-            </select>
-          </label>
-
-          {form.modoSelecao === 'LOTE' ? (
-            <label>
-              <span>Lote <span className="required-marker" aria-hidden="true">*</span></span>
-              <select value={form.loteId} onChange={handleLoteSelecionado} required>
-                <option value="">Selecione o lote...</option>
-                {lotes.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.codigo}{l.descricao ? ` — ${l.descricao}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-
-          <div className="setores-fieldset__select">
-            <span>Animais selecionados</span>
-            <button type="button" className="ssm-trigger" onClick={() => setSelecaoModalOpen(true)}>
-              <span className={form.animalIds.length ? '' : 'ssm-trigger__placeholder'}>
-                {form.animalIds.length > 0
-                  ? `${form.animalIds.length} animal(is) selecionado(s)`
-                  : 'Selecionar animais...'}
-              </span>
-              <span className="ssm-trigger__arrow" aria-hidden="true">▼</span>
-            </button>
-          </div>
-
-          <label>
-            <span>Data da aplicação</span>
-            <input
-              type="datetime-local"
-              name="dataAplicacao"
-              value={form.dataAplicacao}
-              max={maxDataAplicacao}
-              onChange={handleChange}
-            />
-          </label>
-
-          {feedback.message ? (
-            <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>
-              {feedback.message}
-            </p>
-          ) : null}
-
-          <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={isSaving || form.animalIds.length === 0}>
-              {isSaving ? 'Registrando...' : 'Registrar aplicação'}
-            </button>
-          </div>
-        </form>
-
-        {resultado ? (
-          <dl className="details-grid insumos-split-layout__resultado">
-            <div>
-              <dt>Baixa total no estoque</dt>
-              <dd>
-                {resultado.quantidadeTotalBaixaUnidadePrimaria} {resultado.unidadeMedidaPrimariaSigla}
-              </dd>
-            </div>
-            <div>
-              <dt>Saldo restante</dt>
-              <dd>
-                {resultado.saldoAtualAposAplicacao} {resultado.unidadeMedidaPrimariaSigla}
-              </dd>
-            </div>
-            <div>
-              <dt>Animais cobertos</dt>
-              <dd>{resultado.totalAnimais}</dd>
-            </div>
-          </dl>
-        ) : null}
+        <button type="button" className="btn-row" onClick={handleAbrirResumo}>
+          Resumo
+        </button>
+        <button type="button" className="btn-new-entity" onClick={abrirRegistrar}>
+          + Registrar aplicação
+        </button>
       </div>
 
-      <div className="insumos-split-layout__historico">
-        <div className="insumos-historico__header">
-          <h3>Histórico de vacinação</h3>
-          <button type="button" className="btn-row" onClick={handleAbrirResumo}>
-            Resumo
-          </button>
-        </div>
-
-        <div className="data-toolbar">
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">De</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataInicio}
-              max={filtroDataFim || undefined}
-              onChange={(e) => setFiltroDataInicio(e.target.value)}
-            />
-          </label>
-          <label className="toolbar-date-label">
-            <span className="toolbar-date-label__text">Até</span>
-            <input
-              type="date"
-              className="toolbar-date"
-              value={filtroDataFim}
-              min={filtroDataInicio || undefined}
-              onChange={(e) => setFiltroDataFim(e.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
+      <div className="data-table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Vacina</th>
+              <th>Dose/animal</th>
+              <th>Animais</th>
+              <th>Lote</th>
+              <th>Registrado por</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoadingHistorico ? (
               <tr>
-                <th>Data</th>
-                <th>Vacina</th>
-                <th>Dose/animal</th>
-                <th>Animais</th>
-                <th>Lote</th>
-                <th>Registrado por</th>
-                <th>Status</th>
-                <th>Ações</th>
+                <td colSpan={8} className="table-loading">Carregando...</td>
               </tr>
-            </thead>
-            <tbody>
-              {isLoadingHistorico ? (
-                <tr>
-                  <td colSpan={8} className="table-loading">Carregando...</td>
+            ) : historicoFiltrado.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="table-empty">Nenhuma aplicação registrada.</td>
+              </tr>
+            ) : (
+              historicoFiltrado.map((v) => (
+                <tr key={v.id}>
+                  <td>{formatarDataHora(v.dataAplicacao)}</td>
+                  <td>{v.insumoNome}</td>
+                  <td>
+                    {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
+                  </td>
+                  <td>
+                    {v.totalAnimais} ({renderAnimaisResumidos(v.animais)})
+                  </td>
+                  <td>{v.loteCodigo || '—'}</td>
+                  <td>{v.criadoPorNome || v.criadoPorEmail || '—'}</td>
+                  <td>
+                    {v.cancelado ? (
+                      <span className="consumo-estoque__status--cancelado">Cancelado</span>
+                    ) : (
+                      <span className="consumo-estoque__status--ativo">Ativo</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="row-actions">
+                      {podeEditar(v) ? (
+                        <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(v)}>
+                          Editar
+                        </button>
+                      ) : null}
+                      {podeCancelar(v) ? (
+                        <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(v)}>
+                          Cancelar
+                        </button>
+                      ) : null}
+                      {!podeEditar(v) && !podeCancelar(v) ? <span>—</span> : null}
+                    </div>
+                  </td>
                 </tr>
-              ) : historico.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="table-empty">Nenhuma aplicação registrada.</td>
-                </tr>
-              ) : (
-                historico.map((v) => (
-                  <tr key={v.id}>
-                    <td>{formatarDataHora(v.dataAplicacao)}</td>
-                    <td>{v.insumoNome}</td>
-                    <td>
-                      {v.quantidadePorAnimal} {v.unidadeRegistroSigla}
-                    </td>
-                    <td>
-                      {v.totalAnimais} ({renderAnimaisResumidos(v.animais)})
-                    </td>
-                    <td>{v.loteCodigo || '—'}</td>
-                    <td>{v.criadoPorNome || v.criadoPorEmail || '—'}</td>
-                    <td>
-                      {v.cancelado ? (
-                        <span className="consumo-estoque__status--cancelado">Cancelado</span>
-                      ) : (
-                        <span className="consumo-estoque__status--ativo">Ativo</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        {podeEditar(v) ? (
-                          <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(v)}>
-                            Editar
-                          </button>
-                        ) : null}
-                        {podeCancelar(v) ? (
-                          <button type="button" className="btn-row btn-row--danger" onClick={() => abrirCancelamento(v)}>
-                            Cancelar
-                          </button>
-                        ) : null}
-                        {!podeEditar(v) && !podeCancelar(v) ? <span>—</span> : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {registrarAberto ? (
+        <RegistrarVacinacaoModal
+          formData={form}
+          vacinasDisponiveis={vacinasDisponiveis}
+          insumoSelecionado={insumoSelecionado}
+          lotes={lotes}
+          maxDataAplicacao={maxDataAplicacao}
+          isSaving={isSaving}
+          feedback={feedback.type === 'error' ? feedback.message : ''}
+          onClose={fecharRegistrar}
+          onChange={handleChange}
+          onLoteSelecionado={handleLoteSelecionado}
+          onAbrirSelecaoAnimais={() => setSelecaoModalOpen(true)}
+          onSubmit={handleSubmit}
+        />
+      ) : null}
 
       {selecaoModalOpen ? (
         <SearchSelectModal

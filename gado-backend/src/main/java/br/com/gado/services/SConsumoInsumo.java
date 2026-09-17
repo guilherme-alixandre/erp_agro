@@ -12,6 +12,7 @@ import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoInsumo;
 import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.IInsumo;
@@ -84,6 +85,8 @@ public class SConsumoInsumo {
     public ConsumoInsumoRespostaDto registrarConsumo(ConsumoInsumoCadastroDto dto, String emailUsuario) {
         EInsumo insumo = insumoInterface.findByIdAndStatus(dto.getInsumoId(), EnStatus.A)
                 .orElseThrow(() -> new IllegalArgumentException("Insumo não encontrado ou inativo."));
+
+        validaTipoConsumivel(insumo);
 
         ESetor setor = setorInterface.findByIdAndStatus(dto.getSetorId(), EnStatus.A)
                 .orElseThrow(() -> new IllegalArgumentException("Setor não encontrado ou inativo."));
@@ -198,6 +201,23 @@ public class SConsumoInsumo {
     private void validaDataNaoFutura(LocalDateTime dataConsumo) {
         if (dataConsumo != null && dataConsumo.isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("A data de consumo não pode ser no futuro.");
+        }
+    }
+
+    /**
+     * Cabeças de animal só podem ser baixadas por uma venda/abate (Financeiro) e vacinas só pela
+     * aplicação em "Vacinar Animais" — nenhum dos dois pode ter saída registrada como consumo de setor.
+     */
+    private void validaTipoConsumivel(EInsumo insumo) {
+        if (insumo.getTipo() == EnTipoInsumo.ANIMAL) {
+            throw new IllegalArgumentException(String.format(
+                    "O produto \"%s\" é uma cabeça de animal e só pode ser baixado por uma venda no Financeiro.",
+                    insumo.getNome()));
+        }
+        if (insumo.getTipo() == EnTipoInsumo.VACINA) {
+            throw new IllegalArgumentException(String.format(
+                    "O produto \"%s\" é uma vacina e só pode ser baixado pela página \"Vacinar Animais\".",
+                    insumo.getNome()));
         }
     }
 

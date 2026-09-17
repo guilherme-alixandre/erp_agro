@@ -15,6 +15,7 @@ import br.com.gado.entities.EVacinacaoAnimal;
 import br.com.gado.entities.EVacinacaoAnimalItem;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnTipoInsumo;
 import br.com.gado.enums.EnTipoMovimentacaoEstoque;
 import br.com.gado.repositories.IAnimal;
 import br.com.gado.repositories.IInsumo;
@@ -119,6 +120,12 @@ public class SVacinacaoAnimal {
 
         EInsumo insumo = insumoInterface.findByIdAndStatus(dto.getInsumoId(), EnStatus.A)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou inativo."));
+
+        if (insumo.getTipo() != EnTipoInsumo.VACINA) {
+            throw new IllegalArgumentException(String.format(
+                    "O produto \"%s\" não é uma vacina — só produtos do tipo Vacina podem ser aplicados aqui.",
+                    insumo.getNome()));
+        }
 
         if (insumo.getUnidadeMedidaPrimaria() == null) {
             throw new IllegalArgumentException(

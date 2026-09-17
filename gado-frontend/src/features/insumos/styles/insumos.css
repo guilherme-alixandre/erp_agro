@@ -69,55 +69,10 @@
   margin-left: 8px;
 }
 
-/* ── Alimentar Setores / Consumo de Estoque (layout de formulário + histórico) ─ */
+/* ── Alimentar Setores / Consumo de Estoque / Vacinar Animais (lista + modal) ─ */
 
-.insumos-split-layout {
+.insumos-tab-content {
   margin-top: 18px;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
-  align-items: start;
-}
-
-/* Sem isso a largura mínima das tabelas do histórico empurra a coluna e a página rola na horizontal. */
-.insumos-split-layout > * {
-  min-width: 0;
-}
-
-.insumos-split-layout__form-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.insumos-split-layout__form-card h2 {
-  margin: 0;
-}
-
-.insumos-split-layout__resultado {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
-}
-
-.insumos-split-layout__historico h3 {
-  margin: 0;
-}
-
-.insumos-historico__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-@media (max-width: 1100px) {
-  .insumos-split-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* ── Consumo de Estoque ───────────────────────────────────────────────── */

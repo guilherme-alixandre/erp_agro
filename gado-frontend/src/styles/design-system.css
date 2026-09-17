@@ -774,8 +774,7 @@ button.app-user__identity:hover {
 .app-page .animal-card,
 .app-page .meta-card,
 .app-page .resumo-card,
-.app-page .resumo-section,
-.app-page .insumos-split-layout__form-card {
+.app-page .resumo-section {
   border-color: var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -1830,8 +1829,7 @@ button.app-user__identity:hover {
   }
 
   .app-page .meta-card,
-  .app-page .resumo-section,
-  .app-page .insumos-split-layout__form-card {
+  .app-page .resumo-section {
     padding: 14px;
   }
 
@@ -1908,7 +1906,6 @@ html[data-theme='dark'] .app-page .animal-card,
 html[data-theme='dark'] .app-page .meta-card,
 html[data-theme='dark'] .app-page .resumo-card,
 html[data-theme='dark'] .app-page .resumo-section,
-html[data-theme='dark'] .app-page .insumos-split-layout__form-card,
 html[data-theme='dark'] .financeiro-kpi-card,
 html[data-theme='dark'] .financeiro-chart-card,
 html[data-theme='dark'] .task-card,
