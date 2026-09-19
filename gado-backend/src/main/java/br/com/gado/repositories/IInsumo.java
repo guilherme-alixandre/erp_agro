@@ -33,4 +33,9 @@ public interface IInsumo extends JpaRepository<EInsumo, Long> {
      * sem varrer a tabela inteira e sem depender de LIKE/collation para casar o prefixo.
      */
     Optional<EInsumo> findFirstByCodigoProdutoBetweenOrderByCodigoProdutoDesc(String codigoInicio, String codigoFim);
+
+    // ── Grupo de Produto: vínculo de produtos ─────────────────────────────
+
+    /** Considera produtos de qualquer status — ativos e inativos bloqueiam a troca de prefixo do grupo. */
+    boolean existsByGrupoProdutoId(Long grupoProdutoId);
 }

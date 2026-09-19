@@ -8,6 +8,7 @@ import br.com.gado.entities.EConsumoInsumo;
 import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
+import br.com.gado.entities.ESobraAlimentacao;
 import br.com.gado.entities.EUnidadeMedida;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
@@ -18,6 +19,7 @@ import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.ISetor;
+import br.com.gado.repositories.ISobraAlimentacao;
 import br.com.gado.repositories.IUnidadeMedida;
 import br.com.gado.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
@@ -63,6 +65,12 @@ public class SConsumoInsumo {
 
     @Autowired
     private SInsumo insumoService;
+
+    @Autowired
+    private ISobraAlimentacao sobraAlimentacaoInterface;
+
+    @Autowired
+    private SLancamentoFinanceiro lancamentoFinanceiroService;
 
     // ── Permissões ───────────────────────────────────────────────────────
 
@@ -230,7 +238,45 @@ public class SConsumoInsumo {
         } else {
             lista = consumoInsumoInterface.findBySetor_IdAndStatusOrderByDataConsumoDesc(setorId, EnStatus.A);
         }
-        return lista.stream().map(this::toRespostaDto).collect(Collectors.toList());
+
+        Map<Long, ESobraAlimentacao> sobrasPorConsumoId = sobraAlimentacaoInterface
+                .findByConsumoInsumo_IdIn(lista.stream().map(EConsumoInsumo::getId).collect(Collectors.toList()))
+                .stream()
+                .collect(Collectors.toMap(s -> s.getConsumoInsumo().getId(), s -> s));
+
+        return lista.stream()
+                .map(c -> toRespostaDto(c, sobrasPorConsumoId.get(c.getId())))
+                .collect(Collectors.toList());
+    }
+
+    /** Autor do lançamento, Gerente ou Administrador podem excluir — devolve a ração ao estoque. */
+    @Transactional
+    public void excluirConsumo(Long id, String emailUsuario) {
+        EUsuario usuario = resolveUsuarioObrigatorio(emailUsuario);
+        EConsumoInsumo consumo = consumoInsumoInterface.findById(id)
+                .filter(c -> c.getStatus() == EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Lançamento de consumo não encontrado."));
+
+        validaPermissaoEdicao(usuario, consumo);
+
+        sobraAlimentacaoInterface.findByConsumoInsumo_Id(id).ifPresent(sobra -> {
+            if (Boolean.FALSE.equals(sobra.getReaproveitado())) {
+                lancamentoFinanceiroService.estornarPerdaAlimentacao(sobra.getId());
+            }
+            sobraAlimentacaoInterface.delete(sobra);
+        });
+
+        EInsumo insumo = consumo.getInsumo();
+        double saldoRestaurado = (insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0)
+                + consumo.getQuantidadeBaixaUnidadePrimaria();
+        insumo.setSaldoAtual(saldoRestaurado);
+        insumoInterface.save(insumo);
+        insumoService.registrarMovimentacao(insumo, EnTipoMovimentacaoEstoque.ENTRADA,
+                consumo.getQuantidadeBaixaUnidadePrimaria(), insumo.getPrecoCompraMedio(),
+                LocalDateTime.now(), null, consumo.getSetor(), null);
+
+        consumo.setStatus(EnStatus.I);
+        consumoInsumoInterface.save(consumo);
     }
 
     @Transactional
@@ -309,6 +355,10 @@ public class SConsumoInsumo {
     }
 
     private ConsumoInsumoRespostaDto toRespostaDto(EConsumoInsumo consumo) {
+        return toRespostaDto(consumo, sobraAlimentacaoInterface.findByConsumoInsumo_Id(consumo.getId()).orElse(null));
+    }
+
+    private ConsumoInsumoRespostaDto toRespostaDto(EConsumoInsumo consumo, ESobraAlimentacao sobra) {
         ConsumoInsumoRespostaDto dto = new ConsumoInsumoRespostaDto();
         dto.setId(consumo.getId());
 
@@ -336,6 +386,14 @@ public class SConsumoInsumo {
         if (consumo.getRegistradoPorEmail() != null) {
             usuarioInterface.findByEmailAndStatus(consumo.getRegistradoPorEmail(), EnStatus.A)
                     .ifPresent(u -> dto.setRegistradoPorNome(u.getNome()));
+        }
+
+        dto.setSobraRegistrada(sobra != null);
+        if (sobra != null) {
+            dto.setPercentualSobra(sobra.getPercentualSobra());
+            dto.setReaproveitado(sobra.getReaproveitado());
+            dto.setStatusFaixa(sobra.getStatusFaixa());
+            dto.setMensagemRecomendacao(sobra.getMensagem());
         }
 
         return dto;

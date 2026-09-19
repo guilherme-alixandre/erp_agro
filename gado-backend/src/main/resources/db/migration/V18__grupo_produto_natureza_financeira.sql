@@ -2,6 +2,12 @@
 -- vendidos) ou GASTO (não gera retorno direto).
 
 ALTER TABLE grupo_produto
+    ADD COLUMN IF NOT EXISTS categoria_grupo VARCHAR(20) NOT NULL DEFAULT 'OUTROS';
+
+ALTER TABLE grupo_produto
+    ALTER COLUMN categoria_grupo DROP DEFAULT;
+
+ALTER TABLE grupo_produto
     ADD COLUMN IF NOT EXISTS natureza_financeira VARCHAR(20) NOT NULL DEFAULT 'GASTO';
 
 ALTER TABLE grupo_produto

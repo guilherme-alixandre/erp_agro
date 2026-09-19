@@ -62,6 +62,10 @@ function reativarInsumoEstoque(id, email) {
   return request(`/insumos/estoque/${id}/reativar`, { method: 'PUT', headers: usuarioHeaders(email) })
 }
 
+function excluirDefinitivamenteInsumoEstoque(id, email) {
+  return request(`/insumos/estoque/${id}/definitivo`, { method: 'DELETE', headers: usuarioHeaders(email) })
+}
+
 async function cadastrarInsumoEstoque(email, formData) {
   const body = {
     nome: sanitizeText(formData.nome),
@@ -124,4 +128,5 @@ export {
   registrarEntradaEstoque,
   inativarInsumoEstoque,
   reativarInsumoEstoque,
+  excluirDefinitivamenteInsumoEstoque,
 }

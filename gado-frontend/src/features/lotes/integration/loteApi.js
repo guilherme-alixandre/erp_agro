@@ -186,9 +186,19 @@ async function buscarCustoRacaoLote(loteId) {
   }
 }
 
+async function buscarPerdasAlimentacaoLote(loteId) {
+  const payload = await request(`/lotes/${loteId}/perdas-alimentacao`)
+  return {
+    loteId: payload?.loteId ?? loteId,
+    valorTotalPerdido: payload?.valorTotalPerdido ?? 0,
+    valorPerdidoPorAnimal: payload?.valorPerdidoPorAnimal ?? 0,
+  }
+}
+
 export {
   atualizarLote,
   buscarCustoRacaoLote,
+  buscarPerdasAlimentacaoLote,
   cadastrarLote,
   deletarLote,
   exportarLotesCSV,

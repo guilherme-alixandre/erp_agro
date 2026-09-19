@@ -4,6 +4,7 @@ import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
 import br.com.gado.dto.loteDto.LotePutDto;
+import br.com.gado.dto.loteDto.PerdaAlimentacaoLoteDto;
 import br.com.gado.dto.loteDto.TransferenciaAnimalDto;
 import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SLote;
@@ -45,6 +46,11 @@ public class CLote {
     @GetMapping("/{id}/custo-racao")
     public CustoRacaoLoteDto getCustoRacao(@PathVariable Long id) {
         return loteService.calcularCustoRacaoAcumulado(id);
+    }
+
+    @GetMapping("/{id}/perdas-alimentacao")
+    public PerdaAlimentacaoLoteDto getPerdasAlimentacao(@PathVariable Long id) {
+        return loteService.calcularPerdaAlimentacaoAcumulada(id);
     }
 
     @GetMapping

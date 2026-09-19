@@ -6,6 +6,7 @@ import br.com.gado.dto.grupoProdutoDto.GrupoProdutoRespostaDto;
 import br.com.gado.entities.EGrupoProduto;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IGrupoProduto;
+import br.com.gado.repositories.IInsumo;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,9 @@ public class SGrupoProduto {
 
     @Autowired
     private IGrupoProduto grupoProdutoInterface;
+
+    @Autowired
+    private IInsumo insumoInterface;
 
     /**
      * Lista grupos de produto (ativos e inativos, para permitir reativação).
@@ -73,6 +77,7 @@ public class SGrupoProduto {
         EGrupoProduto grupo = new EGrupoProduto();
         grupo.setNome(nome);
         grupo.setCodigoPrefixo(prefixo);
+        grupo.setCategoriaGrupo(dto.getCategoriaGrupo());
         grupo.setNaturezaFinanceira(dto.getNaturezaFinanceira());
 
         return toRespostaDto(grupoProdutoInterface.save(grupo));
@@ -103,7 +108,16 @@ public class SGrupoProduto {
                     .ifPresent(existente -> {
                         throw new IllegalArgumentException("Já existe um grupo de produto com esse prefixo.");
                     });
+            if (!prefixo.equals(grupo.getCodigoPrefixo()) && insumoInterface.existsByGrupoProdutoId(id)) {
+                throw new IllegalArgumentException(
+                        "Não é possível alterar o prefixo do grupo enquanto houver produtos vinculados a ele, "
+                                + "mesmo inativos. Exclua definitivamente os produtos vinculados antes de trocar o prefixo.");
+            }
             grupo.setCodigoPrefixo(prefixo);
+        }
+
+        if (dto.getCategoriaGrupo() != null) {
+            grupo.setCategoriaGrupo(dto.getCategoriaGrupo());
         }
 
         if (dto.getNaturezaFinanceira() != null) {
@@ -137,6 +151,7 @@ public class SGrupoProduto {
         dto.setId(grupo.getId());
         dto.setNome(grupo.getNome());
         dto.setCodigoPrefixo(grupo.getCodigoPrefixo());
+        dto.setCategoriaGrupo(grupo.getCategoriaGrupo());
         dto.setNaturezaFinanceira(grupo.getNaturezaFinanceira());
         dto.setStatus(grupo.getStatus());
         return dto;

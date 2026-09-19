@@ -1,6 +1,7 @@
 package br.com.gado.dto.grupoProdutoDto;
 
 import br.com.gado.enums.EnNaturezaFinanceira;
+import br.com.gado.enums.EnTipoInsumo;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
@@ -15,6 +16,8 @@ public class GrupoProdutoPutDto {
 
     @Pattern(regexp = "\\d{2}", message = "O prefixo deve conter exatamente 2 dígitos numéricos.")
     private String codigoPrefixo;
+
+    private EnTipoInsumo categoriaGrupo;
 
     private EnNaturezaFinanceira naturezaFinanceira;
 }

@@ -331,30 +331,35 @@ public class DataInitializer implements CommandLineRunner {
         EGrupoProduto grupoRacao = new EGrupoProduto();
         grupoRacao.setNome("Ração");
         grupoRacao.setCodigoPrefixo("03");
+        grupoRacao.setCategoriaGrupo(EnTipoInsumo.RACAO);
         grupoRacao.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         grupoRacao = iGrupoProduto.save(grupoRacao);
 
         EGrupoProduto grupoOrigemAnimal = new EGrupoProduto();
-        grupoOrigemAnimal.setNome("Origem Animal (Leite, etc)");
+        grupoOrigemAnimal.setNome("Origem Animal");
         grupoOrigemAnimal.setCodigoPrefixo("04");
+        grupoOrigemAnimal.setCategoriaGrupo(EnTipoInsumo.OUTROS);
         grupoOrigemAnimal.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         grupoOrigemAnimal = iGrupoProduto.save(grupoOrigemAnimal);
 
         EGrupoProduto grupoManutencao = new EGrupoProduto();
         grupoManutencao.setNome("Manutenção");
         grupoManutencao.setCodigoPrefixo("05");
+        grupoManutencao.setCategoriaGrupo(EnTipoInsumo.OUTROS);
         grupoManutencao.setNaturezaFinanceira(EnNaturezaFinanceira.GASTO);
         grupoManutencao = iGrupoProduto.save(grupoManutencao);
 
         EGrupoProduto grupoPlantacoes = new EGrupoProduto();
         grupoPlantacoes.setNome("Plantações");
         grupoPlantacoes.setCodigoPrefixo("06");
+        grupoPlantacoes.setCategoriaGrupo(EnTipoInsumo.OUTROS);
         grupoPlantacoes.setNaturezaFinanceira(EnNaturezaFinanceira.CUSTO);
         grupoPlantacoes = iGrupoProduto.save(grupoPlantacoes);
 
         EGrupoProduto grupoInsumosGerais = new EGrupoProduto();
         grupoInsumosGerais.setNome("Insumos Gerais");
         grupoInsumosGerais.setCodigoPrefixo("07");
+        grupoInsumosGerais.setCategoriaGrupo(EnTipoInsumo.OUTROS);
         grupoInsumosGerais.setNaturezaFinanceira(EnNaturezaFinanceira.GASTO);
         grupoInsumosGerais = iGrupoProduto.save(grupoInsumosGerais);
 

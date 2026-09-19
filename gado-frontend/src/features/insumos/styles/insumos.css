@@ -71,6 +71,32 @@
 
 /* ── Alimentar Setores / Consumo de Estoque / Vacinar Animais (lista + modal) ─ */
 
+.sobra-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sobra-badge--ok {
+  background: rgba(20, 115, 60, 0.12);
+  color: var(--color-success-text);
+}
+
+.sobra-badge--alerta {
+  background: rgba(168, 95, 0, 0.14);
+  color: var(--color-warning);
+}
+
+.sobra-badge--perda {
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--color-danger-text);
+}
+
 .insumos-tab-content {
   margin-top: 18px;
 }

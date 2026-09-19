@@ -135,6 +135,24 @@ public class SInsumo {
         return "Produto reativado com sucesso.";
     }
 
+    /**
+     * Exclusão definitiva (hard delete) — exige que o produto já esteja inativo.
+     * Necessária para liberar a troca de prefixo do grupo de produto ao qual o
+     * insumo pertence (regra: nenhum produto, nem inativo, pode continuar vinculado).
+     */
+    @Transactional
+    public String excluirDefinitivamenteInsumo(Long id, String emailUsuario) {
+        validaGestaoEstoque(emailUsuario);
+        EInsumo insumo = insumoInterface.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Insumo não encontrado."));
+        if (insumo.getStatus() != EnStatus.I) {
+            throw new IllegalArgumentException(
+                    "Apenas produtos inativos podem ser excluídos definitivamente. Inative o produto primeiro.");
+        }
+        insumoInterface.delete(insumo);
+        return "Produto excluído definitivamente com sucesso.";
+    }
+
     @Transactional
     public InsumoEstoqueRespostaDto buscarEstoquePorId(Long id) {
         EInsumo insumo = insumoInterface.findByIdAndStatus(id, EnStatus.A)

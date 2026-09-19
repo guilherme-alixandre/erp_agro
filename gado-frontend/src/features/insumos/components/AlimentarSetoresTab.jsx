@@ -4,10 +4,14 @@ import {
   listarConsumoPorSetor,
   registrarConsumo,
   editarConsumo,
+  excluirConsumo,
+  registrarSobraConsumo,
+  excluirSobraConsumo,
   resumoPorSetorEPeriodo,
 } from '../integration/consumoInsumoApi'
 import RegistrarConsumoInsumoModal from './RegistrarConsumoInsumoModal'
 import EditarConsumoInsumoModal from './EditarConsumoInsumoModal'
+import SobraConsumoModal from './SobraConsumoModal'
 import { formatarData, formatarDataHora } from '../../../utils/formatters'
 
 const defaultForm = {
@@ -18,10 +22,30 @@ const defaultForm = {
   dataConsumo: '',
 }
 
+const defaultSobraForm = {
+  quantidade: '',
+  unidadeMedidaId: '',
+  reaproveitado: 'true',
+}
+
+const SOBRA_BADGE_CLASS = {
+  OK: 'sobra-badge sobra-badge--ok',
+  ABAIXO: 'sobra-badge sobra-badge--alerta',
+  ACIMA: 'sobra-badge sobra-badge--alerta',
+  PERDA: 'sobra-badge sobra-badge--perda',
+}
+
+const SOBRA_BADGE_LABEL = {
+  OK: 'OK',
+  ABAIXO: 'Abaixo',
+  ACIMA: 'Acima',
+  PERDA: 'Perda',
+}
+
 const PERFIS_EDICAO_LIVRE = ['ADMINISTRADOR', 'GERENTE']
 
 // Cabeças de animal só saem por venda no Financeiro, e vacinas só pela página "Vacinar Animais".
-const TIPOS_NAO_CONSUMIVEIS = new Set(['ANIMAL', 'VACINA'])
+//const TIPOS_NAO_CONSUMIVEIS = new Set(['ANIMAL', 'VACINA'])
 
 function agoraDatetimeLocal() {
   const now = new Date()
@@ -53,6 +77,11 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   const [editForm, setEditForm] = useState(null)
   const [editFeedback, setEditFeedback] = useState('')
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [sobraModal, setSobraModal] = useState(null)
+  const [sobraForm, setSobraForm] = useState(defaultSobraForm)
+  const [sobraFeedback, setSobraFeedback] = useState('')
+  const [sobraResultado, setSobraResultado] = useState(null)
+  const [isSavingSobra, setIsSavingSobra] = useState(false)
   const [resumoAberto, setResumoAberto] = useState(false)
   const [resumo, setResumo] = useState([])
   const [isLoadingResumo, setIsLoadingResumo] = useState(false)
@@ -67,7 +96,7 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
   }, [])
 
   const insumosConsumiveis = useMemo(
-    () => insumosEstoque.filter((i) => !TIPOS_NAO_CONSUMIVEIS.has(i.tipo)),
+    () => insumosEstoque.filter((i) => i.tipo === "RACAO"),
     [insumosEstoque],
   )
 
@@ -135,6 +164,72 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
       setEditFeedback(error.message || 'Falha ao salvar a edição.')
     } finally {
       setIsSavingEdit(false)
+    }
+  }
+
+  async function handleExcluirConsumo(consumo) {
+    const confirmar = window.confirm(
+      `Deseja excluir esta alimentação de "${consumo.insumoNome}"? A quantidade aplicada volta ao estoque e qualquer sobra/perda associada também é removida.`,
+    )
+    if (!confirmar) return
+    setFeedback({ type: '', message: '' })
+    try {
+      await excluirConsumo(consumo.id, currentUser.email)
+      setFeedback({ type: 'info', message: 'Alimentação excluída com sucesso.' })
+      await fetchHistorico(filtroSetorId, filtroDataInicio, filtroDataFim)
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao excluir a alimentação.' })
+    }
+  }
+
+  function insumoDoConsumo(consumo) {
+    return insumosEstoque.find((i) => String(i.id) === String(consumo.insumoId)) ?? null
+  }
+
+  function abrirSobra(consumo) {
+    setSobraModal(consumo)
+    setSobraForm(defaultSobraForm)
+    setSobraFeedback('')
+    setSobraResultado(null)
+  }
+
+  function fecharSobra() {
+    setSobraModal(null)
+    setSobraForm(defaultSobraForm)
+    setSobraFeedback('')
+    setSobraResultado(null)
+  }
+
+  function handleSobraChange(event) {
+    const { name, value } = event.target
+    setSobraForm((current) => ({ ...current, [name]: value }))
+  }
+
+  async function handleSubmitSobra(event) {
+    event.preventDefault()
+    setIsSavingSobra(true)
+    setSobraFeedback('')
+    try {
+      const resultado = await registrarSobraConsumo(sobraModal.id, currentUser.email, sobraForm)
+      setSobraResultado(resultado)
+      await fetchHistorico(filtroSetorId, filtroDataInicio, filtroDataFim)
+    } catch (error) {
+      setSobraFeedback(error.message || 'Falha ao registrar a sobra.')
+    } finally {
+      setIsSavingSobra(false)
+    }
+  }
+
+  async function handleExcluirSobra(consumo) {
+    const confirmar = window.confirm('Deseja excluir a sobra registrada para esta alimentação?')
+    if (!confirmar) return
+    setFeedback({ type: '', message: '' })
+    try {
+      await excluirSobraConsumo(consumo.id, currentUser.email)
+      setFeedback({ type: 'info', message: 'Sobra excluída com sucesso.' })
+      await fetchHistorico(filtroSetorId, filtroDataInicio, filtroDataFim)
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao excluir a sobra.' })
     }
   }
 
@@ -272,21 +367,22 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
               <th>Animais</th>
               <th>Por animal</th>
               <th>Registrado por</th>
+              <th>Sobra</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {!filtroSetorId ? (
               <tr>
-                <td colSpan={7} className="table-empty">Selecione um setor para ver o histórico.</td>
+                <td colSpan={8} className="table-empty">Selecione um setor para ver o histórico.</td>
               </tr>
             ) : isLoadingHistorico ? (
               <tr>
-                <td colSpan={7} className="table-loading">Carregando...</td>
+                <td colSpan={8} className="table-loading">Carregando...</td>
               </tr>
             ) : historico.length === 0 ? (
               <tr>
-                <td colSpan={7} className="table-empty">Nenhum consumo registrado neste setor.</td>
+                <td colSpan={8} className="table-empty">Nenhum consumo registrado neste setor.</td>
               </tr>
             ) : (
               historico.map((c) => (
@@ -304,13 +400,49 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
                   </td>
                   <td>{c.registradoPorNome || c.registradoPorEmail || '—'}</td>
                   <td>
-                    {podeEditar(c) ? (
-                      <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
-                        Editar
-                      </button>
+                    {c.sobraRegistrada ? (
+                      <span
+                        className={SOBRA_BADGE_CLASS[c.statusFaixa] ?? 'sobra-badge'}
+                        title={c.mensagemRecomendacao}
+                      >
+                        {SOBRA_BADGE_LABEL[c.statusFaixa] ?? c.statusFaixa}
+                        {c.percentualSobra != null ? ` (${c.percentualSobra.toFixed(1)}%)` : ''}
+                      </span>
                     ) : (
                       '—'
                     )}
+                  </td>
+                  <td>
+                    <div className="row-actions">
+                      {podeEditar(c) ? (
+                        <>
+                          <button type="button" className="btn-row btn-row--edit" onClick={() => abrirEdicao(c)}>
+                            Editar
+                          </button>
+                          <button type="button" className="btn-row" onClick={() => abrirSobra(c)}>
+                            {c.sobraRegistrada ? 'Editar Sobra' : 'Sobras'}
+                          </button>
+                          {c.sobraRegistrada ? (
+                            <button
+                              type="button"
+                              className="btn-row btn-row--danger"
+                              onClick={() => handleExcluirSobra(c)}
+                            >
+                              Excluir Sobra
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="btn-row btn-row--danger"
+                            onClick={() => handleExcluirConsumo(c)}
+                          >
+                            Excluir
+                          </button>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -343,6 +475,20 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
           onClose={fecharEdicao}
           onChange={handleEditChange}
           onSubmit={handleSubmitEdicao}
+        />
+      ) : null}
+
+      {sobraModal ? (
+        <SobraConsumoModal
+          consumo={sobraModal}
+          insumoSelecionado={insumoDoConsumo(sobraModal)}
+          formData={sobraForm}
+          isSaving={isSavingSobra}
+          feedback={sobraFeedback}
+          resultado={sobraResultado}
+          onClose={fecharSobra}
+          onChange={handleSobraChange}
+          onSubmit={handleSubmitSobra}
         />
       ) : null}
 

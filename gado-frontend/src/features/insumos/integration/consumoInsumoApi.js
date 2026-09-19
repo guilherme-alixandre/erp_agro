@@ -22,6 +22,26 @@ function normalizeConsumo(raw) {
     dataConsumo: raw?.dataConsumo ?? null,
     registradoPorEmail: raw?.registradoPorEmail ?? '',
     registradoPorNome: raw?.registradoPorNome ?? '',
+    sobraRegistrada: raw?.sobraRegistrada === true,
+    percentualSobra: raw?.percentualSobra ?? null,
+    reaproveitado: raw?.reaproveitado ?? null,
+    statusFaixa: raw?.statusFaixa ?? null,
+    mensagemRecomendacao: raw?.mensagemRecomendacao ?? '',
+  }
+}
+
+function normalizeSobra(raw) {
+  return {
+    consumoInsumoId: raw?.consumoInsumoId ?? null,
+    quantidadeSobraRegistrada: raw?.quantidadeSobraRegistrada ?? 0,
+    unidadeRegistroSigla: raw?.unidadeRegistroSigla ?? '',
+    quantidadeSobraUnidadePrimaria: raw?.quantidadeSobraUnidadePrimaria ?? 0,
+    unidadeMedidaPrimariaSigla: raw?.unidadeMedidaPrimariaSigla ?? '',
+    percentualSobra: raw?.percentualSobra ?? 0,
+    reaproveitado: raw?.reaproveitado ?? null,
+    statusFaixa: raw?.statusFaixa ?? null,
+    quantidadeAjusteRecomendada: raw?.quantidadeAjusteRecomendada ?? null,
+    mensagem: raw?.mensagem ?? '',
   }
 }
 
@@ -67,6 +87,28 @@ async function editarConsumo(id, email, formData) {
   return normalizeConsumo(payload)
 }
 
+function excluirConsumo(id, email) {
+  return request(`/consumos-insumo/${id}`, { method: 'DELETE', headers: usuarioHeaders(email) })
+}
+
+async function registrarSobraConsumo(id, email, formData) {
+  const body = {
+    quantidade: Number(formData.quantidade),
+    unidadeMedidaId: formData.unidadeMedidaId ? Number(formData.unidadeMedidaId) : null,
+    reaproveitado: formData.reaproveitado === 'true' || formData.reaproveitado === true,
+  }
+  const payload = await request(`/consumos-insumo/${id}/sobra`, {
+    method: 'PUT',
+    headers: usuarioHeaders(email),
+    body: JSON.stringify(body),
+  })
+  return normalizeSobra(payload)
+}
+
+function excluirSobraConsumo(id, email) {
+  return request(`/consumos-insumo/${id}/sobra`, { method: 'DELETE', headers: usuarioHeaders(email) })
+}
+
 async function resumoPorSetorEPeriodo(setorId, dataInicio, dataFim) {
   const params = new URLSearchParams({ setorId: String(setorId), dataInicio, dataFim })
   const payload = await request(`/consumos-insumo/resumo?${params.toString()}`)
@@ -81,4 +123,12 @@ async function resumoPorSetorEPeriodo(setorId, dataInicio, dataFim) {
   }))
 }
 
-export { registrarConsumo, listarConsumoPorSetor, editarConsumo, resumoPorSetorEPeriodo }
+export {
+  registrarConsumo,
+  listarConsumoPorSetor,
+  editarConsumo,
+  excluirConsumo,
+  registrarSobraConsumo,
+  excluirSobraConsumo,
+  resumoPorSetorEPeriodo,
+}

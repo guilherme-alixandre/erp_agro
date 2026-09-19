@@ -65,6 +65,29 @@ function GrupoProdutoFormModal({
           </p>
 
           <label>
+            <RequiredLabel>Categoria do Grupo</RequiredLabel>
+            <select
+                name="categoriaGrupo"
+                value={formData.categoriaGrupo}
+                onChange={onChange}
+                required
+            >
+              <option value="" disabled>
+                Selecione...
+              </option>
+              <option value="RACAO">Ração</option>
+              <option value="VACINA">Vacina</option>
+              <option value="MEDICAMENTO">Medicamento</option>
+              <option value="OUTROS">Outros</option>
+              <option value="ANIMAL">Animal</option>
+            </select>
+          </label>
+          <p className="form-help">
+            Define onde o grupo se enquadra no seu uso do dia a dia, isso influencia na maneira como ele
+            pode ser usado no sistema.
+          </p>
+
+          <label>
             <RequiredLabel>Natureza financeira</RequiredLabel>
             <select
               name="naturezaFinanceira"

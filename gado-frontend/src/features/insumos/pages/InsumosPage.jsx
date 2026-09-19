@@ -15,6 +15,7 @@ import {
   registrarEntradaEstoque,
   inativarInsumoEstoque,
   reativarInsumoEstoque,
+  excluirDefinitivamenteInsumoEstoque,
 } from '../integration/insumoApi'
 import {
   listarUnidadesMedida,
@@ -52,6 +53,7 @@ const defaultGrupoForm = {
   id: null,
   nome: '',
   codigoPrefixo: '',
+  categoriaGrupo: '',
   naturezaFinanceira: '',
 }
 
@@ -162,6 +164,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       id: grupo.id,
       nome: grupo.nome,
       codigoPrefixo: grupo.codigoPrefixo,
+      categoriaGrupo: grupo.categoriaGrupo ?? '',
       naturezaFinanceira: grupo.naturezaFinanceira,
     })
     setGrupoModal({ open: true, grupo })
@@ -453,6 +456,21 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
       await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
     } catch (error) {
       setEstoqueFeedback({ type: 'error', message: error.message || 'Falha ao reativar o produto.' })
+    }
+  }
+
+  async function handleExcluirDefinitivamenteProduto(insumo) {
+    const confirmar = window.confirm(
+      `Deseja excluir definitivamente o produto "${insumo.nome}"? Esta ação não pode ser desfeita.`,
+    )
+    if (!confirmar) return
+    setEstoqueFeedback({ type: '', message: '' })
+    try {
+      await excluirDefinitivamenteInsumoEstoque(insumo.id, currentUser.email)
+      setEstoqueFeedback({ type: 'info', message: 'Produto excluído definitivamente com sucesso.' })
+      await fetchEstoque(estoqueActiveSearch, estoqueStatusFiltro)
+    } catch (error) {
+      setEstoqueFeedback({ type: 'error', message: error.message || 'Falha ao excluir o produto.' })
     }
   }
 
@@ -794,13 +812,22 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                           <div className="row-actions">
                             {canGerenciarEstoque ? (
                               insumo.status === 'INATIVO' ? (
-                                <button
-                                  type="button"
-                                  className="btn-row"
-                                  onClick={() => handleReativarProduto(insumo)}
-                                >
-                                  Reativar
-                                </button>
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-row"
+                                    onClick={() => handleReativarProduto(insumo)}
+                                  >
+                                    Reativar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-row btn-row--danger"
+                                    onClick={() => handleExcluirDefinitivamenteProduto(insumo)}
+                                  >
+                                    Excluir definitivamente
+                                  </button>
+                                </>
                               ) : (
                                 <>
                                   <button
@@ -929,6 +956,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                   <tr>
                     <th>Prefixo</th>
                     <th>Nome</th>
+                    <th>Categoria</th>
                     <th>Natureza</th>
                     <th>Ações</th>
                   </tr>
@@ -956,6 +984,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                             <span className="setor-badge setor-badge--inativo estoque-badge">Inativo</span>
                           ) : null}
                         </td>
+                        <td>{TIPO_INSUMO_LABELS[grupo.categoriaGrupo] ?? 'Não informado'}</td>
                         <td>{grupo.naturezaFinanceira === 'CUSTO' ? 'Custo' : 'Gasto'}</td>
                         <td>
                           <div className="row-actions">

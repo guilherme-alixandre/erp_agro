@@ -1,6 +1,7 @@
 package br.com.gado.dto.grupoProdutoDto;
 
 import br.com.gado.enums.EnNaturezaFinanceira;
+import br.com.gado.enums.EnTipoInsumo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -15,6 +16,9 @@ public class GrupoProdutoCadastroDto {
     @NotBlank(message = "O prefixo do grupo é obrigatório.")
     @Pattern(regexp = "\\d{2}", message = "O prefixo deve conter exatamente 2 dígitos numéricos.")
     private String codigoPrefixo;
+
+    @NotBlank(message = "A categoria do grupo é obrigatoria")
+    private EnTipoInsumo categoriaGrupo;
 
     @NotNull(message = "A natureza financeira do grupo é obrigatória.")
     private EnNaturezaFinanceira naturezaFinanceira;

@@ -1,7 +1,7 @@
 -- Garante (idempotente) o Grupo de Produto "Animais" e a unidade de medida "CABECA" fora do
 -- ambiente de dev (hoje só existiam via DataInitializer, que só roda com o banco vazio).
-INSERT INTO grupo_produto (status, created_at, updated_at, nome, codigo_prefixo, natureza_financeira)
-SELECT 'A', NOW(), NOW(), 'Animais', '01', 'CUSTO'
+INSERT INTO grupo_produto (status, created_at, updated_at, nome, codigo_prefixo, categoria_grupo, natureza_financeira)
+SELECT 'A', NOW(), NOW(), 'Animais', '01', 'ANIMAL' , 'CUSTO'
 WHERE NOT EXISTS (SELECT 1 FROM grupo_produto WHERE nome = 'Animais');
 
 INSERT INTO unidade_medida (status, created_at, updated_at, unidade)
@@ -31,3 +31,4 @@ ALTER TABLE animal ADD CONSTRAINT fk_animal_raca FOREIGN KEY (raca_id) REFERENCE
 ALTER TABLE animal DROP COLUMN IF EXISTS raca;
 ALTER TABLE animal DROP COLUMN IF EXISTS nome;
 ALTER TABLE animal ADD CONSTRAINT uq_animal_codigo_brinco UNIQUE (codigo_brinco);
+

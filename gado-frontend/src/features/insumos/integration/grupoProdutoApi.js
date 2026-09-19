@@ -11,6 +11,7 @@ function normalizeGrupoProduto(raw) {
     id: raw?.id ?? null,
     nome: raw?.nome ?? '',
     codigoPrefixo: raw?.codigoPrefixo ?? '',
+    categoriaGrupo: raw?.categoriaGrupo ?? '',
     naturezaFinanceira: raw?.naturezaFinanceira ?? '',
     status,
   }
@@ -25,12 +26,17 @@ function toPayload(formData) {
     throw new Error('O prefixo deve conter exatamente 2 dígitos numéricos.')
   }
 
+  const categoriaGrupo = sanitize(formData.categoriaGrupo)
+  if (!['RACAO', 'VACINA', 'MEDICAMENTO', 'OUTROS', 'ANIMAL'].includes(categoriaGrupo)) {
+    throw new Error('Selecione a categoria do grupo.')
+  }
+
   const naturezaFinanceira = sanitize(formData.naturezaFinanceira)
   if (!['CUSTO', 'GASTO'].includes(naturezaFinanceira)) {
     throw new Error('Selecione a natureza financeira do grupo (Custo ou Gasto).')
   }
 
-  return { nome, codigoPrefixo, naturezaFinanceira }
+  return { nome, codigoPrefixo, categoriaGrupo, naturezaFinanceira }
 }
 
 async function listarGruposProduto(termo, statusFiltro) {

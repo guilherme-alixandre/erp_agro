@@ -1,5 +1,6 @@
 package br.com.gado.dto.consumoInsumoDto;
 
+import br.com.gado.enums.EnStatusSobra;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -28,4 +29,10 @@ public class ConsumoInsumoRespostaDto {
     private LocalDateTime dataConsumo;
     private String registradoPorEmail;
     private String registradoPorNome;
+
+    private Boolean sobraRegistrada;
+    private Double percentualSobra;
+    private Boolean reaproveitado;
+    private EnStatusSobra statusFaixa;
+    private String mensagemRecomendacao;
 }

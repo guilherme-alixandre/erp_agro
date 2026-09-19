@@ -9,5 +9,6 @@ public enum EnOrigemLancamentoFinanceiro {
     FOLHA_PAGAMENTO,
     CONSUMO_ESTOQUE,
     VENDA,
-    MANUAL
+    MANUAL,
+    PERDA_ALIMENTACAO
 }

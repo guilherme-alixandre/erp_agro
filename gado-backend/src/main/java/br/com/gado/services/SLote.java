@@ -6,12 +6,14 @@ import br.com.gado.dto.loteDto.LoteDto;
 import br.com.gado.dto.loteDto.LotePutDto;
 import br.com.gado.dto.loteDto.LoteSetorCadastroDto;
 import br.com.gado.dto.loteDto.LoteSetorRespostaDto;
+import br.com.gado.dto.loteDto.PerdaAlimentacaoLoteDto;
 import br.com.gado.dto.loteDto.TransferenciaAnimalDto;
 import br.com.gado.entities.EAnimal;
 import br.com.gado.entities.EConsumoInsumo;
 import br.com.gado.entities.ELote;
 import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
+import br.com.gado.entities.ESobraAlimentacao;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
@@ -21,6 +23,7 @@ import br.com.gado.repositories.IConsumoInsumo;
 import br.com.gado.repositories.ILote;
 import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.ISetor;
+import br.com.gado.repositories.ISobraAlimentacao;
 import br.com.gado.repositories.IUsuario;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -33,6 +36,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -60,6 +64,9 @@ public class SLote {
 
     @Autowired
     private IConsumoInsumo consumoInsumoInterface;
+
+    @Autowired
+    private ISobraAlimentacao sobraAlimentacaoInterface;
 
     // ── Controle de acesso ───────────────────────────────────────────────
 
@@ -408,6 +415,51 @@ public class SLote {
                 : BigDecimal.ZERO;
 
         return new CustoRacaoLoteDto(loteId, custoTotal, custoPorAnimal);
+    }
+
+    // ── Perdas de alimentação acumuladas (informativo, ver PerdaAlimentacaoLoteDto) ─────
+
+    public PerdaAlimentacaoLoteDto calcularPerdaAlimentacaoAcumulada(Long loteId) {
+        ELote lote = loteInterface.findByIdAndStatus(loteId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum lote ativo encontrado para o ID: " + loteId));
+
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_Id(lote.getId());
+        BigDecimal valorTotal = BigDecimal.ZERO;
+
+        for (ELoteSetor alocacao : alocacoes) {
+            int animaisDoLoteNoSetor = alocacao.getAnimais().size();
+            if (animaisDoLoteNoSetor == 0) continue;
+
+            List<EConsumoInsumo> consumos = consumoInsumoInterface
+                    .findBySetor_IdAndStatusOrderByDataConsumoDesc(alocacao.getSetor().getId(), EnStatus.A);
+            if (consumos.isEmpty()) continue;
+
+            List<Long> consumoIds = consumos.stream().map(EConsumoInsumo::getId).collect(Collectors.toList());
+            Map<Long, ESobraAlimentacao> sobrasPorConsumoId = sobraAlimentacaoInterface
+                    .findByConsumoInsumo_IdIn(consumoIds).stream()
+                    .collect(Collectors.toMap(s -> s.getConsumoInsumo().getId(), s -> s));
+
+            for (EConsumoInsumo consumo : consumos) {
+                ESobraAlimentacao sobra = sobrasPorConsumoId.get(consumo.getId());
+                if (sobra == null || !Boolean.FALSE.equals(sobra.getReaproveitado())) continue;
+                if (consumo.getTotalAnimaisSetor() == null || consumo.getTotalAnimaisSetor() == 0) continue;
+
+                Double precoMedio = consumo.getInsumo().getPrecoCompraMedio();
+                if (precoMedio == null) continue;
+
+                double perdaPorAnimal = sobra.getQuantidadeSobraUnidadePrimaria() / consumo.getTotalAnimaisSetor();
+                double perdaDoLote = perdaPorAnimal * animaisDoLoteNoSetor;
+                valorTotal = valorTotal.add(BigDecimal.valueOf(perdaDoLote * precoMedio));
+            }
+        }
+
+        int totalAnimaisLote = alocacoes.stream().mapToInt(a -> a.getAnimais().size()).sum();
+        valorTotal = valorTotal.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal valorPorAnimal = totalAnimaisLote > 0
+                ? valorTotal.divide(BigDecimal.valueOf(totalAnimaisLote), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new PerdaAlimentacaoLoteDto(loteId, valorTotal, valorPorAnimal);
     }
 
     // ── Mapeamento para resposta ──────────────────────────────────────────

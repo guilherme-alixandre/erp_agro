@@ -4,8 +4,11 @@ import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoCadastroDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoEdicaoDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoResumoItemDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoRespostaDto;
+import br.com.gado.dto.consumoInsumoDto.SobraAlimentacaoCadastroDto;
+import br.com.gado.dto.consumoInsumoDto.SobraAlimentacaoRespostaDto;
 import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SConsumoInsumo;
+import br.com.gado.services.SSobraAlimentacao;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,6 +30,9 @@ public class CConsumoInsumo {
 
     @Autowired
     private SConsumoInsumo consumoInsumoService;
+
+    @Autowired
+    private SSobraAlimentacao sobraAlimentacaoService;
 
     @GetMapping
     public List<ConsumoInsumoRespostaDto> listarPorSetor(
@@ -55,5 +61,25 @@ public class CConsumoInsumo {
     @PutMapping("/{id}")
     public ResponseEntity<ConsumoInsumoRespostaDto> editarConsumo(@PathVariable Long id, @Valid @RequestBody ConsumoInsumoEdicaoDto dto) {
         return ResponseEntity.ok(consumoInsumoService.editarConsumo(id, dto, SecurityUtils.currentUserEmail()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluirConsumo(@PathVariable Long id) {
+        consumoInsumoService.excluirConsumo(id, SecurityUtils.currentUserEmail());
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Sobras de alimentação ────────────────────────────────────────────
+
+    @PutMapping("/{id}/sobra")
+    public SobraAlimentacaoRespostaDto registrarSobra(@PathVariable Long id,
+                                                        @Valid @RequestBody SobraAlimentacaoCadastroDto dto) {
+        return sobraAlimentacaoService.registrarOuAtualizarSobra(id, dto, SecurityUtils.currentUserEmail());
+    }
+
+    @DeleteMapping("/{id}/sobra")
+    public ResponseEntity<Void> excluirSobra(@PathVariable Long id) {
+        sobraAlimentacaoService.excluirSobra(id, SecurityUtils.currentUserEmail());
+        return ResponseEntity.noContent().build();
     }
 }

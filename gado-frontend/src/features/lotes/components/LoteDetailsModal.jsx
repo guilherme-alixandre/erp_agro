@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { buscarCustoRacaoLote } from '../integration/loteApi'
+import { buscarCustoRacaoLote, buscarPerdasAlimentacaoLote } from '../integration/loteApi'
 import { formatarData, formatarMoeda } from '../../../utils/formatters'
 
 function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   const [custoRacao, setCustoRacao] = useState(null)
+  const [perdasAlimentacao, setPerdasAlimentacao] = useState(null)
 
   useEffect(() => {
     let cancelado = false
@@ -13,6 +14,13 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
       })
       .catch(() => {
         if (!cancelado) setCustoRacao(null)
+      })
+    buscarPerdasAlimentacaoLote(lote.id)
+      .then((dados) => {
+        if (!cancelado) setPerdasAlimentacao(dados)
+      })
+      .catch(() => {
+        if (!cancelado) setPerdasAlimentacao(null)
       })
     return () => {
       cancelado = true
@@ -67,6 +75,18 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
               <div>
                 <dt>Custo de ração por animal</dt>
                 <dd>{formatarMoeda(custoRacao.custoPorAnimal)}</dd>
+              </div>
+            </>
+          ) : null}
+          {perdasAlimentacao && Number(perdasAlimentacao.valorTotalPerdido) > 0 ? (
+            <>
+              <div>
+                <dt>Perdas de alimentação</dt>
+                <dd>{formatarMoeda(perdasAlimentacao.valorTotalPerdido)}</dd>
+              </div>
+              <div>
+                <dt>Perda de alimentação por animal</dt>
+                <dd>{formatarMoeda(perdasAlimentacao.valorPerdidoPorAnimal)}</dd>
               </div>
             </>
           ) : null}

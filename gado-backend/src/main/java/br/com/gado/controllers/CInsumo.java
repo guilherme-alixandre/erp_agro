@@ -58,4 +58,9 @@ public class CInsumo {
     public String reativarInsumoEstoque(@PathVariable Long id) {
         return insumoService.reativarInsumo(id, SecurityUtils.currentUserEmail());
     }
+
+    @DeleteMapping("/estoque/{id}/definitivo")
+    public String deleteInsumoEstoqueDefinitivo(@PathVariable Long id) {
+        return insumoService.excluirDefinitivamenteInsumo(id, SecurityUtils.currentUserEmail());
+    }
 }

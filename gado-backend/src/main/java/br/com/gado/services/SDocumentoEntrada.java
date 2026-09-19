@@ -23,6 +23,7 @@ import br.com.gado.repositories.IDocumentoEntradaItem;
 import br.com.gado.repositories.IInsumo;
 import br.com.gado.repositories.IParceiro;
 import br.com.gado.repositories.IUsuario;
+import br.com.gado.util.NfeXmlParser;
 import br.com.gado.util.SenhaUtil;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -106,15 +106,12 @@ public class SDocumentoEntrada {
         return usuario;
     }
 
-    // ── Regra 1: Importação XML (mock inicial) ────────────────────────────
+    // ── Regra 1: Importação XML (parsing real — ver NfeXmlParser) ─────────
 
     /**
-     * Simula a extração de dados de um XML de NF-e e salva o documento. NF-e é um documento
-     * fiscal já validado pela SEFAZ, então nasce direto APROVADO (diferente do RECIBO_SIMPLES,
-     * que sempre nasce pendente) e já gera lançamento no razão financeiro.
-     *
-     * TODO: substituir simularExtracaoXml por um parser real do XML padrão nfeProc (JAXB contra
-     * o schema da NF-e), extraindo emitente por CNPJ, itens por NCM/EAN, impostos etc.
+     * Extrai os dados do XML da NF-e (padrão nfeProc/NFe, layout 4.00 — ver NfeXmlParser) e salva
+     * o documento. NF-e é um documento fiscal já validado pela SEFAZ, então nasce direto APROVADO
+     * (diferente do RECIBO_SIMPLES, que sempre nasce pendente) e já gera lançamento no razão financeiro.
      */
     @Transactional
     public DocumentoEntradaRespostaDto importarNfeXml(MultipartFile file, Long fornecedorId, String emailUsuarioLogado) throws IOException {
@@ -129,7 +126,7 @@ public class SDocumentoEntrada {
         EParceiro fornecedor = parceiroInterface.findById(fornecedorId)
                 .orElseThrow(() -> new IllegalArgumentException("Fornecedor não encontrado."));
 
-        DadosNfeExtraidos dados = simularExtracaoXml(file);
+        NfeXmlParser.DadosNfe dados = NfeXmlParser.parse(file.getBytes());
 
         if (documentoInterface.findByChaveAcessoNfe(dados.chaveAcesso).isPresent()) {
             throw new IllegalArgumentException("Esta NF-e já foi importada (chave de acesso duplicada).");
@@ -151,7 +148,7 @@ public class SDocumentoEntrada {
         documento.setAprovadoEm(LocalDateTime.now());
 
         List<EDocumentoEntradaItem> itens = new ArrayList<>();
-        for (ItemExtraido itemExtraido : dados.itens) {
+        for (NfeXmlParser.ItemNfe itemExtraido : dados.itens) {
             EDocumentoEntradaItem item = new EDocumentoEntradaItem();
             item.setDocumentoEntrada(documento);
             item.setDescricaoXml(itemExtraido.descricao);
@@ -194,45 +191,6 @@ public class SDocumentoEntrada {
 
         item.setEntradaEstoqueAplicada(true);
         itemInterface.save(item);
-    }
-
-    private DadosNfeExtraidos simularExtracaoXml(MultipartFile file) {
-        String chave = UUID.randomUUID().toString().replaceAll("[^0-9]", "");
-        chave = (chave + "00000000000000000000000000000000000000000000").substring(0, 44);
-
-        DadosNfeExtraidos dados = new DadosNfeExtraidos();
-        dados.numeroDocumento = "MOCK-" + System.currentTimeMillis();
-        dados.serie = "1";
-        dados.chaveAcesso = chave;
-        dados.dataEmissao = LocalDate.now();
-        dados.valorTotal = new BigDecimal("100.00");
-
-        ItemExtraido item = new ItemExtraido();
-        item.descricao = "Item extraído do XML (mock) - " + file.getOriginalFilename();
-        item.codigo = "MOCK";
-        item.quantidade = BigDecimal.ONE;
-        item.valorUnitario = new BigDecimal("100.00");
-        item.valorTotal = new BigDecimal("100.00");
-        dados.itens = List.of(item);
-
-        return dados;
-    }
-
-    private static final class DadosNfeExtraidos {
-        String numeroDocumento;
-        String serie;
-        String chaveAcesso;
-        LocalDate dataEmissao;
-        BigDecimal valorTotal;
-        List<ItemExtraido> itens;
-    }
-
-    private static final class ItemExtraido {
-        String descricao;
-        String codigo;
-        BigDecimal quantidade;
-        BigDecimal valorUnitario;
-        BigDecimal valorTotal;
     }
 
     // ── Cadastro manual de RECIBO_SIMPLES (nasce sempre PENDENTE) ─────────

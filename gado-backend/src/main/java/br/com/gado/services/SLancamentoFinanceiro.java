@@ -9,6 +9,7 @@ import br.com.gado.entities.EDocumentoEntradaItem;
 import br.com.gado.entities.EDocumentoSaida;
 import br.com.gado.entities.ELancamentoFinanceiro;
 import br.com.gado.entities.EPagamentoFuncionario;
+import br.com.gado.entities.ESobraAlimentacao;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.entities.EVendaAnimalItem;
 import br.com.gado.enums.EnNaturezaFinanceira;
@@ -119,6 +120,39 @@ public class SLancamentoFinanceiro {
             lancamentoInterface.findByOrigemAndOrigemId(EnOrigemLancamentoFinanceiro.CONSUMO_ESTOQUE, item.getId())
                     .ifPresent(lancamentoInterface::delete);
         }
+    }
+
+    /**
+     * Gera uma Saída Financeira real (upsert por origem+origemId) para uma sobra de alimentação
+     * NÃO reaproveitada. Diferente do consumo normal de ração (CONSUMO_ESTOQUE, excluído do DRE
+     * para não contar a compra em dobro — ver gerarResumoMensal), uma perda não gera nenhum
+     * retorno, então é classificada sempre como GASTO e conta como despesa real do mês. Chamado
+     * por SSobraAlimentacao sempre que uma sobra é registrada/atualizada como não reaproveitada.
+     */
+    @Transactional
+    void contabilizarPerdaAlimentacao(ESobraAlimentacao sobra) {
+        double precoUnitario = sobra.getConsumoInsumo().getInsumo().getPrecoCompraMedio() != null
+                ? sobra.getConsumoInsumo().getInsumo().getPrecoCompraMedio()
+                : 0.0;
+        BigDecimal valor = BigDecimal.valueOf(sobra.getQuantidadeSobraUnidadePrimaria())
+                .multiply(BigDecimal.valueOf(precoUnitario));
+
+        String descricao = String.format("Perda de alimentação: %s (%s)",
+                sobra.getConsumoInsumo().getInsumo().getNome(), sobra.getConsumoInsumo().getSetor().getNome());
+
+        registrar(EnTipoMovimentoFinanceiro.SAIDA, EnNaturezaFinanceira.GASTO,
+                EnOrigemLancamentoFinanceiro.PERDA_ALIMENTACAO, sobra.getId(), descricao, valor,
+                sobra.getDataRegistro().toLocalDate(), sobra.getRegistradoPorEmail(), true);
+    }
+
+    /**
+     * Reverte a Saída Financeira de uma perda de alimentação. Chamado por SSobraAlimentacao
+     * quando uma sobra deixa de ser "não reaproveitada" (editada para reaproveitada) ou é excluída.
+     */
+    @Transactional
+    void estornarPerdaAlimentacao(Long sobraId) {
+        lancamentoInterface.findByOrigemAndOrigemId(EnOrigemLancamentoFinanceiro.PERDA_ALIMENTACAO, sobraId)
+                .ifPresent(lancamentoInterface::delete);
     }
 
     /**
