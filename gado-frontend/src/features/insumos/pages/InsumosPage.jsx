@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import GrupoProdutoFormModal from '../components/GrupoProdutoFormModal'
 import UnidadeMedidaFormModal from '../components/UnidadeMedidaFormModal'
 import InsumoEstoqueFormModal from '../components/InsumoEstoqueFormModal'
@@ -8,6 +8,7 @@ import ConsumoEstoqueTab from '../components/ConsumoEstoqueTab'
 import VacinarAnimaisTab from '../components/VacinarAnimaisTab'
 import MovimentacoesTab from '../components/MovimentacoesTab'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
+import CategoriaDistribuicaoChart from '../../../components/shared/CategoriaDistribuicaoChart'
 import {
   listarEstoque,
   cadastrarInsumoEstoque,
@@ -374,9 +375,38 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
   const [isSavingEntrada, setIsSavingEntrada] = useState(false)
   const [estoqueStatusFiltro, setEstoqueStatusFiltro] = useState('ATIVO')
   const [estoquePage, setEstoquePage] = useState(0)
+  const [filterGrupo, setFilterGrupo] = useState('')
 
-  const totalEstoquePages = Math.max(1, Math.ceil(insumosEstoque.length / ROWS_PER_PAGE))
-  const paginatedInsumosEstoque = insumosEstoque.slice(
+  // Nº de produtos por grupo (exclui o grupo "Animais" via tipo === 'ANIMAL' — já coberto pelo
+  // gráfico de raças em Animais). Conta produtos, não soma saldoAtual: cada insumo tem uma
+  // unidade diferente (SACA, KG, DOSE, LITRO, UNIDADE), somar misturaria unidades distintas.
+  const insumoGrupoDistribuicao = useMemo(() => {
+    const contagem = new Map()
+    for (const insumo of insumosEstoque) {
+      if (insumo.tipo === 'ANIMAL') continue
+      const nome = insumo.grupoProdutoNome || 'Sem grupo'
+      contagem.set(nome, (contagem.get(nome) ?? 0) + 1)
+    }
+    return [...contagem.entries()]
+      .map(([nome, quantidade]) => ({ nome, quantidade }))
+      .sort((a, b) => b.quantidade - a.quantidade)
+  }, [insumosEstoque])
+
+  // Clique numa barra do gráfico "Insumos por grupo de produto" filtra a tabela abaixo por
+  // aquele grupo (localmente — não refaz a busca na API, pois insumosEstoque também alimenta
+  // o próprio gráfico). Clicar de novo no mesmo grupo limpa o filtro.
+  function handleGrupoBarClick(nome) {
+    setFilterGrupo((atual) => (atual === nome ? '' : nome))
+    setEstoquePage(0)
+  }
+
+  const filteredInsumosEstoque = useMemo(() => {
+    if (!filterGrupo) return insumosEstoque
+    return insumosEstoque.filter((i) => (i.grupoProdutoNome || 'Sem grupo') === filterGrupo)
+  }, [insumosEstoque, filterGrupo])
+
+  const totalEstoquePages = Math.max(1, Math.ceil(filteredInsumosEstoque.length / ROWS_PER_PAGE))
+  const paginatedInsumosEstoque = filteredInsumosEstoque.slice(
     estoquePage * ROWS_PER_PAGE,
     (estoquePage + 1) * ROWS_PER_PAGE,
   )
@@ -703,6 +733,30 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
 
         {activeTab === 'estoque' ? (
           <>
+            <div className="chart-card">
+              <h3>Insumos por grupo de produto</h3>
+              <CategoriaDistribuicaoChart
+                data={insumoGrupoDistribuicao}
+                unidadeLabel="produtos"
+                onBarClick={handleGrupoBarClick}
+                activeNome={filterGrupo}
+              />
+            </div>
+
+            {filterGrupo ? (
+              <p className="feedback feedback--info">
+                Filtrando por grupo: <strong>{filterGrupo}</strong>{' '}
+                <button
+                  type="button"
+                  className="toolbar-search__clear"
+                  onClick={() => setFilterGrupo('')}
+                  aria-label="Limpar filtro de grupo"
+                >
+                  ✕
+                </button>
+              </p>
+            ) : null}
+
             {estoqueFeedback.message ? (
               <p
                 className={`feedback ${estoqueFeedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}
@@ -768,10 +822,12 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
                     <tr>
                       <td colSpan={8} className="table-loading">Carregando...</td>
                     </tr>
-                  ) : insumosEstoque.length === 0 ? (
+                  ) : filteredInsumosEstoque.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="table-empty">
-                        {estoqueActiveSearch
+                        {filterGrupo
+                          ? `Nenhum produto no grupo "${filterGrupo}".`
+                          : estoqueActiveSearch
                           ? `Nenhum resultado para "${estoqueActiveSearch}".`
                           : canGerenciarEstoque
                             ? 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'
@@ -869,7 +925,7 @@ function InsumosPage({ currentUser, onNavigate, onLogout }) {
               <span className="pagination-info">
                 {isLoadingEstoque
                   ? ''
-                  : `${insumosEstoque.length} ${insumosEstoque.length === 1 ? 'registro' : 'registros'}`}
+                  : `${filteredInsumosEstoque.length} ${filteredInsumosEstoque.length === 1 ? 'registro' : 'registros'}`}
               </span>
               <div className="pagination-controls">
                 <button

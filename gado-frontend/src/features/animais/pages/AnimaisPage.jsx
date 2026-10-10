@@ -3,6 +3,7 @@ import AnimalFormModal from '../components/AnimalFormModal'
 import AnimalDetailsModal from '../components/AnimalDetailsModal'
 import RacaFormModal from '../components/RacaFormModal'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
+import CategoriaDistribuicaoChart from '../../../components/shared/CategoriaDistribuicaoChart'
 import {
     buscarAnimais,
     cadastrarAnimal,
@@ -36,6 +37,8 @@ const DEFAULT_FORM = {
     comprimentoCorporal: '',
     sexo: 'M',
     statusAnimal: 'ATIVO',
+    valorAquisicao: '',
+    dataAquisicao: '',
 }
 
 const DEFAULT_RACA_FORM = { id: null, nome: '', sigla: '' }
@@ -126,6 +129,7 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
     const [filterStatus, setFilterStatus] = useState('')
     const [dateFrom, setDateFrom] = useState('')
     const [dateTo, setDateTo] = useState('')
+    const [filterRaca, setFilterRaca] = useState('')
     const [page, setPage] = useState(0)
 
     // Estado: Carregamento
@@ -161,15 +165,39 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
     const cards = useMemo(() => animals.map(toCardAnimal), [animals])
 
+    // Animais fisicamente na fazenda hoje (exclui VENDIDO/OBITO/ABATIDO) agrupados por raça —
+    // deriva da própria lista de animais em vez de racas[].saldoAtual (proxy de estoque que
+    // não necessariamente reflete óbitos) para refletir a contagem real do rebanho atual.
+    const racaDistribuicao = useMemo(() => {
+        const contagem = new Map()
+        for (const animal of animals) {
+            if (animal.statusAnimal !== 'ATIVO' && animal.statusAnimal !== 'OBSERVACAO') continue
+            const nome = animal.racaNome || 'Sem raça'
+            contagem.set(nome, (contagem.get(nome) ?? 0) + 1)
+        }
+        return [...contagem.entries()]
+            .map(([nome, quantidade]) => ({ nome, quantidade }))
+            .sort((a, b) => b.quantidade - a.quantidade)
+    }, [animals])
+
     const filteredCards = useMemo(() => {
         return cards.filter((a) => {
             if (filterSexo && a.sexo !== filterSexo) return false
             if (filterStatus && a.statusAnimal !== filterStatus) return false
             if (dateFrom && a.dataNascimento && a.dataNascimento < dateFrom) return false
             if (dateTo && a.dataNascimento && a.dataNascimento > dateTo) return false
+            if (filterRaca && (a.racaNome || 'Sem raça') !== filterRaca) return false
             return true
         })
-    }, [cards, filterSexo, filterStatus, dateFrom, dateTo])
+    }, [cards, filterSexo, filterStatus, dateFrom, dateTo, filterRaca])
+
+    // Clique numa barra do gráfico "Animais por raça" filtra a tabela abaixo por aquela
+    // raça (sem refazer a busca na API — assim o próprio gráfico, que depende da lista
+    // completa de `animals`, não é afetado pelo filtro). Clicar de novo na mesma raça limpa.
+    function handleRacaBarClick(nome) {
+        setFilterRaca((atual) => (atual === nome ? '' : nome))
+        setPage(0)
+    }
 
     const totalPages = Math.max(1, Math.ceil(filteredCards.length / ROWS_PER_PAGE))
     const paginatedCards = filteredCards.slice(
@@ -555,6 +583,30 @@ function AnimaisPage({ currentUser, onNavigate, onLogout }) {
 
                 {activeTab === 'animais' ? (
                 <>
+                <div className="chart-card">
+                    <h3>Animais por raça</h3>
+                    <CategoriaDistribuicaoChart
+                        data={racaDistribuicao}
+                        unidadeLabel="animais"
+                        onBarClick={handleRacaBarClick}
+                        activeNome={filterRaca}
+                    />
+                </div>
+
+                {filterRaca ? (
+                    <p className="feedback feedback--info">
+                        Filtrando por raça: <strong>{filterRaca}</strong>{' '}
+                        <button
+                            type="button"
+                            className="toolbar-search__clear"
+                            onClick={() => setFilterRaca('')}
+                            aria-label="Limpar filtro de raça"
+                        >
+                            ✕
+                        </button>
+                    </p>
+                ) : null}
+
                 {/* Feedback */}
                 {feedback.message ? (
                     <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>

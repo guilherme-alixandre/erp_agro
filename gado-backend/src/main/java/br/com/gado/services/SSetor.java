@@ -117,7 +117,11 @@ public class SSetor {
             dto.setAlteradoPorEmail(setor.getAlteradoPor().getEmail());
         }
 
-        List<ELoteSetor> alocacoes = loteSetorInterface.findBySetor_Id(setor.getId());
+        // Ignora alocações de lotes já inativados (soft delete) — mesmo padrão usado em
+        // SConsumoInsumo.buscarAnimaisDoSetor, já que findBySetor_Id não filtra por status do lote.
+        List<ELoteSetor> alocacoes = loteSetorInterface.findBySetor_Id(setor.getId()).stream()
+                .filter(ls -> ls.getLote() != null && ls.getLote().getStatus() == EnStatus.A)
+                .collect(Collectors.toList());
         dto.setLotes(alocacoes.stream().map(ls -> {
             SetorDto.LoteResumoDto resumo = new SetorDto.LoteResumoDto();
             resumo.setLoteSectorId(ls.getId());

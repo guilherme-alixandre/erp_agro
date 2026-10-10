@@ -532,6 +532,52 @@ button.app-user__identity:hover {
   grid-column: 1 / -1;
 }
 
+/* ── Card de gráfico (Recharts) — compartilhado entre módulos ─────────────
+   Generalização de .financeiro-chart-card (ver financeiro.css) para uso fora
+   do módulo Financeiro, sem precisar importar seu CSS. */
+.chart-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 18px;
+}
+
+.chart-card h3 {
+  margin: 0 0 12px;
+}
+
+.chart-card__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+}
+
+/* Recharts desenha em SVG: cores de grade, eixos e tooltip acompanham o tema. */
+.chart-card .recharts-cartesian-grid line {
+  stroke: var(--color-border);
+}
+
+.chart-card .recharts-cartesian-axis-line,
+.chart-card .recharts-cartesian-axis-tick-line {
+  stroke: var(--color-border-strong);
+}
+
+.chart-card .recharts-cartesian-axis-tick-value {
+  fill: var(--color-muted);
+}
+
+.chart-card .recharts-default-tooltip {
+  border-color: var(--color-border) !important;
+  border-radius: 8px;
+  background: var(--color-surface) !important;
+  color: var(--color-ink);
+}
+
+.chart-card .recharts-label {
+  fill: var(--color-ink);
+}
+
 /* Hierarquia e superfícies */
 .app-page .animals-header,
 .app-page .page-header {

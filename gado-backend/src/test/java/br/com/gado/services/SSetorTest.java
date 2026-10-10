@@ -1,6 +1,9 @@
 package br.com.gado.services;
 
 import br.com.gado.dto.SetorDto;
+import br.com.gado.entities.EAnimal;
+import br.com.gado.entities.ELote;
+import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnStatus;
@@ -37,12 +40,18 @@ class SSetorTest {
     @Mock private ILoteSetor loteSetorInterface;
 
     private EUsuario usuario;
+    private ESetor setor;
 
     @BeforeEach
     void setUp() {
         usuario = new EUsuario();
         usuario.setNome("Admin");
         usuario.setEmail("admin@fazenda.com");
+
+        setor = new ESetor();
+        setor.setId(1L);
+        setor.setNome("Pasto Principal");
+        setor.setCapacidadeMaxima(50);
     }
 
     @Nested
@@ -66,6 +75,49 @@ class SSetorTest {
             when(setorInterface.findByIdAndStatus(99L, EnStatus.A)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> sSetor.procuraPorId(99L)).isInstanceOf(EntityNotFoundException.class);
+        }
+
+        @Test
+        void deveIgnorarAlocacoesDeLotesInativados() {
+            when(setorInterface.findByIdAndStatus(1L, EnStatus.A)).thenReturn(Optional.of(setor));
+
+            ELote loteAtivo = new ELote();
+            loteAtivo.setId(10L);
+            loteAtivo.setCodigo("LOT001");
+            loteAtivo.setStatus(EnStatus.A);
+            ELoteSetor alocacaoAtiva = new ELoteSetor();
+            alocacaoAtiva.setId(100L);
+            alocacaoAtiva.setLote(loteAtivo);
+            alocacaoAtiva.setSetor(setor);
+            alocacaoAtiva.setAnimais(List.of(new EAnimal(), new EAnimal()));
+
+            ELote loteInativo = new ELote();
+            loteInativo.setId(11L);
+            loteInativo.setCodigo("LOT002");
+            loteInativo.setStatus(EnStatus.I);
+            ELoteSetor alocacaoInativa = new ELoteSetor();
+            alocacaoInativa.setId(101L);
+            alocacaoInativa.setLote(loteInativo);
+            alocacaoInativa.setSetor(setor);
+            alocacaoInativa.setAnimais(List.of(new EAnimal()));
+
+            when(loteSetorInterface.findBySetor_Id(1L)).thenReturn(List.of(alocacaoAtiva, alocacaoInativa));
+
+            SetorDto resultado = sSetor.procuraPorId(1L);
+
+            assertThat(resultado.getLotes()).hasSize(1);
+            assertThat(resultado.getLotes().get(0).getLoteCodigo()).isEqualTo("LOT001");
+            assertThat(resultado.getLotes().get(0).getQuantidadeAnimais()).isEqualTo(2);
+        }
+
+        @Test
+        void deveRetornarListaVazia_QuandoSetorSemAlocacoes() {
+            when(setorInterface.findByIdAndStatus(1L, EnStatus.A)).thenReturn(Optional.of(setor));
+            when(loteSetorInterface.findBySetor_Id(1L)).thenReturn(List.of());
+
+            SetorDto resultado = sSetor.procuraPorId(1L);
+
+            assertThat(resultado.getLotes()).isEmpty();
         }
     }
 

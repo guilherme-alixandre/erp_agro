@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import SetorFormModal from '../components/SetorFormModal'
 import SetorDetailsModal from '../components/SetorDetailsModal'
+import SetorOcupacaoBar from '../components/SetorOcupacaoBar'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
 import {
   listarSetores,
@@ -111,6 +112,18 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
   useEffect(() => {
     fetchSetores()
   }, [fetchSetores])
+
+  // Clique numa barra do gráfico de ocupação filtra a tabela de setores abaixo por aquele
+  // setor, reaproveitando a mesma busca por texto já existente (filteredSetores é calculada
+  // em memória a partir de `setores`, sem refazer a chamada à API). Clicar de novo limpa.
+  function handleSetorBarClick(nome) {
+    setActiveSearch((atual) => {
+      const novo = atual === nome ? '' : nome
+      setSearch(novo)
+      return novo
+    })
+    setPage(0)
+  }
 
   function handleSearchSubmit(event) {
     event.preventDefault()
@@ -269,6 +282,20 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           >
             {feedback.message}
           </p>
+        ) : null}
+
+        {!isLoading && setores.length > 0 ? (
+          <section className="setor-ocupacao-section">
+            <h3>Ocupação dos setores</h3>
+            {setores.map((setor) => (
+              <SetorOcupacaoBar
+                key={setor.id}
+                setor={setor}
+                onClick={() => handleSetorBarClick(setor.nome)}
+                isActive={activeSearch === setor.nome}
+              />
+            ))}
+          </section>
         ) : null}
 
         <div className="data-toolbar">

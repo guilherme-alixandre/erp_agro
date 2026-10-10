@@ -101,3 +101,123 @@
   color: #4f7f2f;
   font-weight: 600;
 }
+
+/* ── Ocupação dos setores (barra empilhada, ver SetorOcupacaoBar) ────── */
+
+.setor-ocupacao-section {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 20px;
+}
+
+.setor-ocupacao-section > h3 {
+  margin: 0;
+}
+
+.setor-ocupacao-bar {
+  display: grid;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 6px;
+  margin: -6px;
+}
+
+.setor-ocupacao-bar[role='button'] {
+  cursor: pointer;
+}
+
+.setor-ocupacao-bar[role='button']:hover,
+.setor-ocupacao-bar[role='button']:focus-visible {
+  background: var(--color-surface-soft);
+  outline: none;
+}
+
+.setor-ocupacao-bar--ativo {
+  background: var(--color-brand-soft);
+  box-shadow: inset 0 0 0 1px var(--color-brand);
+}
+
+.setor-ocupacao-bar__legenda {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.setor-ocupacao-bar__legenda strong {
+  color: var(--color-ink);
+}
+
+.setor-ocupacao-bar__legenda span {
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.setor-ocupacao-bar__track {
+  display: flex;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+}
+
+.setor-ocupacao-bar__segment {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 2px;
+  height: 100%;
+  box-shadow: inset -2px 0 0 var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.setor-ocupacao-bar__segment:last-child {
+  box-shadow: none;
+}
+
+.setor-ocupacao-bar__segment--livre {
+  background: var(--color-surface-muted);
+  box-shadow: none;
+}
+
+.setor-ocupacao-bar__segment-label {
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.setor-ocupacao-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setor-ocupacao-bar__chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.setor-ocupacao-bar__chip-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.setor-ocupacao-bar__vazio {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
