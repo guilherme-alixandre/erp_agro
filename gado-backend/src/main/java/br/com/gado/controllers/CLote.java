@@ -1,5 +1,6 @@
 package br.com.gado.controllers;
 
+import br.com.gado.dto.loteDto.CustoLoteDto;
 import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
@@ -46,6 +47,11 @@ public class CLote {
     @GetMapping("/{id}/custo-racao")
     public CustoRacaoLoteDto getCustoRacao(@PathVariable Long id) {
         return loteService.calcularCustoRacaoAcumulado(id);
+    }
+
+    @GetMapping("/{id}/custo-total")
+    public CustoLoteDto getCustoTotal(@PathVariable Long id) {
+        return loteService.calcularCustoTotalAcumulado(id);
     }
 
     @GetMapping("/{id}/perdas-alimentacao")

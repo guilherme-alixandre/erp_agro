@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
@@ -19,6 +20,10 @@ public class EAnimal extends EAbstract{
     private String codigoBrinco;
     private LocalDateTime dataNascimento;
     private Double pesoAtual;
+
+    /** Preço pago na aquisição do animal. Nulo quando o animal nasceu na própria fazenda. */
+    private BigDecimal valorAquisicao;
+    private LocalDateTime dataAquisicao;
 
     @ManyToOne
     @JoinColumn(name = "raca_id")

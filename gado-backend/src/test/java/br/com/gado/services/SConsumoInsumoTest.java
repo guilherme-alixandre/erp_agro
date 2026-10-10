@@ -62,6 +62,7 @@ class SConsumoInsumoTest {
     @Mock private SInsumo insumoService;
     @Mock private ISobraAlimentacao sobraAlimentacaoInterface;
     @Mock private SLancamentoFinanceiro lancamentoFinanceiroService;
+    @Mock private SCustoAnimal custoAnimalService;
 
     private EUnidadeMedida primaria;
     private EInsumo insumo;

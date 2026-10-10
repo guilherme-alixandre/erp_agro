@@ -49,6 +49,7 @@ class SVacinacaoAnimalTest {
     @Mock private IUnidadeMedida unidadeMedidaInterface;
     @Mock private IUsuario usuarioInterface;
     @Mock private SInsumo insumoService;
+    @Mock private SCustoAnimal custoAnimalService;
 
     private EUnidadeMedida primaria;
     private EInsumo vacina;

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { buscarCustoRacaoLote, buscarPerdasAlimentacaoLote } from '../integration/loteApi'
+import { buscarCustoRacaoLote, buscarCustoTotalLote, buscarPerdasAlimentacaoLote } from '../integration/loteApi'
 import { formatarData, formatarMoeda } from '../../../utils/formatters'
 
 function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   const [custoRacao, setCustoRacao] = useState(null)
   const [perdasAlimentacao, setPerdasAlimentacao] = useState(null)
+  const [custoTotal, setCustoTotal] = useState(null)
 
   useEffect(() => {
     let cancelado = false
@@ -21,6 +22,13 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
       })
       .catch(() => {
         if (!cancelado) setPerdasAlimentacao(null)
+      })
+    buscarCustoTotalLote(lote.id)
+      .then((dados) => {
+        if (!cancelado) setCustoTotal(dados)
+      })
+      .catch(() => {
+        if (!cancelado) setCustoTotal(null)
       })
     return () => {
       cancelado = true
@@ -101,6 +109,34 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
             </div>
           ) : null}
         </dl>
+
+        {custoTotal && Number(custoTotal.totalGeral) > 0 ? (
+          <>
+            <h3 className="details-section">Custo total do lote</h3>
+            <dl className="details-grid">
+              <div>
+                <dt>Aquisição</dt>
+                <dd>{formatarMoeda(custoTotal.totalAquisicao)}</dd>
+              </div>
+              <div>
+                <dt>Alimentação</dt>
+                <dd>{formatarMoeda(custoTotal.totalAlimentacao)}</dd>
+              </div>
+              <div>
+                <dt>Vacinação</dt>
+                <dd>{formatarMoeda(custoTotal.totalVacinacao)}</dd>
+              </div>
+              <div>
+                <dt>Total</dt>
+                <dd>{formatarMoeda(custoTotal.totalGeral)}</dd>
+              </div>
+              <div>
+                <dt>Total por animal</dt>
+                <dd>{formatarMoeda(custoTotal.totalPorAnimal)}</dd>
+              </div>
+            </dl>
+          </>
+        ) : null}
 
         <h3 className="details-section">Divisão por setores</h3>
 

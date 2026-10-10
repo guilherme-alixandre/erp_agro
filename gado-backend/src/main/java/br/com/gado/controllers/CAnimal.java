@@ -1,7 +1,9 @@
 package br.com.gado.controllers;
 
 import br.com.gado.dto.AnimalDto;
+import br.com.gado.dto.custoAnimalDto.CustoVidaAnimalDto;
 import br.com.gado.services.SAnimal;
+import br.com.gado.services.SCustoAnimal;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,14 @@ public class CAnimal {
 
     @Autowired
     private SAnimal animalService;
+
+    @Autowired
+    private SCustoAnimal custoAnimalService;
+
+    @GetMapping("/{id}/custo-vida")
+    public ResponseEntity<CustoVidaAnimalDto> getCustoVida(@PathVariable Long id) {
+        return ResponseEntity.ok(custoAnimalService.calcularCustoVida(id));
+    }
 
     @GetMapping("/{brinco}")
     public ResponseEntity<AnimalDto> getAnimal(@PathVariable String brinco) {

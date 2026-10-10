@@ -1,5 +1,6 @@
 package br.com.gado.controllers;
 
+import br.com.gado.dto.loteDto.CustoLoteDto;
 import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
@@ -84,6 +85,19 @@ class CLoteTest {
                         .with(TestSecurity.autenticadoComo(USUARIO, EnPerfilUsuario.ADMINISTRADOR)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.custoTotalAcumulado").value(10.00));
+    }
+
+    @Test
+    void getCustoTotal_deveRetornar200() throws Exception {
+        when(loteService.calcularCustoTotalAcumulado(1L))
+                .thenReturn(new CustoLoteDto(1L, new BigDecimal("500.00"), new BigDecimal("50.00"),
+                        new BigDecimal("5.00"), new BigDecimal("555.00"), new BigDecimal("250.00"),
+                        new BigDecimal("25.00"), new BigDecimal("2.50"), new BigDecimal("277.50")));
+
+        mockMvc.perform(get("/api/lotes/1/custo-total")
+                        .with(TestSecurity.autenticadoComo(USUARIO, EnPerfilUsuario.ADMINISTRADOR)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalGeral").value(555.00));
     }
 
     @Test

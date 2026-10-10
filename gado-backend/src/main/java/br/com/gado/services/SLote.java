@@ -1,5 +1,7 @@
 package br.com.gado.services;
 
+import br.com.gado.dto.custoAnimalDto.CustoVidaAnimalDto;
+import br.com.gado.dto.loteDto.CustoLoteDto;
 import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
@@ -67,6 +69,9 @@ public class SLote {
 
     @Autowired
     private ISobraAlimentacao sobraAlimentacaoInterface;
+
+    @Autowired
+    private SCustoAnimal custoAnimalService;
 
     // ── Controle de acesso ───────────────────────────────────────────────
 
@@ -415,6 +420,48 @@ public class SLote {
                 : BigDecimal.ZERO;
 
         return new CustoRacaoLoteDto(loteId, custoTotal, custoPorAnimal);
+    }
+
+    // ── Custo total acumulado (ledger por animal, ver CustoLoteDto) ──────
+
+    public CustoLoteDto calcularCustoTotalAcumulado(Long loteId) {
+        ELote lote = loteInterface.findByIdAndStatus(loteId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Nenhum lote ativo encontrado para o ID: " + loteId));
+
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_Id(lote.getId());
+        List<Long> animalIds = alocacoes.stream()
+                .flatMap(ls -> ls.getAnimais().stream())
+                .map(EAnimal::getId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, CustoVidaAnimalDto> custosPorAnimal = custoAnimalService.calcularCustoTotalAnimais(animalIds);
+
+        BigDecimal totalAquisicao = BigDecimal.ZERO;
+        BigDecimal totalAlimentacao = BigDecimal.ZERO;
+        BigDecimal totalVacinacao = BigDecimal.ZERO;
+
+        for (CustoVidaAnimalDto custo : custosPorAnimal.values()) {
+            totalAquisicao = totalAquisicao.add(custo.getTotalAquisicao());
+            totalAlimentacao = totalAlimentacao.add(custo.getTotalAlimentacao());
+            totalVacinacao = totalVacinacao.add(custo.getTotalVacinacao());
+        }
+
+        totalAquisicao = totalAquisicao.setScale(2, RoundingMode.HALF_UP);
+        totalAlimentacao = totalAlimentacao.setScale(2, RoundingMode.HALF_UP);
+        totalVacinacao = totalVacinacao.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalGeral = totalAquisicao.add(totalAlimentacao).add(totalVacinacao);
+
+        int totalAnimais = animalIds.size();
+        return new CustoLoteDto(loteId, totalAquisicao, totalAlimentacao, totalVacinacao, totalGeral,
+                dividirPorAnimal(totalAquisicao, totalAnimais), dividirPorAnimal(totalAlimentacao, totalAnimais),
+                dividirPorAnimal(totalVacinacao, totalAnimais), dividirPorAnimal(totalGeral, totalAnimais));
+    }
+
+    private BigDecimal dividirPorAnimal(BigDecimal valor, int totalAnimais) {
+        return totalAnimais > 0
+                ? valor.divide(BigDecimal.valueOf(totalAnimais), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
     }
 
     // ── Perdas de alimentação acumuladas (informativo, ver PerdaAlimentacaoLoteDto) ─────

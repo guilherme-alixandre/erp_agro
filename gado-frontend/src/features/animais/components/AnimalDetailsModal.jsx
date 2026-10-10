@@ -7,7 +7,14 @@ import {
   excluirOcorrencia,
   TIPOS_OCORRENCIA,
 } from '../integration/ocorrenciaAnimalApi'
-import { formatarData, formatarDataHora } from '../../../utils/formatters'
+import { buscarCustoVidaAnimal } from '../integration/custoAnimalApi'
+import { formatarData, formatarDataHora, formatarMoeda } from '../../../utils/formatters'
+
+const TIPO_CUSTO_LABELS = {
+  AQUISICAO: 'Aquisição',
+  ALIMENTACAO: 'Alimentação',
+  VACINACAO: 'Vacinação',
+}
 
 const STATUS_LABELS = {
   ATIVO: 'Ativo',
@@ -38,6 +45,10 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
   const [vacinacoes, setVacinacoes] = useState([])
   const [isLoadingVacinacoes, setIsLoadingVacinacoes] = useState(false)
 
+  const [custoVida, setCustoVida] = useState(null)
+  const [isLoadingCustoVida, setIsLoadingCustoVida] = useState(false)
+  const [mostrarEventosCusto, setMostrarEventosCusto] = useState(false)
+
   const [ocorrencias, setOcorrencias] = useState([])
   const [isLoadingOcorrencias, setIsLoadingOcorrencias] = useState(false)
   const [isAddingOcorrencia, setIsAddingOcorrencia] = useState(false)
@@ -63,6 +74,28 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
       })
       .finally(() => {
         if (!cancelado) setIsLoadingVacinacoes(false)
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [animal.id])
+
+  useEffect(() => {
+    if (!animal.id) {
+      setCustoVida(null)
+      return
+    }
+    let cancelado = false
+    setIsLoadingCustoVida(true)
+    buscarCustoVidaAnimal(animal.id)
+      .then((dados) => {
+        if (!cancelado) setCustoVida(dados)
+      })
+      .catch(() => {
+        if (!cancelado) setCustoVida(null)
+      })
+      .finally(() => {
+        if (!cancelado) setIsLoadingCustoVida(false)
       })
     return () => {
       cancelado = true
@@ -221,6 +254,62 @@ function AnimalDetailsModal({ animal, onClose, onEdit, onDelete, isDeleting }) {
           </ul>
         ) : (
           <p className="vacinas-empty">Nenhuma vacina aplicada a este animal.</p>
+        )}
+
+        <h3 className="details-section">Custo de vida</h3>
+        {isLoadingCustoVida ? (
+          <p className="vacinas-empty">Carregando...</p>
+        ) : custoVida ? (
+          <>
+            <dl className="details-grid">
+              <div>
+                <dt>Aquisição</dt>
+                <dd>{formatarMoeda(custoVida.totalAquisicao)}</dd>
+              </div>
+              <div>
+                <dt>Alimentação</dt>
+                <dd>{formatarMoeda(custoVida.totalAlimentacao)}</dd>
+              </div>
+              <div>
+                <dt>Vacinação</dt>
+                <dd>{formatarMoeda(custoVida.totalVacinacao)}</dd>
+              </div>
+              <div>
+                <dt>Total</dt>
+                <dd>{formatarMoeda(custoVida.totalGeral)}</dd>
+              </div>
+            </dl>
+            {custoVida.eventos.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setMostrarEventosCusto((atual) => !atual)}
+                >
+                  {mostrarEventosCusto ? 'Ocultar eventos' : `Ver eventos (${custoVida.eventos.length})`}
+                </button>
+                {mostrarEventosCusto ? (
+                  <ul className="vacinas-detail-list">
+                    {custoVida.eventos.map((evento, indice) => (
+                      <li key={indice}>
+                        <strong>
+                          {TIPO_CUSTO_LABELS[evento.tipoCusto] ?? evento.tipoCusto} — {formatarMoeda(evento.valor)}
+                        </strong>
+                        <span>
+                          {formatarDataHora(evento.dataEvento)}
+                          {evento.descricao ? ` — ${evento.descricao}` : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : (
+              <p className="vacinas-empty">Nenhum evento de custo registrado para este animal.</p>
+            )}
+          </>
+        ) : (
+          <p className="vacinas-empty">Não foi possível carregar o custo de vida deste animal.</p>
         )}
 
         <h3 className="details-section">Ocorrências</h3>

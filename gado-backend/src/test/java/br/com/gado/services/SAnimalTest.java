@@ -36,6 +36,7 @@ class SAnimalTest {
     @Mock private IAnimal animalInterface;
     @Mock private IUsuario usuarioInterface;
     @Mock private IRaca racaInterface;
+    @Mock private SCustoAnimal custoAnimalService;
 
     @org.mockito.Spy
     private ModelMapper modelMapper = new ModelMapper();

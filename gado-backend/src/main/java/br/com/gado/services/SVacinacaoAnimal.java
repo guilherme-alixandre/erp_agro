@@ -66,6 +66,9 @@ public class SVacinacaoAnimal {
     @Autowired
     private SInsumo insumoService;
 
+    @Autowired
+    private SCustoAnimal custoAnimalService;
+
     // ── Permissões ───────────────────────────────────────────────────────
 
     /** Qualquer usuário ativo pode registrar aplicação de vacina. */
@@ -180,6 +183,10 @@ public class SVacinacaoAnimal {
         vacinacao.setItens(itens);
 
         EVacinacaoAnimal salvo = vacinacaoAnimalInterface.save(vacinacao);
+        double precoUnitario = insumo.getPrecoCompraMedio() != null ? insumo.getPrecoCompraMedio() : 0.0;
+        for (EVacinacaoAnimalItem item : salvo.getItens()) {
+            custoAnimalService.registrarCustoVacinacao(item, precoUnitario);
+        }
         return toRespostaDto(salvo);
     }
 
@@ -210,6 +217,10 @@ public class SVacinacaoAnimal {
         vacinacao.setMotivoCancelamento(dto.getMotivoCancelamento().trim());
         vacinacao.setCanceladoPorEmail(emailUsuario.trim());
         vacinacao.setCanceladoEm(LocalDateTime.now());
+
+        for (EVacinacaoAnimalItem item : vacinacao.getItens()) {
+            custoAnimalService.estornarCustoVacinacaoItem(item.getId());
+        }
 
         return toRespostaDto(vacinacaoAnimalInterface.save(vacinacao));
     }
@@ -258,13 +269,22 @@ public class SVacinacaoAnimal {
                     dataAplicacaoEdicao, null, null, item.getAnimal());
         }
 
+        for (EVacinacaoAnimalItem item : vacinacao.getItens()) {
+            custoAnimalService.estornarCustoVacinacaoItem(item.getId());
+        }
+
         vacinacao.setQuantidadePorAnimal(dto.getQuantidadePorAnimal());
         vacinacao.setUnidadeRegistro(unidadeRegistro);
         vacinacao.setQuantidadeBaixaPorAnimalUnidadePrimaria(novaQuantidadeBaixaPorAnimal);
         vacinacao.setQuantidadeTotalBaixaUnidadePrimaria(novaQuantidadeTotalBaixa);
         vacinacao.setDataAplicacao(dto.getDataAplicacao() != null ? dto.getDataAplicacao() : LocalDateTime.now());
 
-        return toRespostaDto(vacinacaoAnimalInterface.save(vacinacao));
+        EVacinacaoAnimal salvo = vacinacaoAnimalInterface.save(vacinacao);
+        double precoUnitario = insumo.getPrecoCompraMedio() != null ? insumo.getPrecoCompraMedio() : 0.0;
+        for (EVacinacaoAnimalItem item : salvo.getItens()) {
+            custoAnimalService.registrarCustoVacinacao(item, precoUnitario);
+        }
+        return toRespostaDto(salvo);
     }
 
     @Transactional

@@ -195,9 +195,25 @@ async function buscarPerdasAlimentacaoLote(loteId) {
   }
 }
 
+async function buscarCustoTotalLote(loteId) {
+  const payload = await request(`/lotes/${loteId}/custo-total`)
+  return {
+    loteId: payload?.loteId ?? loteId,
+    totalAquisicao: payload?.totalAquisicao ?? 0,
+    totalAlimentacao: payload?.totalAlimentacao ?? 0,
+    totalVacinacao: payload?.totalVacinacao ?? 0,
+    totalGeral: payload?.totalGeral ?? 0,
+    aquisicaoPorAnimal: payload?.aquisicaoPorAnimal ?? 0,
+    alimentacaoPorAnimal: payload?.alimentacaoPorAnimal ?? 0,
+    vacinacaoPorAnimal: payload?.vacinacaoPorAnimal ?? 0,
+    totalPorAnimal: payload?.totalPorAnimal ?? 0,
+  }
+}
+
 export {
   atualizarLote,
   buscarCustoRacaoLote,
+  buscarCustoTotalLote,
   buscarPerdasAlimentacaoLote,
   cadastrarLote,
   deletarLote,

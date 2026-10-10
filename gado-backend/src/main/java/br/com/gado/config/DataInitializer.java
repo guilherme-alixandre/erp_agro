@@ -1,5 +1,6 @@
 package br.com.gado.config;
 
+import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoCadastroDto;
 import br.com.gado.dto.documentoEntradaDto.ReciboSimplesCadastroDto;
 import br.com.gado.dto.documentoSaidaDto.VendaAnimalCadastroDto;
 import br.com.gado.dto.documentoSaidaDto.VendaLeiteCadastroDto;
@@ -9,14 +10,18 @@ import br.com.gado.dto.parcerioDto.ParceiroCadastroDto;
 import br.com.gado.dto.parcerioDto.ParceiroDto;
 import br.com.gado.dto.racaDto.RacaCadastroDto;
 import br.com.gado.dto.racaDto.RacaRespostaDto;
+import br.com.gado.dto.vacinacaoAnimalDto.VacinacaoAnimalCadastroDto;
 import br.com.gado.entities.*;
 import br.com.gado.enums.*;
 import br.com.gado.repositories.*;
+import br.com.gado.services.SConsumoInsumo;
+import br.com.gado.services.SCustoAnimal;
 import br.com.gado.services.SDocumentoEntrada;
 import br.com.gado.services.SDocumentoSaida;
 import br.com.gado.services.SMetaSetor;
 import br.com.gado.services.SParceiro;
 import br.com.gado.services.SRaca;
+import br.com.gado.services.SVacinacaoAnimal;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -60,6 +65,9 @@ public class DataInitializer implements CommandLineRunner {
     private final SMetaSetor sMetaSetor;
     private final SDocumentoEntrada sDocumentoEntrada;
     private final SDocumentoSaida sDocumentoSaida;
+    private final SConsumoInsumo sConsumoInsumo;
+    private final SVacinacaoAnimal sVacinacaoAnimal;
+    private final SCustoAnimal sCustoAnimal;
 
     public DataInitializer(
             IUsuario iUsuario,
@@ -76,7 +84,10 @@ public class DataInitializer implements CommandLineRunner {
             SParceiro sParceiro,
             SMetaSetor sMetaSetor,
             SDocumentoEntrada sDocumentoEntrada,
-            SDocumentoSaida sDocumentoSaida) {
+            SDocumentoSaida sDocumentoSaida,
+            SConsumoInsumo sConsumoInsumo,
+            SVacinacaoAnimal sVacinacaoAnimal,
+            SCustoAnimal sCustoAnimal) {
         this.iUsuario = iUsuario;
         this.iSetor = iSetor;
         this.iAnimal = iAnimal;
@@ -92,6 +103,9 @@ public class DataInitializer implements CommandLineRunner {
         this.sMetaSetor = sMetaSetor;
         this.sDocumentoEntrada = sDocumentoEntrada;
         this.sDocumentoSaida = sDocumentoSaida;
+        this.sConsumoInsumo = sConsumoInsumo;
+        this.sVacinacaoAnimal = sVacinacaoAnimal;
+        this.sCustoAnimal = sCustoAnimal;
     }
 
     @Override
@@ -225,16 +239,24 @@ public class DataInitializer implements CommandLineRunner {
 
         // ── 5. ANIMAIS (30 no total, ≥ 2 por status) ─────────────────────────────────
 
+        // Os 5 animais de destaque abaixo foram comprados de terceiros (valor/data de
+        // aquisição informados — ver Custo de Vida do Animal); os demais 25 nasceram na
+        // própria fazenda (sem valor de aquisição).
         EAnimal boi1 = criarAnimalSeed("NE0001", EnSexoAnimal.M, racaNelore, "Branca", 480.0, 1.45, 1.92, 1.55,
-                LocalDateTime.of(2021, 3, 10, 0, 0), EnStatusAnimal.ATIVO, cuidador);
+                LocalDateTime.of(2021, 3, 10, 0, 0), EnStatusAnimal.ATIVO, cuidador,
+                new BigDecimal("2800.00"), LocalDateTime.of(2021, 6, 10, 0, 0));
         EAnimal boi2 = criarAnimalSeed("AN0001", EnSexoAnimal.M, racaAngus, "Preta", 520.0, 1.50, 2.05, 1.60,
-                LocalDateTime.of(2020, 8, 22, 0, 0), EnStatusAnimal.ATIVO, cuidador);
+                LocalDateTime.of(2020, 8, 22, 0, 0), EnStatusAnimal.ATIVO, cuidador,
+                new BigDecimal("3200.00"), LocalDateTime.of(2020, 11, 22, 0, 0));
         EAnimal boi3 = criarAnimalSeed("BR0001", EnSexoAnimal.M, racaBrangus, "Cinza", 495.0, 1.47, 1.95, 1.57,
-                LocalDateTime.of(2021, 1, 5, 0, 0), EnStatusAnimal.ATIVO, cuidador);
+                LocalDateTime.of(2021, 1, 5, 0, 0), EnStatusAnimal.ATIVO, cuidador,
+                new BigDecimal("3000.00"), LocalDateTime.of(2021, 4, 5, 0, 0));
         EAnimal vaca1 = criarAnimalSeed("GI0001", EnSexoAnimal.F, racaGirolando, "Malhada", 380.0, 1.38, 1.80, 1.45,
-                LocalDateTime.of(2019, 5, 14, 0, 0), EnStatusAnimal.OBSERVACAO, cuidador);
+                LocalDateTime.of(2019, 5, 14, 0, 0), EnStatusAnimal.OBSERVACAO, cuidador,
+                new BigDecimal("2200.00"), LocalDateTime.of(2019, 8, 14, 0, 0));
         EAnimal vaca2 = criarAnimalSeed("HO0001", EnSexoAnimal.F, racaHolandesa, "Branca e Preta", 410.0, 1.42, 1.88, 1.48,
-                LocalDateTime.of(2020, 11, 30, 0, 0), EnStatusAnimal.ATIVO, cuidador);
+                LocalDateTime.of(2020, 11, 30, 0, 0), EnStatusAnimal.ATIVO, cuidador,
+                new BigDecimal("2500.00"), LocalDateTime.of(2021, 2, 28, 0, 0));
 
         // Nelore
         EAnimal ne2 = criarAnimalSeed("NE0002", EnSexoAnimal.M, racaNelore, "Branca", 465.0, 1.44, 1.90, 1.53,
@@ -387,10 +409,12 @@ public class DataInitializer implements CommandLineRunner {
 
         // ── 10. INSUMOS (≈ 3 por grupo) ───────────────────────────────────────────────
 
+        // Saldo inicial folgado para cobrir tanto o consumo histórico semeado abaixo
+        // (seção 10b) quanto testes manuais de "Alimentar Setores" depois do seed.
         EInsumo racao = criarInsumoSeed("Ração Engorda Premium", EnTipoInsumo.RACAO, grupoRacao, "000001",
-                unidadeSaca, unidadeKg, 40.0, 10.0, 25.0, 120.0, 120.0, false);
-        criarInsumoSeed("Ração Lactação Especial", EnTipoInsumo.RACAO, grupoRacao, "000002",
-                unidadeSaca, unidadeKg, 40.0, 10.0, 30.0, 135.0, 135.0, false);
+                unidadeSaca, unidadeKg, 40.0, 10.0, 150.0, 120.0, 120.0, false);
+        EInsumo racaoLactacao = criarInsumoSeed("Ração Lactação Especial", EnTipoInsumo.RACAO, grupoRacao, "000002",
+                unidadeSaca, unidadeKg, 40.0, 10.0, 100.0, 135.0, 135.0, false);
         EInsumo salMineral = criarInsumoSeed("Sal Mineral", EnTipoInsumo.RACAO, grupoRacao, "000003",
                 unidadeSaca, null, null, 10.0, 5.0, 90.0, 90.0, false);
 
@@ -428,6 +452,28 @@ public class DataInitializer implements CommandLineRunner {
                 unidadeUnidade, null, null, 5.0, 8.0, 15.0, 15.0, false);
         criarInsumoSeed("Ferramentas Diversas", EnTipoInsumo.OUTROS, grupoInsumosGerais, "000003",
                 unidadeUnidade, null, null, 3.0, 6.0, 50.0, 50.0, false);
+
+        // ── 10b. ALIMENTAÇÃO E VACINAÇÃO (histórico de Custo de Vida do Animal) ──────
+        // Passa pelos services de verdade (SConsumoInsumo/SVacinacaoAnimal), não pelo
+        // repositório — é esse caminho que gera os lançamentos em custo_animal
+        // (ver SCustoAnimal), com o preço do insumo fotografado na data do evento.
+
+        LocalDateTime dataAlimentacaoConfinamento = LocalDateTime.now().minusDays(20);
+        registrarConsumoSeed(racao.getId(), setorConfinamento.getId(), 70.0, dataAlimentacaoConfinamento,
+                adminSeed.getEmail());
+
+        LocalDateTime dataAlimentacaoPasto = LocalDateTime.now().minusDays(18);
+        registrarConsumoSeed(racaoLactacao.getId(), setorPasto.getId(), 45.0, dataAlimentacaoPasto,
+                adminSeed.getEmail());
+
+        LocalDateTime dataAlimentacaoGalpao = LocalDateTime.now().minusDays(15);
+        registrarConsumoSeed(salMineral.getId(), setorGalpao.getId(), 2.0, dataAlimentacaoGalpao,
+                adminSeed.getEmail());
+
+        LocalDateTime dataVacinacaoAftosa = LocalDateTime.now().minusDays(12);
+        registrarVacinacaoSeed(vacinaAftosa.getId(), 2.0,
+                List.of(boi1.getId(), boi2.getId(), vaca1.getId(), ne2.getId(), an2.getId(), gi2.getId()),
+                dataVacinacaoAftosa, adminSeed.getEmail());
 
         // ── 11. METAS DE SETOR (3 no total: 2 ARROBA + 1 LEITE) ──────────────────────
 
@@ -548,6 +594,15 @@ public class DataInitializer implements CommandLineRunner {
     private EAnimal criarAnimalSeed(String codigoBrinco, EnSexoAnimal sexo, ERaca raca, String cor, double peso,
                                      double alturaCernelha, double perimetroToracico, double comprimentoCorporal,
                                      LocalDateTime dataNascimento, EnStatusAnimal status, EUsuario usuario) {
+        return criarAnimalSeed(codigoBrinco, sexo, raca, cor, peso, alturaCernelha, perimetroToracico,
+                comprimentoCorporal, dataNascimento, status, usuario, null, null);
+    }
+
+    /** Variante com valor/data de aquisição — gera o lançamento de custo tipo AQUISICAO (ver SCustoAnimal). */
+    private EAnimal criarAnimalSeed(String codigoBrinco, EnSexoAnimal sexo, ERaca raca, String cor, double peso,
+                                     double alturaCernelha, double perimetroToracico, double comprimentoCorporal,
+                                     LocalDateTime dataNascimento, EnStatusAnimal status, EUsuario usuario,
+                                     BigDecimal valorAquisicao, LocalDateTime dataAquisicao) {
         EAnimal animal = new EAnimal();
         animal.setCodigoBrinco(codigoBrinco);
         animal.setSexo(sexo);
@@ -560,7 +615,33 @@ public class DataInitializer implements CommandLineRunner {
         animal.setDataNascimento(dataNascimento);
         animal.setStatusAnimal(status);
         animal.setUsuario(usuario);
-        return iAnimal.save(animal);
+        animal.setValorAquisicao(valorAquisicao);
+        animal.setDataAquisicao(dataAquisicao);
+        EAnimal salvo = iAnimal.save(animal);
+        sCustoAnimal.registrarOuAtualizarAquisicao(salvo);
+        return salvo;
+    }
+
+    /** Registra um consumo de setor via SConsumoInsumo — gera o lançamento de custo ALIMENTACAO por animal. */
+    private void registrarConsumoSeed(Long insumoId, Long setorId, double quantidade, LocalDateTime dataConsumo,
+                                       String emailUsuario) {
+        ConsumoInsumoCadastroDto dto = new ConsumoInsumoCadastroDto();
+        dto.setInsumoId(insumoId);
+        dto.setSetorId(setorId);
+        dto.setQuantidade(quantidade);
+        dto.setDataConsumo(dataConsumo);
+        sConsumoInsumo.registrarConsumo(dto, emailUsuario);
+    }
+
+    /** Registra uma aplicação de vacina via SVacinacaoAnimal — gera o lançamento de custo VACINACAO por animal. */
+    private void registrarVacinacaoSeed(Long insumoId, double quantidadePorAnimal, List<Long> animalIds,
+                                         LocalDateTime dataAplicacao, String emailUsuario) {
+        VacinacaoAnimalCadastroDto dto = new VacinacaoAnimalCadastroDto();
+        dto.setInsumoId(insumoId);
+        dto.setQuantidadePorAnimal(quantidadePorAnimal);
+        dto.setAnimalIds(animalIds);
+        dto.setDataAplicacao(dataAplicacao);
+        sVacinacaoAnimal.registrarAplicacao(dto, emailUsuario);
     }
 
     private ELote criarLoteSeed(String codigo, String descricao, String racaPredominante, String corBrinco,

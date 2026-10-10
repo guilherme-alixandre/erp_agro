@@ -129,6 +129,34 @@ function AnimalFormModal({
           </label>
 
           <p className="form-help">
+            Aquisição — deixe em branco se o animal nasceu na própria fazenda.
+          </p>
+
+          <label>
+            <span>Valor de aquisição (R$)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              name="valorAquisicao"
+              value={formData.valorAquisicao}
+              onChange={onChange}
+              placeholder="Ex.: 3500.00"
+            />
+          </label>
+
+          <label>
+            <span>Data de aquisição</span>
+            <input
+              type="date"
+              name="dataAquisicao"
+              value={formData.dataAquisicao}
+              onChange={onChange}
+              max={maxBirthDate}
+            />
+          </label>
+
+          <p className="form-help">
             Medidas zootécnicas — preencha as que você medir.
           </p>
 

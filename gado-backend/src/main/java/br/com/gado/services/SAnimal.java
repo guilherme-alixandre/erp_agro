@@ -37,6 +37,9 @@ public class SAnimal {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private SCustoAnimal custoAnimalService;
+
     public AnimalDto buscarPorBrinco(String brinco) {
         EAnimal animal = animalInterface.findByCodigoBrincoAndStatus(brinco, EnStatus.A)
                 .orElseThrow(() -> new EntityNotFoundException("animal não encontrado"));
@@ -72,6 +75,7 @@ public class SAnimal {
         novoAnimal.setUsuario(usuario);
         // codigoBrinco é sempre gerado pelo backend — ignora qualquer valor vindo do cliente.
         EAnimal animalSalvo = salvarComCodigoSequencial(novoAnimal, raca);
+        custoAnimalService.registrarOuAtualizarAquisicao(animalSalvo);
 
         return toDto(animalSalvo);
     }
@@ -109,6 +113,7 @@ public class SAnimal {
         }
 
         EAnimal animalAtualizado = animalInterface.save(animal);
+        custoAnimalService.registrarOuAtualizarAquisicao(animalAtualizado);
         return toDto(animalAtualizado);
     }
 

@@ -4,6 +4,7 @@ import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoCadastroDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoEdicaoDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoResumoItemDto;
 import br.com.gado.dto.consumoInsumoDto.ConsumoInsumoRespostaDto;
+import br.com.gado.entities.EAnimal;
 import br.com.gado.entities.EConsumoInsumo;
 import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.ELoteSetor;
@@ -72,6 +73,9 @@ public class SConsumoInsumo {
     @Autowired
     private SLancamentoFinanceiro lancamentoFinanceiroService;
 
+    @Autowired
+    private SCustoAnimal custoAnimalService;
+
     // ── Permissões ───────────────────────────────────────────────────────
 
     /** Qualquer usuário ativo (incluindo Cuidadores comuns) pode registrar consumo. */
@@ -125,7 +129,8 @@ public class SConsumoInsumo {
                 null, setor, null);
 
         // Rateio: total de animais atualmente alocados neste setor, em lotes ativos (rule 3)
-        int totalAnimais = contarAnimaisDoSetor(setor.getId());
+        List<EAnimal> animaisDoSetor = buscarAnimaisDoSetor(setor.getId());
+        int totalAnimais = animaisDoSetor.size();
         Double consumoPorAnimal = totalAnimais > 0 ? dto.getQuantidade() / totalAnimais : null;
         if (totalAnimais == 0) {
             log.warn("Consumo registrado para o setor {} sem nenhum animal alocado.", setor.getId());
@@ -143,6 +148,8 @@ public class SConsumoInsumo {
         consumo.setRegistradoPorEmail(emailUsuario != null ? emailUsuario.trim() : null);
 
         EConsumoInsumo salvo = consumoInsumoInterface.save(consumo);
+        custoAnimalService.registrarCustoAlimentacao(salvo, animaisDoSetor,
+                insumo.getPrecoCompraMedio() != null ? insumo.getPrecoCompraMedio() : 0.0);
         return toRespostaDto(salvo);
     }
 
@@ -182,7 +189,8 @@ public class SConsumoInsumo {
                 dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now(),
                 null, consumo.getSetor(), null);
 
-        int totalAnimais = contarAnimaisDoSetor(consumo.getSetor().getId());
+        List<EAnimal> animaisDoSetor = buscarAnimaisDoSetor(consumo.getSetor().getId());
+        int totalAnimais = animaisDoSetor.size();
         Double consumoPorAnimal = totalAnimais > 0 ? dto.getQuantidade() / totalAnimais : null;
 
         consumo.setQuantidadeRegistrada(dto.getQuantidade());
@@ -192,7 +200,10 @@ public class SConsumoInsumo {
         consumo.setConsumoPorAnimal(consumoPorAnimal);
         consumo.setDataConsumo(dto.getDataConsumo() != null ? dto.getDataConsumo() : LocalDateTime.now());
 
-        return toRespostaDto(consumoInsumoInterface.save(consumo));
+        EConsumoInsumo salvo = consumoInsumoInterface.save(consumo);
+        custoAnimalService.registrarCustoAlimentacao(salvo, animaisDoSetor,
+                insumo.getPrecoCompraMedio() != null ? insumo.getPrecoCompraMedio() : 0.0);
+        return toRespostaDto(salvo);
     }
 
     private void validaPermissaoEdicao(EUsuario usuario, EConsumoInsumo consumo) {
@@ -277,6 +288,7 @@ public class SConsumoInsumo {
 
         consumo.setStatus(EnStatus.I);
         consumoInsumoInterface.save(consumo);
+        custoAnimalService.estornarCustoAlimentacao(consumo.getId());
     }
 
     @Transactional
@@ -345,13 +357,13 @@ public class SConsumoInsumo {
         return quantidade / insumo.getFatorConversao();
     }
 
-    /** Soma os animais de todas as alocações (lote_setor) ativas do setor, ignorando lotes inativados. */
-    private int contarAnimaisDoSetor(Long setorId) {
+    /** Animais de todas as alocações (lote_setor) ativas do setor, ignorando lotes inativados. */
+    private List<EAnimal> buscarAnimaisDoSetor(Long setorId) {
         List<ELoteSetor> alocacoes = loteSetorInterface.findBySetor_Id(setorId);
         return alocacoes.stream()
                 .filter(ls -> ls.getLote() != null && ls.getLote().getStatus() == EnStatus.A)
-                .mapToInt(ls -> ls.getAnimais().size())
-                .sum();
+                .flatMap(ls -> ls.getAnimais().stream())
+                .collect(Collectors.toList());
     }
 
     private ConsumoInsumoRespostaDto toRespostaDto(EConsumoInsumo consumo) {

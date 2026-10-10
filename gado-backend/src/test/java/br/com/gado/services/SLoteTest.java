@@ -1,5 +1,8 @@
 package br.com.gado.services;
 
+import br.com.gado.dto.custoAnimalDto.CustoVidaAnimalDto;
+import br.com.gado.dto.custoAnimalDto.CustoVidaEventoDto;
+import br.com.gado.dto.loteDto.CustoLoteDto;
 import br.com.gado.dto.loteDto.CustoRacaoLoteDto;
 import br.com.gado.dto.loteDto.LoteCadastroDto;
 import br.com.gado.dto.loteDto.LoteDto;
@@ -35,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +62,7 @@ class SLoteTest {
     @Mock private IUsuario usuarioInterface;
     @Mock private IConsumoInsumo consumoInsumoInterface;
     @Mock private ISobraAlimentacao sobraAlimentacaoInterface;
+    @Mock private SCustoAnimal custoAnimalService;
 
     private EUsuario admin;
     private EUsuario gerente;
@@ -496,6 +501,65 @@ class SLoteTest {
             CustoRacaoLoteDto resultado = sLote.calcularCustoRacaoAcumulado(1L);
 
             assertThat(resultado.getCustoTotalAcumulado()).isEqualByComparingTo(BigDecimal.ZERO);
+        }
+    }
+
+    @Nested
+    class CalcularCustoTotalAcumuladoTests {
+
+        @Test
+        void deveLancarEntityNotFoundException_QuandoLoteNaoEncontrado() {
+            when(loteInterface.findByIdAndStatus(1L, EnStatus.A)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> sLote.calcularCustoTotalAcumulado(1L))
+                    .isInstanceOf(EntityNotFoundException.class);
+        }
+
+        @Test
+        void deveSomarOLedgerDosAnimaisAtualmenteNoLote() {
+            ELote lote = new ELote();
+            lote.setId(1L);
+            when(loteInterface.findByIdAndStatus(1L, EnStatus.A)).thenReturn(Optional.of(lote));
+
+            EAnimal animal1 = new EAnimal();
+            animal1.setId(100L);
+            EAnimal animal2 = new EAnimal();
+            animal2.setId(101L);
+            ELoteSetor alocacao = new ELoteSetor();
+            alocacao.setSetor(new ESetor());
+            alocacao.getAnimais().add(animal1);
+            alocacao.getAnimais().add(animal2);
+            when(loteSetorInterface.findByLote_Id(1L)).thenReturn(List.of(alocacao));
+
+            CustoVidaEventoDto evento = new CustoVidaEventoDto();
+            Map<Long, CustoVidaAnimalDto> custos = Map.of(
+                    100L, new CustoVidaAnimalDto(100L, new BigDecimal("500.00"), new BigDecimal("30.00"),
+                            new BigDecimal("5.00"), new BigDecimal("535.00"), List.of(evento)),
+                    101L, new CustoVidaAnimalDto(101L, BigDecimal.ZERO, new BigDecimal("20.00"),
+                            BigDecimal.ZERO, new BigDecimal("20.00"), List.of()));
+            when(custoAnimalService.calcularCustoTotalAnimais(List.of(100L, 101L))).thenReturn(custos);
+
+            CustoLoteDto resultado = sLote.calcularCustoTotalAcumulado(1L);
+
+            assertThat(resultado.getTotalAquisicao()).isEqualByComparingTo(new BigDecimal("500.00"));
+            assertThat(resultado.getTotalAlimentacao()).isEqualByComparingTo(new BigDecimal("50.00"));
+            assertThat(resultado.getTotalVacinacao()).isEqualByComparingTo(new BigDecimal("5.00"));
+            assertThat(resultado.getTotalGeral()).isEqualByComparingTo(new BigDecimal("555.00"));
+            assertThat(resultado.getTotalPorAnimal()).isEqualByComparingTo(new BigDecimal("277.50"));
+        }
+
+        @Test
+        void deveRetornarZero_QuandoLoteSemAnimais() {
+            ELote lote = new ELote();
+            lote.setId(1L);
+            when(loteInterface.findByIdAndStatus(1L, EnStatus.A)).thenReturn(Optional.of(lote));
+            when(loteSetorInterface.findByLote_Id(1L)).thenReturn(List.of());
+            when(custoAnimalService.calcularCustoTotalAnimais(List.of())).thenReturn(Map.of());
+
+            CustoLoteDto resultado = sLote.calcularCustoTotalAcumulado(1L);
+
+            assertThat(resultado.getTotalGeral()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(resultado.getTotalPorAnimal()).isEqualByComparingTo(BigDecimal.ZERO);
         }
     }
 

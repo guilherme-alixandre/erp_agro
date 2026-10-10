@@ -6,6 +6,7 @@ import jakarta.validation.constraints.DecimalMin;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
@@ -19,6 +20,10 @@ public class AnimalDto extends AbstractDTO {
 
     @DecimalMin(value = "30.0", message = "O peso mínimo para cadastro é 30kg.")
     private Double pesoAtual;
+
+    /** Opcional: preço e data de compra do animal, usados no custo de vida (ver SCustoAnimal). */
+    private BigDecimal valorAquisicao;
+    private LocalDateTime dataAquisicao;
 
     /** Obrigatório na criação. */
     private Long racaId;

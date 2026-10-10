@@ -1,10 +1,12 @@
 package br.com.gado.controllers;
 
 import br.com.gado.dto.AnimalDto;
+import br.com.gado.dto.custoAnimalDto.CustoVidaAnimalDto;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.security.JwtService;
 import br.com.gado.security.TestSecurity;
 import br.com.gado.services.SAnimal;
+import br.com.gado.services.SCustoAnimal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +34,9 @@ class CAnimalTest {
 
     @MockitoBean
     private SAnimal animalService;
+
+    @MockitoBean
+    private SCustoAnimal custoAnimalService;
 
     @MockitoBean
     private JwtService jwtService;
@@ -106,6 +111,20 @@ class CAnimalTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getCustoVida_deveRetornar200ComOsTotais() throws Exception {
+        CustoVidaAnimalDto dto = new CustoVidaAnimalDto(1L,
+                java.math.BigDecimal.valueOf(1000), java.math.BigDecimal.valueOf(50),
+                java.math.BigDecimal.valueOf(10), java.math.BigDecimal.valueOf(1060), new ArrayList<>());
+        when(custoAnimalService.calcularCustoVida(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/animais/{id}/custo-vida", 1L)
+                        .with(TestSecurity.autenticadoComo(USUARIO, EnPerfilUsuario.CUIDADOR)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalGeral").value(1060))
+                .andExpect(jsonPath("$.totalAquisicao").value(1000));
     }
 
     @Test

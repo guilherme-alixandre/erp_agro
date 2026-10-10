@@ -56,12 +56,36 @@ function validatePeso(pesoAtual) {
     return peso
 }
 
+function validateDataAquisicao(dataAquisicao) {
+    if (!dataAquisicao) return null
+
+    const [yearStr, monthStr, dayStr] = dataAquisicao.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+    const day = Number(dayStr)
+
+    if (!year || !month || !day) {
+        throw new Error('Data de aquisição inválida.')
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const data = new Date(year, month - 1, day)
+
+    if (data.getTime() > today.getTime()) {
+        throw new Error('Data de aquisição não pode ser no futuro.')
+    }
+
+    return `${dataAquisicao}T00:00:00`
+}
+
 // ============================================================================
 // Helpers: Normalização (Backend → Frontend)
 // ============================================================================
 
 function normalizeAnimal(rawAnimal) {
     const nascimento = rawAnimal?.dataNascimento?.slice(0, 10) ?? ''
+    const aquisicao = rawAnimal?.dataAquisicao?.slice(0, 10) ?? ''
 
     return {
         id: rawAnimal?.id ?? null,
@@ -79,6 +103,8 @@ function normalizeAnimal(rawAnimal) {
         comprimentoCorporal: String(rawAnimal?.comprimentoCorporal ?? ''),
         sexo: rawAnimal?.sexo ?? 'M',
         statusAnimal: rawAnimal?.statusAnimal ?? 'ATIVO',
+        valorAquisicao: String(rawAnimal?.valorAquisicao ?? ''),
+        dataAquisicao: aquisicao,
     }
 }
 
@@ -106,6 +132,8 @@ function toPayload(animal) {
         comprimentoCorporal: parseOptionalNumber(animal.comprimentoCorporal, 'Comprimento corporal'),
         sexo: animal.sexo,
         statusAnimal: animal.statusAnimal,
+        valorAquisicao: parseOptionalNumber(animal.valorAquisicao, 'Valor de aquisição'),
+        dataAquisicao: validateDataAquisicao(animal.dataAquisicao),
     }
 }
 
