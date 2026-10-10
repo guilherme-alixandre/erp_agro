@@ -23,7 +23,7 @@ public class CRegistroFinanceiro {
         return registroFinanceiroService.buscarRegistroFinanceiroPorId(registroFinanceiroId);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public RegistroFinanceiroDTO postMovimentacaoEstoque(@RequestBody RegistroFinanceiroDTO registroFinanceiroId) {
         return registroFinanceiroService.criarRegistroFinanceiro(registroFinanceiroId);
     }

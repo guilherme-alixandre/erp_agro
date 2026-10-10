@@ -20,7 +20,7 @@ public class CTransacao {
         return trasacaoService.buscarTrasacaoPorId(transacaoId);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public TrasacaoDTO postMovimentacaoEstoque(@RequestBody TrasacaoDTO transacaoId) {
         return trasacaoService.criarTrasacao(transacaoId);
     }

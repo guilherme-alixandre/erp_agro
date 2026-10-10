@@ -17,7 +17,7 @@ public class GrupoProdutoCadastroDto {
     @Pattern(regexp = "\\d{2}", message = "O prefixo deve conter exatamente 2 dígitos numéricos.")
     private String codigoPrefixo;
 
-    @NotBlank(message = "A categoria do grupo é obrigatoria")
+    @NotNull(message = "A categoria do grupo é obrigatoria")
     private EnTipoInsumo categoriaGrupo;
 
     @NotNull(message = "A natureza financeira do grupo é obrigatória.")

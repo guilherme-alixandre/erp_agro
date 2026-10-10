@@ -18,7 +18,7 @@ public class CCategoria {
         return categoriaService.buscarCategoriaPorId(categoriaId);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public CategoriaDTO postCategoria(@RequestBody CategoriaDTO categoria) {
         return categoriaService.criarCategoria(categoria);
     }

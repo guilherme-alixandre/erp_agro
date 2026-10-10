@@ -102,6 +102,28 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            Somente para montar corpos de requisição JSON nos testes de controller (ObjectMapper de
+            teste, não usado pela aplicação — o app real usa Jackson 3 via spring-boot-starter-jackson).
+            jackson-databind 2.x já entra transitivamente via jjwt-jackson (runtime); este módulo
+            adiciona suporte a LocalDate/LocalDateTime a essa mesma versão.
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.20.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

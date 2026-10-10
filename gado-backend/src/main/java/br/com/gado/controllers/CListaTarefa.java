@@ -18,7 +18,7 @@ public class CListaTarefa {
         return listaTarefaService.buscarListaDeTarefasPorId(listaTarefaId);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ListasTarefasDTO postListaTarefa(@RequestBody ListasTarefasDTO listaTarefa) {
         return listaTarefaService.criarListaDeTarefas(listaTarefa);
     }

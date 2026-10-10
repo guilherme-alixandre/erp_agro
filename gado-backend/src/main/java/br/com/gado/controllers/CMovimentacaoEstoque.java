@@ -28,7 +28,7 @@ public class CMovimentacaoEstoque {
         return movimetacaoEstoqueService.buscarMovimentacaoEstoquePorId(movimentacaoEstoqueId);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public MovimentacaoEstoqueDTO postMovimentacaoEstoque(@RequestBody MovimentacaoEstoqueDTO movimentacaoEstoqueId) {
         return movimetacaoEstoqueService.criarMovimentacaoEstoque(movimentacaoEstoqueId);
     }
