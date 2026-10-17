@@ -42,7 +42,8 @@ class CNotaFiscalTest {
     @Test
     void listar_deveRetornar200ComLista() throws Exception {
         NotaFiscalResumoDto dto = new NotaFiscalResumoDto(
-                1L, "ENTRADA", "NF_E", "100", "chave", null, new BigDecimal("100.00"), "APROVADO");
+                1L, "ENTRADA", "NF_E", "100", "chave", null, new BigDecimal("100.00"), "APROVADO",
+                "Fornecedor Teste", "A_VISTA", null, 1, null);
         when(notaFiscalService.listar(null, null, null, USUARIO)).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/notas-fiscais")

@@ -1,5 +1,6 @@
 package br.com.gado.dto.documentoEntradaDto;
 
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnNaturezaFinanceira;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,4 +32,14 @@ public class ReciboSimplesCadastroDto {
 
     @NotNull(message = "Classifique o recibo como CUSTO ou GASTO.")
     private EnNaturezaFinanceira naturezaFinanceira;
+
+    /** Opcional — quando ausente, assume-se à vista com vencimento na data de emissão. */
+    private EnFormaPagamento formaPagamento;
+
+    private LocalDate dataVencimento;
+
+    private Integer numeroParcelas;
+
+    /** Obrigatório apenas quando formaPagamento = PARCELADO. */
+    private BigDecimal valorParcela;
 }

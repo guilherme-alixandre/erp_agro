@@ -21,6 +21,10 @@ async function cadastrarVendaLeite(email, formData) {
       loteId: Number(item.loteId),
       litros: Number(item.litros),
     })),
+    formaPagamento: formData.formaPagamento || null,
+    dataVencimento: formData.dataVencimento || null,
+    numeroParcelas: formData.formaPagamento === 'PARCELADO' && formData.numeroParcelas !== '' ? Number(formData.numeroParcelas) : null,
+    valorParcela: formData.formaPagamento === 'PARCELADO' && formData.valorParcela !== '' ? Number(formData.valorParcela) : null,
   }
   return request('/documentos-saida/venda-leite', {
     method: 'POST',
@@ -38,6 +42,10 @@ async function cadastrarVendaAnimal(email, formData) {
     animalIds: (formData.animalIds ?? []).map(Number),
     valorTotal: Number(formData.valorTotal),
     compradorId: Number(formData.compradorId),
+    formaPagamento: formData.formaPagamento || null,
+    dataVencimento: formData.dataVencimento || null,
+    numeroParcelas: formData.formaPagamento === 'PARCELADO' && formData.numeroParcelas !== '' ? Number(formData.numeroParcelas) : null,
+    valorParcela: formData.formaPagamento === 'PARCELADO' && formData.valorParcela !== '' ? Number(formData.valorParcela) : null,
   }
   return request('/documentos-saida/venda-animal', {
     method: 'POST',

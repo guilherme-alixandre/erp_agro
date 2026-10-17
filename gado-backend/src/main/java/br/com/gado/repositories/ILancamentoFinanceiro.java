@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,4 +42,17 @@ public interface ILancamentoFinanceiro extends JpaRepository<ELancamentoFinancei
                               @Param("tipo") EnTipoMovimentoFinanceiro tipo,
                               @Param("natureza") EnNaturezaFinanceira natureza,
                               @Param("origemExcluida") EnOrigemLancamentoFinanceiro origemExcluida);
+
+    /** Mesma lógica de somarPorBlocoExcluindoOrigem, mas para um intervalo de datas livre (aba Rentabilidade). */
+    @Query("select coalesce(sum(l.valor), 0) from ELancamentoFinanceiro l "
+            + "where l.dataCompetencia between :inicio and :fim and l.tipoMovimento = :tipo "
+            + "and (:natureza is null or l.naturezaFinanceira = :natureza) "
+            + "and (:origemExcluida is null or l.origem <> :origemExcluida)")
+    BigDecimal somarPorPeriodoExcluindoOrigem(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim,
+                              @Param("tipo") EnTipoMovimentoFinanceiro tipo,
+                              @Param("natureza") EnNaturezaFinanceira natureza,
+                              @Param("origemExcluida") EnOrigemLancamentoFinanceiro origemExcluida);
+
+    List<ELancamentoFinanceiro> findByTipoMovimentoAndDataCompetenciaBetween(
+            EnTipoMovimentoFinanceiro tipoMovimento, LocalDate inicio, LocalDate fim);
 }

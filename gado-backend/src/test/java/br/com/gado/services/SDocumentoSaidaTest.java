@@ -112,7 +112,38 @@ class SDocumentoSaidaTest {
 
             assertThat(resultado.getItensLeite().get(0).getPrecoLitro()).isEqualByComparingTo("2.0000");
             assertThat(resultado.getValorTotal()).isEqualByComparingTo("200.00");
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(resultado.getDataVencimento()).isEqualTo(resultado.getDataEmissao());
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(1);
             verify(lancamentoFinanceiroService).registrarEntradaVenda(any(), any(), any(), any(), eq(financeiro.getEmail()));
+        }
+
+        @Test
+        void deveCadastrarParcelado_QuandoFormaPagamentoInformada() {
+            stubUsuario(financeiro);
+            ELote lote = new ELote();
+            lote.setId(10L);
+            when(loteInterface.findByIdAndStatus(10L, EnStatus.A)).thenReturn(Optional.of(lote));
+            when(parceiroInterface.findById(1L)).thenReturn(Optional.of(comprador));
+            when(loteSetorInterface.findByLote_Id(10L)).thenReturn(List.of());
+            when(documentoSaidaInterface.save(any(EDocumentoSaida.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            VendaLeiteCadastroDto dto = new VendaLeiteCadastroDto();
+            dto.setDataEmissao(LocalDate.of(2026, 3, 1));
+            dto.setCompradorId(1L);
+            dto.setValorTotal(new BigDecimal("200.00"));
+            dto.setItens(List.of(item(10L, "100")));
+            dto.setFormaPagamento(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            dto.setDataVencimento(LocalDate.of(2026, 4, 1));
+            dto.setNumeroParcelas(2);
+            dto.setValorParcela(new BigDecimal("100.00"));
+
+            DocumentoSaidaRespostaDto resultado = sDocumentoSaida.cadastrarVendaLeite(dto, financeiro.getEmail());
+
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            assertThat(resultado.getDataVencimento()).isEqualTo(LocalDate.of(2026, 4, 1));
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(2);
+            assertThat(resultado.getValorParcela()).isEqualByComparingTo("100.00");
         }
 
         @Test
@@ -271,6 +302,8 @@ class SDocumentoSaidaTest {
             assertThat(resultado.getItensAnimal().get(0).getValorVenda()).isEqualByComparingTo("1000.00");
             assertThat(a1.getStatusAnimal()).isEqualTo(EnStatusAnimal.VENDIDO);
             assertThat(a2.getStatusAnimal()).isEqualTo(EnStatusAnimal.VENDIDO);
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(1);
         }
 
         @Test

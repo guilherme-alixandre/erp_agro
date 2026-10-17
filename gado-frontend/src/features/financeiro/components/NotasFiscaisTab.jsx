@@ -52,6 +52,7 @@ const STATUS_CLASS = {
 
 const defaultReciboForm = {
   descricao: '', dataEmissao: '', produtoId: '', quantidade: '', valorTotal: '', naturezaFinanceira: '',
+  formaPagamento: 'A_VISTA', dataVencimento: '', numeroParcelas: '', valorParcela: '',
 }
 
 /**
@@ -368,6 +369,7 @@ function NotasFiscaisTab({ currentUser }) {
               <th>Direção</th>
               <th>Tipo</th>
               <th>Número</th>
+              <th>Fornecedor/Comprador</th>
               <th>Chave</th>
               <th>Data Emissão</th>
               <th>Valor Total</th>
@@ -378,11 +380,11 @@ function NotasFiscaisTab({ currentUser }) {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="table-loading">Carregando...</td>
+                <td colSpan={9} className="table-loading">Carregando...</td>
               </tr>
             ) : notasFiscais.length === 0 ? (
               <tr>
-                <td colSpan={8} className="table-empty">Nenhuma nota fiscal encontrada.</td>
+                <td colSpan={9} className="table-empty">Nenhuma nota fiscal encontrada.</td>
               </tr>
             ) : (
               notasFiscais.map((nf) => {
@@ -392,6 +394,7 @@ function NotasFiscaisTab({ currentUser }) {
                     <td>{nf.direcao === 'ENTRADA' ? 'Entrada' : 'Receita'}</td>
                     <td>{TIPO_DOC_LABEL[nf.tipoDocumento] ?? nf.tipoDocumento}</td>
                     <td>{nf.numeroDocumento || '—'}</td>
+                    <td>{nf.parceiroNome || '—'}</td>
                     <td className="codigo-produto">{nf.chaveAcesso || '—'}</td>
                     <td>{formatarData(nf.dataEmissao)}</td>
                     <td>{formatarMoeda(nf.valorTotal)}</td>

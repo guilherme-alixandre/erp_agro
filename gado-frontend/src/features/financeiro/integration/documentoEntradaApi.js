@@ -39,6 +39,10 @@ function normalizeDocumento(raw) {
     fornecedorId: raw?.fornecedorId ?? null,
     fornecedorNome: raw?.fornecedorNome ?? '',
     valorTotal: raw?.valorTotal ?? 0,
+    formaPagamento: raw?.formaPagamento ?? '',
+    dataVencimento: raw?.dataVencimento ?? null,
+    numeroParcelas: raw?.numeroParcelas ?? null,
+    valorParcela: raw?.valorParcela ?? null,
     justificativaRecusa: raw?.justificativaRecusa ?? '',
     criadoPorEmail: raw?.criadoPorEmail ?? '',
     aprovadoPorEmail: raw?.aprovadoPorEmail ?? '',
@@ -90,6 +94,10 @@ async function cadastrarReciboSimples(email, formData) {
     quantidade: Number(formData.quantidade),
     valorTotal: Number(formData.valorTotal),
     naturezaFinanceira: formData.naturezaFinanceira,
+    formaPagamento: formData.formaPagamento || null,
+    dataVencimento: formData.dataVencimento || null,
+    numeroParcelas: formData.formaPagamento === 'PARCELADO' && formData.numeroParcelas !== '' ? Number(formData.numeroParcelas) : null,
+    valorParcela: formData.formaPagamento === 'PARCELADO' && formData.valorParcela !== '' ? Number(formData.valorParcela) : null,
   }
   const payload = await request('/documentos-entrada/recibos', {
     method: 'POST',

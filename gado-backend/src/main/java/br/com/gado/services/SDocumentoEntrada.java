@@ -13,6 +13,7 @@ import br.com.gado.entities.EDocumentoEntradaItem;
 import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.EParceiro;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAprovacaoFinanceira;
@@ -141,6 +142,10 @@ public class SDocumentoEntrada {
         documento.setDataEmissao(dados.dataEmissao);
         documento.setDataEntrada(LocalDate.now());
         documento.setValorTotal(dados.valorTotal);
+        documento.setFormaPagamento(dados.formaPagamento);
+        documento.setDataVencimento(dados.dataVencimento);
+        documento.setNumeroParcelas(dados.numeroParcelas);
+        documento.setValorParcela(dados.valorParcela);
         documento.setXmlOriginal(new String(file.getBytes(), StandardCharsets.UTF_8));
         documento.setFornecedor(fornecedor);
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
@@ -210,6 +215,12 @@ public class SDocumentoEntrada {
         documento.setDataEntrada(LocalDate.now());
         documento.setValorTotal(dto.getValorTotal());
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
+
+        EnFormaPagamento formaPagamento = dto.getFormaPagamento() != null ? dto.getFormaPagamento() : EnFormaPagamento.A_VISTA;
+        documento.setFormaPagamento(formaPagamento);
+        documento.setDataVencimento(dto.getDataVencimento() != null ? dto.getDataVencimento() : dto.getDataEmissao());
+        documento.setNumeroParcelas(formaPagamento == EnFormaPagamento.PARCELADO ? dto.getNumeroParcelas() : 1);
+        documento.setValorParcela(formaPagamento == EnFormaPagamento.PARCELADO ? dto.getValorParcela() : null);
 
         if (dto.getFornecedorId() != null) {
             EParceiro fornecedor = parceiroInterface.findById(dto.getFornecedorId())
@@ -479,6 +490,10 @@ public class SDocumentoEntrada {
         dto.setDataEmissao(documento.getDataEmissao());
         dto.setDataEntrada(documento.getDataEntrada());
         dto.setValorTotal(documento.getValorTotal());
+        dto.setFormaPagamento(documento.getFormaPagamento());
+        dto.setDataVencimento(documento.getDataVencimento());
+        dto.setNumeroParcelas(documento.getNumeroParcelas());
+        dto.setValorParcela(documento.getValorParcela());
         dto.setJustificativaRecusa(documento.getJustificativaRecusa());
         dto.setCriadoPorEmail(documento.getCriadoPorEmail());
         dto.setAprovadoPorEmail(documento.getAprovadoPorEmail());

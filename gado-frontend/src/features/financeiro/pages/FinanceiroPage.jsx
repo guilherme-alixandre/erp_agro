@@ -3,7 +3,7 @@ import NotasFiscaisTab from '../components/NotasFiscaisTab'
 import AprovacoesTab from '../components/AprovacoesTab'
 import FuncionariosTab from '../components/FuncionariosTab'
 import ParceirosTab from '../components/ParceirosTab'
-import DashboardTab from '../components/DashboardTab'
+import RentabilidadeTab from '../components/RentabilidadeTab'
 import ModuleHeader from '../../../components/shared/ModuleHeader'
 import '../../animais/styles/animais.css'
 import '../../insumos/styles/insumos.css'
@@ -101,10 +101,10 @@ function FinanceiroPage({ currentUser, onNavigate, onLogout }) {
           </button>
           <button
             type="button"
-            className={`insumos-tab ${activeTab === 'dashboard' ? 'insumos-tab--active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            className={`insumos-tab ${activeTab === 'rentabilidade' ? 'insumos-tab--active' : ''}`}
+            onClick={() => setActiveTab('rentabilidade')}
           >
-            Dashboard
+            Rentabilidade
           </button>
         </div>
 
@@ -112,7 +112,7 @@ function FinanceiroPage({ currentUser, onNavigate, onLogout }) {
         {activeTab === 'aprovacoes' ? <AprovacoesTab currentUser={currentUser} /> : null}
         {activeTab === 'parceiros' ? <ParceirosTab currentUser={currentUser} /> : null}
         {activeTab === 'funcionarios' ? <FuncionariosTab currentUser={currentUser} /> : null}
-        {activeTab === 'dashboard' ? <DashboardTab currentUser={currentUser} /> : null}
+        {activeTab === 'rentabilidade' ? <RentabilidadeTab currentUser={currentUser} /> : null}
       </section>
     </main>
   )

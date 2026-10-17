@@ -86,7 +86,15 @@ class SDocumentoEntradaTest {
     }
 
     private byte[] xmlNfeValida() {
-        try (InputStream in = SDocumentoEntradaTest.class.getResourceAsStream("/nfe/nfe-racao-valida.xml")) {
+        return recursoXml("/nfe/nfe-racao-valida.xml");
+    }
+
+    private byte[] xmlNfeParcelada() {
+        return recursoXml("/nfe/nfe-racao-parcelada.xml");
+    }
+
+    private byte[] recursoXml(String caminho) {
+        try (InputStream in = SDocumentoEntradaTest.class.getResourceAsStream(caminho)) {
             return in.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -113,6 +121,42 @@ class SDocumentoEntradaTest {
             assertThat(resultado.getChaveAcessoNfe()).hasSize(44);
             assertThat(resultado.getItens()).hasSize(1);
             verify(lancamentoFinanceiroService).registrarOuAtualizarSaidaItemDocumento(any(), eq(financeiro.getEmail()));
+        }
+
+        @Test
+        void deveImportarNfe_AVista_QuandoXmlSemCobr() throws IOException {
+            stubUsuario(financeiro);
+            when(parceiroInterface.findById(1L)).thenReturn(Optional.of(fornecedor));
+            when(documentoInterface.findByChaveAcessoNfe(any())).thenReturn(Optional.empty());
+            when(documentoInterface.save(any(EDocumentoEntrada.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            MockMultipartFile file = new MockMultipartFile("file", "nfe.xml", "text/xml", xmlNfeValida());
+
+            DocumentoEntradaRespostaDto resultado =
+                    sDocumentoEntrada.importarNfeXml(file, 1L, financeiro.getEmail());
+
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(resultado.getDataVencimento()).isEqualTo(resultado.getDataEmissao());
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(1);
+            assertThat(resultado.getValorParcela()).isNull();
+        }
+
+        @Test
+        void deveImportarNfe_Parcelada_QuandoXmlComCobr() throws IOException {
+            stubUsuario(financeiro);
+            when(parceiroInterface.findById(1L)).thenReturn(Optional.of(fornecedor));
+            when(documentoInterface.findByChaveAcessoNfe(any())).thenReturn(Optional.empty());
+            when(documentoInterface.save(any(EDocumentoEntrada.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            MockMultipartFile file = new MockMultipartFile("file", "nfe.xml", "text/xml", xmlNfeParcelada());
+
+            DocumentoEntradaRespostaDto resultado =
+                    sDocumentoEntrada.importarNfeXml(file, 1L, financeiro.getEmail());
+
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            assertThat(resultado.getDataVencimento()).isEqualTo(LocalDate.of(2026, 10, 5));
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(2);
+            assertThat(resultado.getValorParcela()).isEqualByComparingTo("1500.00");
         }
 
         @Test
@@ -199,7 +243,33 @@ class SDocumentoEntradaTest {
 
             assertThat(resultado.getStatusAprovacao()).isEqualTo(EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO);
             assertThat(resultado.getTipoDocumento()).isEqualTo(EnTipoDocumentoFinanceiro.RECIBO_SIMPLES);
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(resultado.getDataVencimento()).isEqualTo(resultado.getDataEmissao());
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(1);
             verifyNoInteractions(lancamentoFinanceiroService, insumoService);
+        }
+
+        @Test
+        void deveCadastrarRecibo_Parcelado_QuandoInformado() {
+            stubUsuario(financeiro);
+            EInsumo produto = new EInsumo();
+            produto.setId(200L);
+            when(insumoInterface.findByIdAndStatus(200L, EnStatus.A)).thenReturn(Optional.of(produto));
+            when(documentoInterface.save(any(EDocumentoEntrada.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ReciboSimplesCadastroDto dto = dtoValido();
+            dto.setFormaPagamento(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            dto.setDataVencimento(LocalDate.of(2026, 4, 1));
+            dto.setNumeroParcelas(3);
+            dto.setValorParcela(new BigDecimal("50.00"));
+
+            DocumentoEntradaRespostaDto resultado =
+                    sDocumentoEntrada.cadastrarReciboSimples(dto, financeiro.getEmail());
+
+            assertThat(resultado.getFormaPagamento()).isEqualTo(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            assertThat(resultado.getDataVencimento()).isEqualTo(LocalDate.of(2026, 4, 1));
+            assertThat(resultado.getNumeroParcelas()).isEqualTo(3);
+            assertThat(resultado.getValorParcela()).isEqualByComparingTo("50.00");
         }
 
         @Test

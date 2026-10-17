@@ -3,6 +3,9 @@ package br.com.gado.services;
 import br.com.gado.dto.SetorDto;
 import br.com.gado.dto.loteDto.LoteDto;
 import br.com.gado.dto.metaSetorDto.MetaSetorRespostaDto;
+import br.com.gado.dto.rentabilidadeDto.ContaParceiroDto;
+import br.com.gado.dto.rentabilidadeDto.GastoGrupoDto;
+import br.com.gado.dto.rentabilidadeDto.ProdutoVendidoDto;
 import br.com.gado.enums.EnStatus;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -33,6 +37,9 @@ public class SPdfRelatorio {
 
     @Autowired
     private SMetaSetor metaSetorService;
+
+    @Autowired
+    private SRentabilidade rentabilidadeService;
 
     public byte[] gerarRelatorioMetas(Long setorId) {
         List<MetaSetorRespostaDto> metas = metaSetorService.listarPorSetor(setorId);
@@ -148,6 +155,91 @@ public class SPdfRelatorio {
         return out.toByteArray();
     }
 
+    public byte[] gerarRelatorioRentabilidade(LocalDate dataInicio, LocalDate dataFim, String emailUsuario) {
+        List<ContaParceiroDto> contasPorParceiro = rentabilidadeService.listarContasPorParceiro(dataInicio, dataFim, emailUsuario);
+        List<ProdutoVendidoDto> vendasPorProduto = rentabilidadeService.listarVendasPorProduto(dataInicio, dataFim, emailUsuario);
+        List<GastoGrupoDto> gastosPorGrupo = rentabilidadeService.listarGastosPorGrupo(dataInicio, dataFim, emailUsuario);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document doc = new Document(PageSize.A4.rotate());
+        try {
+            PdfWriter.getInstance(doc, out);
+            doc.open();
+            addTitulo(doc, "Relatório de Rentabilidade");
+            Font fontPeriodo = FontFactory.getFont(FontFactory.HELVETICA, 10, Font.NORMAL, Color.DARK_GRAY);
+            Paragraph periodo = new Paragraph("Período: " + dataInicio.format(BR_DATE) + " a " + dataFim.format(BR_DATE), fontPeriodo);
+            periodo.setAlignment(Element.ALIGN_CENTER);
+            periodo.setSpacingAfter(4f);
+            doc.add(periodo);
+            addDataGeracao(doc);
+
+            addSubtitulo(doc, "Contas a Pagar e Receber por Parceiro");
+            if (contasPorParceiro.isEmpty()) {
+                doc.add(new Paragraph("Nenhuma conta com vencimento neste período.", corpo()));
+            } else {
+                PdfPTable tabela = novaTabela(5, new float[]{3f, 2f, 2f, 1.5f, 2f});
+                addCabecalho(tabela, "Parceiro", "A Pagar", "A Receber", "Qtd. NFs", "Próx. Vencimento");
+                boolean par = false;
+                for (ContaParceiroDto c : contasPorParceiro) {
+                    Color bg = par ? COR_LINHA_PAR : Color.WHITE;
+                    addCelula(tabela, c.getParceiroNome(), bg);
+                    addCelula(tabela, "R$ " + formatBigDecimal(c.getTotalAPagar()), bg);
+                    addCelula(tabela, "R$ " + formatBigDecimal(c.getTotalAReceber()), bg);
+                    addCelula(tabela, String.valueOf(c.getQtdNfsPagar() + c.getQtdNfsReceber()), bg);
+                    addCelula(tabela, c.getProximoVencimento() != null ? c.getProximoVencimento().format(BR_DATE) : "-", bg);
+                    par = !par;
+                }
+                doc.add(tabela);
+            }
+
+            addSubtitulo(doc, "Produtos Mais Vendidos");
+            if (vendasPorProduto.isEmpty()) {
+                doc.add(new Paragraph("Nenhuma venda neste período.", corpo()));
+            } else {
+                PdfPTable tabela = novaTabela(3, new float[]{3f, 2f, 2f});
+                addCabecalho(tabela, "Produto", "Quantidade", "Valor Total");
+                boolean par = false;
+                for (ProdutoVendidoDto p : vendasPorProduto) {
+                    Color bg = par ? COR_LINHA_PAR : Color.WHITE;
+                    addCelula(tabela, p.getNome(), bg);
+                    addCelula(tabela, formatBigDecimal(p.getQuantidade()) + " " + p.getUnidade(), bg);
+                    addCelula(tabela, "R$ " + formatBigDecimal(p.getValorTotal()), bg);
+                    par = !par;
+                }
+                doc.add(tabela);
+            }
+
+            addSubtitulo(doc, "Maiores Gastos por Grupo");
+            if (gastosPorGrupo.isEmpty()) {
+                doc.add(new Paragraph("Nenhum gasto neste período.", corpo()));
+            } else {
+                PdfPTable tabela = novaTabela(2, new float[]{4f, 2f});
+                addCabecalho(tabela, "Grupo", "Valor Total");
+                boolean par = false;
+                for (GastoGrupoDto g : gastosPorGrupo) {
+                    Color bg = par ? COR_LINHA_PAR : Color.WHITE;
+                    addCelula(tabela, g.getGrupoNome(), bg);
+                    addCelula(tabela, "R$ " + formatBigDecimal(g.getValorTotal()), bg);
+                    par = !par;
+                }
+                doc.add(tabela);
+            }
+        } catch (DocumentException e) {
+            throw new RuntimeException("Erro ao gerar PDF de rentabilidade.", e);
+        } finally {
+            doc.close();
+        }
+        return out.toByteArray();
+    }
+
+    private void addSubtitulo(Document doc, String texto) throws DocumentException {
+        Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Font.BOLD, COR_CABECALHO);
+        Paragraph p = new Paragraph(texto, font);
+        p.setSpacingBefore(14f);
+        p.setSpacingAfter(4f);
+        doc.add(p);
+    }
+
     private void addTitulo(Document doc, String titulo) throws DocumentException {
         Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Font.BOLD, COR_CABECALHO);
         Paragraph p = new Paragraph(titulo, font);
@@ -211,6 +303,11 @@ public class SPdfRelatorio {
     }
 
     private String formatDouble(Double valor) {
+        if (valor == null) return "-";
+        return String.format("%.2f", valor).replace(".", ",");
+    }
+
+    private String formatBigDecimal(BigDecimal valor) {
         if (valor == null) return "-";
         return String.format("%.2f", valor).replace(".", ",");
     }

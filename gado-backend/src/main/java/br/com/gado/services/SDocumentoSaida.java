@@ -14,6 +14,7 @@ import br.com.gado.entities.EUsuario;
 import br.com.gado.entities.EVendaAnimalItem;
 import br.com.gado.entities.EVendaLeiteItem;
 import br.com.gado.entities.EVendaMetaLote;
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAnimal;
@@ -99,6 +100,17 @@ public class SDocumentoSaida {
                 .orElseThrow(() -> new IllegalArgumentException("Comprador não encontrado."));
     }
 
+    /** Aplica forma de pagamento no documento — padrão A_VISTA com vencimento na emissão quando não informado. */
+    private void aplicarFormaPagamento(EDocumentoSaida documento, EnFormaPagamento formaPagamentoInformada,
+                                        LocalDate dataVencimentoInformada, Integer numeroParcelasInformado,
+                                        BigDecimal valorParcelaInformado, LocalDate dataEmissao) {
+        EnFormaPagamento formaPagamento = formaPagamentoInformada != null ? formaPagamentoInformada : EnFormaPagamento.A_VISTA;
+        documento.setFormaPagamento(formaPagamento);
+        documento.setDataVencimento(dataVencimentoInformada != null ? dataVencimentoInformada : dataEmissao);
+        documento.setNumeroParcelas(formaPagamento == EnFormaPagamento.PARCELADO ? numeroParcelasInformado : 1);
+        documento.setValorParcela(formaPagamento == EnFormaPagamento.PARCELADO ? valorParcelaInformado : null);
+    }
+
     // ── Venda de leite ───────────────────────────────────────────────────
 
     @Transactional
@@ -129,6 +141,8 @@ public class SDocumentoSaida {
         documento.setValorTotal(valorTotal);
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
         documento.setComprador(resolveComprador(dto.getCompradorId()));
+        aplicarFormaPagamento(documento, dto.getFormaPagamento(), dto.getDataVencimento(),
+                dto.getNumeroParcelas(), dto.getValorParcela(), dto.getDataEmissao());
 
         List<EVendaLeiteItem> itens = new ArrayList<>();
         for (VendaLeiteItemCadastroDto itemDto : dto.getItens()) {
@@ -213,6 +227,8 @@ public class SDocumentoSaida {
         documento.setValorTotal(dto.getValorTotal());
         documento.setCriadoPorEmail(emailUsuarioLogado.trim());
         documento.setComprador(resolveComprador(dto.getCompradorId()));
+        aplicarFormaPagamento(documento, dto.getFormaPagamento(), dto.getDataVencimento(),
+                dto.getNumeroParcelas(), dto.getValorParcela(), dto.getDataEmissao());
 
         BigDecimal valorPorAnimal = dto.getValorTotal()
                 .divide(BigDecimal.valueOf(animais.size()), 2, RoundingMode.HALF_UP);
@@ -274,6 +290,10 @@ public class SDocumentoSaida {
         dto.setChaveAcesso(documento.getChaveAcesso());
         dto.setDataEmissao(documento.getDataEmissao());
         dto.setValorTotal(documento.getValorTotal());
+        dto.setFormaPagamento(documento.getFormaPagamento());
+        dto.setDataVencimento(documento.getDataVencimento());
+        dto.setNumeroParcelas(documento.getNumeroParcelas());
+        dto.setValorParcela(documento.getValorParcela());
         dto.setCriadoPorEmail(documento.getCriadoPorEmail());
 
         if (documento.getComprador() != null) {

@@ -1,5 +1,6 @@
 package br.com.gado.util;
 
+import br.com.gado.enums.EnFormaPagamento;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -19,8 +20,10 @@ import java.util.List;
 
 /**
  * Parser do XML padrão nfeProc/NFe (layout 4.00 da SEFAZ) — extrai apenas os campos usados por
- * SDocumentoEntrada.importarNfeXml: chave de acesso, número, série, data de emissão, valor total
- * e os itens (cProd/xProd/qCom/vUnCom/vProd). Não valida assinatura digital nem o schema completo
+ * SDocumentoEntrada.importarNfeXml: chave de acesso, número, série, data de emissão, valor total,
+ * os itens (cProd/xProd/qCom/vUnCom/vProd) e a condição de pagamento (cobr/dup — nDup/dVenc/vDup;
+ * quando ausente, assume-se à vista com vencimento na data de emissão). Não valida assinatura
+ * digital nem o schema completo
  * — a NF-e já chega autorizada pela SEFAZ; aqui só extraímos os dados para o Documento de Entrada.
  *
  * O XML vem de upload do usuário, então o DocumentBuilderFactory é configurado para bloquear
@@ -62,6 +65,8 @@ public final class NfeXmlParser {
             throw new IllegalArgumentException("XML inválido: nenhum item (<det>/<prod>) encontrado na NF-e.");
         }
 
+        List<ParcelaNfe> parcelas = extrairParcelas(infNFe);
+
         DadosNfe dados = new DadosNfe();
         dados.chaveAcesso = chaveAcesso;
         dados.numeroDocumento = numeroDocumento;
@@ -69,7 +74,45 @@ public final class NfeXmlParser {
         dados.dataEmissao = dataEmissao;
         dados.valorTotal = valorTotal;
         dados.itens = itens;
+        if (parcelas.isEmpty()) {
+            dados.formaPagamento = EnFormaPagamento.A_VISTA;
+            dados.dataVencimento = dataEmissao;
+            dados.numeroParcelas = 1;
+            dados.valorParcela = null;
+        } else {
+            dados.formaPagamento = parcelas.size() > 1 ? EnFormaPagamento.PARCELADO : EnFormaPagamento.A_VISTA;
+            dados.dataVencimento = parcelas.get(0).dataVencimento;
+            dados.numeroParcelas = parcelas.size();
+            dados.valorParcela = parcelas.size() > 1 ? parcelas.get(0).valor : null;
+        }
         return dados;
+    }
+
+    /** Lê <cobr>/<dup> (duplicatas de cobrança) — ausente quando a NF-e não traz condição de pagamento detalhada. */
+    private static List<ParcelaNfe> extrairParcelas(Element infNFe) {
+        List<ParcelaNfe> parcelas = new ArrayList<>();
+        Element cobr = primeiroFilhoPorTag(infNFe, "cobr");
+        if (cobr == null) {
+            return parcelas;
+        }
+        NodeList filhos = cobr.getChildNodes();
+        for (int i = 0; i < filhos.getLength(); i++) {
+            Node node = filhos.item(i);
+            if (node.getNodeType() != Node.ELEMENT_NODE || !"dup".equals(node.getNodeName())) {
+                continue;
+            }
+            Element dup = (Element) node;
+            String dVenc = textoDireto(dup, "dVenc");
+            String vDup = textoDireto(dup, "vDup");
+            if (dVenc == null || vDup == null) {
+                continue;
+            }
+            ParcelaNfe parcela = new ParcelaNfe();
+            parcela.dataVencimento = LocalDate.parse(dVenc, DateTimeFormatter.ISO_LOCAL_DATE);
+            parcela.valor = new BigDecimal(vDup);
+            parcelas.add(parcela);
+        }
+        return parcelas;
     }
 
     private static Document parseDocument(byte[] xmlBytes) {
@@ -199,6 +242,10 @@ public final class NfeXmlParser {
         public LocalDate dataEmissao;
         public BigDecimal valorTotal;
         public List<ItemNfe> itens;
+        public EnFormaPagamento formaPagamento;
+        public LocalDate dataVencimento;
+        public Integer numeroParcelas;
+        public BigDecimal valorParcela;
     }
 
     public static final class ItemNfe {
@@ -207,5 +254,10 @@ public final class NfeXmlParser {
         public BigDecimal quantidade;
         public BigDecimal valorUnitario;
         public BigDecimal valorTotal;
+    }
+
+    private static final class ParcelaNfe {
+        LocalDate dataVencimento;
+        BigDecimal valor;
     }
 }

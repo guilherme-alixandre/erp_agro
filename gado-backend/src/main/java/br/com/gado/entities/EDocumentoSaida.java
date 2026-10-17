@@ -1,5 +1,6 @@
 package br.com.gado.entities;
 
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnTipoDocumentoSaida;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -44,6 +45,21 @@ public class EDocumentoSaida extends EAbstract {
 
     @Column(name = "valor_total", nullable = false, precision = 15, scale = 2)
     private BigDecimal valorTotal;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "forma_pagamento", length = 15)
+    private EnFormaPagamento formaPagamento;
+
+    /** Vencimento único (se à vista) ou da primeira parcela — as demais vencem +1 mês cada. */
+    @Column(name = "data_vencimento")
+    private LocalDate dataVencimento;
+
+    @Column(name = "numero_parcelas")
+    private Integer numeroParcelas;
+
+    /** Preenchido apenas quando formaPagamento = PARCELADO. */
+    @Column(name = "valor_parcela", precision = 15, scale = 2)
+    private BigDecimal valorParcela;
 
     @Column(name = "criado_por_email", nullable = false)
     private String criadoPorEmail;

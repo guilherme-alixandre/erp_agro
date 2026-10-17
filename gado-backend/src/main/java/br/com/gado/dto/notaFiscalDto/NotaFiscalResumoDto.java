@@ -24,4 +24,9 @@ public class NotaFiscalResumoDto {
     private LocalDate dataEmissao;
     private BigDecimal valorTotal;
     private String status; // status de aprovação (entradas) ou "-" (saídas, sempre confirmadas)
+    private String parceiroNome; // fornecedor (ENTRADA) ou comprador (RECEITA)
+    private String formaPagamento; // A_VISTA | PARCELADO
+    private LocalDate dataVencimento;
+    private Integer numeroParcelas;
+    private BigDecimal valorParcela;
 }

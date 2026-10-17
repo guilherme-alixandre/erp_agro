@@ -1,5 +1,6 @@
 package br.com.gado.dto.documentoSaidaDto;
 
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnStatusAnimal;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -34,4 +35,14 @@ public class VendaAnimalCadastroDto {
 
     @NotNull(message = "Informe o comprador.")
     private Long compradorId;
+
+    /** Opcional — quando ausente, assume-se à vista com vencimento na data de emissão. */
+    private EnFormaPagamento formaPagamento;
+
+    private LocalDate dataVencimento;
+
+    private Integer numeroParcelas;
+
+    /** Obrigatório apenas quando formaPagamento = PARCELADO. */
+    private BigDecimal valorParcela;
 }

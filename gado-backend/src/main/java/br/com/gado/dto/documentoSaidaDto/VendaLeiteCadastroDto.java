@@ -1,5 +1,6 @@
 package br.com.gado.dto.documentoSaidaDto;
 
+import br.com.gado.enums.EnFormaPagamento;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -31,4 +32,14 @@ public class VendaLeiteCadastroDto {
     @NotEmpty(message = "Selecione ao menos um lote de origem do leite.")
     @Valid
     private List<VendaLeiteItemCadastroDto> itens;
+
+    /** Opcional — quando ausente, assume-se à vista com vencimento na data de emissão. */
+    private EnFormaPagamento formaPagamento;
+
+    private LocalDate dataVencimento;
+
+    private Integer numeroParcelas;
+
+    /** Obrigatório apenas quando formaPagamento = PARCELADO. */
+    private BigDecimal valorParcela;
 }

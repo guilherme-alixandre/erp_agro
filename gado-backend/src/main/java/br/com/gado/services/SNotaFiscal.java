@@ -85,13 +85,19 @@ public class SNotaFiscal {
                 documento.getId(), "ENTRADA", documento.getTipoDocumento().name(),
                 documento.getNumeroDocumento(), documento.getChaveAcessoNfe(),
                 documento.getDataEmissao(), documento.getValorTotal(),
-                documento.getStatusAprovacao().name());
+                documento.getStatusAprovacao().name(),
+                documento.getFornecedor() != null ? documento.getFornecedor().getNome() : null,
+                documento.getFormaPagamento() != null ? documento.getFormaPagamento().name() : null,
+                documento.getDataVencimento(), documento.getNumeroParcelas(), documento.getValorParcela());
     }
 
     private NotaFiscalResumoDto toResumoDto(EDocumentoSaida documento) {
         return new NotaFiscalResumoDto(
                 documento.getId(), "RECEITA", documento.getTipoDocumento().name(),
                 documento.getNumeroDocumento(), documento.getChaveAcesso(),
-                documento.getDataEmissao(), documento.getValorTotal(), "CONFIRMADO");
+                documento.getDataEmissao(), documento.getValorTotal(), "CONFIRMADO",
+                documento.getComprador() != null ? documento.getComprador().getNome() : null,
+                documento.getFormaPagamento() != null ? documento.getFormaPagamento().name() : null,
+                documento.getDataVencimento(), documento.getNumeroParcelas(), documento.getValorParcela());
     }
 }

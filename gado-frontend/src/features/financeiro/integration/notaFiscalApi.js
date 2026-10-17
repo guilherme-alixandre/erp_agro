@@ -15,6 +15,11 @@ function normalizeNotaFiscal(raw) {
     dataEmissao: raw?.dataEmissao ?? null,
     valorTotal: raw?.valorTotal ?? 0,
     status: raw?.status ?? '',
+    parceiroNome: raw?.parceiroNome ?? '',
+    formaPagamento: raw?.formaPagamento ?? '',
+    dataVencimento: raw?.dataVencimento ?? null,
+    numeroParcelas: raw?.numeroParcelas ?? null,
+    valorParcela: raw?.valorParcela ?? null,
   }
 }
 

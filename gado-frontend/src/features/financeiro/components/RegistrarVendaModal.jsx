@@ -25,6 +25,10 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
     valorTotal: '',
     compradorId: '',
     itens: [{ loteId: '', litros: '' }],
+    formaPagamento: 'A_VISTA',
+    dataVencimento: '',
+    numeroParcelas: '',
+    valorParcela: '',
   })
 
   function handleLeiteChange(event) {
@@ -71,6 +75,10 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
     animalIds: [],
     valorTotal: '',
     compradorId: '',
+    formaPagamento: 'A_VISTA',
+    dataVencimento: '',
+    numeroParcelas: '',
+    valorParcela: '',
   })
   const [selecaoModalOpen, setSelecaoModalOpen] = useState(false)
 
@@ -216,6 +224,32 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
               <input type="text" name="chaveAcesso" value={leiteForm.chaveAcesso} onChange={handleLeiteChange} maxLength={44} />
             </label>
 
+            <label>
+              <span>Forma de pagamento</span>
+              <select name="formaPagamento" value={leiteForm.formaPagamento} onChange={handleLeiteChange}>
+                <option value="A_VISTA">À vista</option>
+                <option value="PARCELADO">Parcelado</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Data de vencimento{leiteForm.formaPagamento === 'PARCELADO' ? ' (1ª parcela)' : ''}</span>
+              <input type="date" name="dataVencimento" value={leiteForm.dataVencimento} onChange={handleLeiteChange} />
+            </label>
+
+            {leiteForm.formaPagamento === 'PARCELADO' ? (
+              <>
+                <label>
+                  <span>Número de parcelas <span className="required-marker">*</span></span>
+                  <input type="number" name="numeroParcelas" value={leiteForm.numeroParcelas} onChange={handleLeiteChange} min="2" step="1" required />
+                </label>
+                <label>
+                  <span>Valor de cada parcela (R$) <span className="required-marker">*</span></span>
+                  <input type="number" name="valorParcela" value={leiteForm.valorParcela} onChange={handleLeiteChange} min="0.01" step="0.01" required />
+                </label>
+              </>
+            ) : null}
+
             {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 
             <div className="modal-actions">
@@ -301,6 +335,32 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
               <span>Chave de acesso (opcional)</span>
               <input type="text" name="chaveAcesso" value={animalForm.chaveAcesso} onChange={handleAnimalChange} maxLength={44} />
             </label>
+
+            <label>
+              <span>Forma de pagamento</span>
+              <select name="formaPagamento" value={animalForm.formaPagamento} onChange={handleAnimalChange}>
+                <option value="A_VISTA">À vista</option>
+                <option value="PARCELADO">Parcelado</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Data de vencimento{animalForm.formaPagamento === 'PARCELADO' ? ' (1ª parcela)' : ''}</span>
+              <input type="date" name="dataVencimento" value={animalForm.dataVencimento} onChange={handleAnimalChange} />
+            </label>
+
+            {animalForm.formaPagamento === 'PARCELADO' ? (
+              <>
+                <label>
+                  <span>Número de parcelas <span className="required-marker">*</span></span>
+                  <input type="number" name="numeroParcelas" value={animalForm.numeroParcelas} onChange={handleAnimalChange} min="2" step="1" required />
+                </label>
+                <label>
+                  <span>Valor de cada parcela (R$) <span className="required-marker">*</span></span>
+                  <input type="number" name="valorParcela" value={animalForm.valorParcela} onChange={handleAnimalChange} min="0.01" step="0.01" required />
+                </label>
+              </>
+            ) : null}
 
             {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 

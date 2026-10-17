@@ -6,6 +6,7 @@ import br.com.gado.enums.EnStatusAprovacaoFinanceira;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,5 @@ public interface IDocumentoEntrada extends JpaRepository<EDocumentoEntrada, Long
     List<EDocumentoEntrada> findByStatusAprovacaoOrderByDataEntradaDesc(EnStatusAprovacaoFinanceira status);
     List<EDocumentoEntrada> findAllByOrderByDataEntradaDesc();
     List<EDocumentoEntrada> findByStatusOrderByDataEntradaDesc(EnStatus status);
+    List<EDocumentoEntrada> findByStatusAndDataVencimentoBetween(EnStatus status, LocalDate inicio, LocalDate fim);
 }

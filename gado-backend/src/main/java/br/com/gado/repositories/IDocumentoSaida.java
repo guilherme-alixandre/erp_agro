@@ -12,4 +12,5 @@ import java.util.List;
 public interface IDocumentoSaida extends JpaRepository<EDocumentoSaida, Long> {
     List<EDocumentoSaida> findByStatusOrderByDataEmissaoDesc(EnStatus status);
     List<EDocumentoSaida> findByStatusAndDataEmissaoBetween(EnStatus status, LocalDate inicio, LocalDate fim);
+    List<EDocumentoSaida> findByStatusAndDataVencimentoBetween(EnStatus status, LocalDate inicio, LocalDate fim);
 }

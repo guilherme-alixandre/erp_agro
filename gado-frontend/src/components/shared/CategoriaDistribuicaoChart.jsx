@@ -9,8 +9,11 @@ import { getCorCategoria } from '../../utils/chartColors'
  * `onBarClick(nome)` — opcional; quando informado, cada barra fica clicável
  * (cursor de ponteiro) e `activeNome` pode destacar a barra correspondente,
  * apagando levemente as demais, para indicar um filtro ativo.
+ *
+ * `formatValor(valor)` — opcional; quando informado, formata o valor exibido no
+ * tooltip e no rótulo da barra (ex: moeda) em vez do número bruto + unidadeLabel.
  */
-function CategoriaDistribuicaoChart({ data, unidadeLabel = 'itens', onBarClick, activeNome }) {
+function CategoriaDistribuicaoChart({ data, unidadeLabel = 'itens', onBarClick, activeNome, formatValor }) {
   if (!data || data.length === 0) {
     return <p className="chart-card__empty">Sem dados para exibir.</p>
   }
@@ -27,7 +30,7 @@ function CategoriaDistribuicaoChart({ data, unidadeLabel = 'itens', onBarClick, 
       >
         <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
         <YAxis type="category" dataKey="nome" width={130} tick={{ fontSize: 12 }} />
-        <Tooltip formatter={(valor) => [`${valor} ${unidadeLabel}`, '']} />
+        <Tooltip formatter={(valor) => [formatValor ? formatValor(valor) : `${valor} ${unidadeLabel}`, '']} />
         <Bar
           dataKey="quantidade"
           radius={[0, 4, 4, 0]}
@@ -42,7 +45,12 @@ function CategoriaDistribuicaoChart({ data, unidadeLabel = 'itens', onBarClick, 
               fillOpacity={!activeNome || activeNome === item.nome ? 1 : 0.35}
             />
           ))}
-          <LabelList dataKey="quantidade" position="right" style={{ fill: 'var(--color-ink)' }} />
+          <LabelList
+            dataKey="quantidade"
+            position="right"
+            style={{ fill: 'var(--color-ink)' }}
+            formatter={formatValor}
+          />
         </Bar>
       </BarChart>
     </ResponsiveContainer>

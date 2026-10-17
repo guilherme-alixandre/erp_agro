@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NF-e FICTÍCIA para testes do módulo "Documento de Entrada" (gado-backend), com condição de
+  pagamento parcelada (<cobr>/<dup>). Todos os dados são inventados.
+-->
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+    <infNFe Id="NFe35240111222333000181550010000654329876543210" versao="4.00">
+      <ide>
+        <cUF>35</cUF>
+        <natOp>VENDA DE MERCADORIA - RACAO ANIMAL</natOp>
+        <mod>55</mod>
+        <serie>1</serie>
+        <nNF>65432</nNF>
+        <dhEmi>2026-09-05T09:30:00-03:00</dhEmi>
+        <tpNF>1</tpNF>
+      </ide>
+      <det nItem="1">
+        <prod>
+          <cProd>RAC-25KG-002</cProd>
+          <xProd>RACAO BOVINA ENGORDA - SACO 25KG</xProd>
+          <qCom>60.0000</qCom>
+          <vUnCom>50.0000000000</vUnCom>
+          <vProd>3000.00</vProd>
+        </prod>
+      </det>
+      <total>
+        <ICMSTot>
+          <vNF>3000.00</vNF>
+        </ICMSTot>
+      </total>
+      <cobr>
+        <fat>
+          <nFat>65432</nFat>
+          <vOrig>3000.00</vOrig>
+        </fat>
+        <dup>
+          <nDup>001</nDup>
+          <dVenc>2026-10-05</dVenc>
+          <vDup>1500.00</vDup>
+        </dup>
+        <dup>
+          <nDup>002</nDup>
+          <dVenc>2026-11-05</dVenc>
+          <vDup>1500.00</vDup>
+        </dup>
+      </cobr>
+      <infAdic>
+        <infCpl>NOTA FISCAL FICTICIA GERADA PARA TESTES DO SISTEMA GADO ERP - NAO POSSUI VALOR FISCAL.</infCpl>
+      </infAdic>
+    </infNFe>
+  </NFe>
+</nfeProc>

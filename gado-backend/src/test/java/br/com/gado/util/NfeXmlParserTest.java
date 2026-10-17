@@ -35,6 +35,10 @@ class NfeXmlParserTest {
     }
 
     private static String nfeCompleta(String tagIde, String tagTotal, String tagDet) {
+        return nfeCompleta(tagIde, tagTotal, tagDet, "");
+    }
+
+    private static String nfeCompleta(String tagIde, String tagTotal, String tagDet, String tagCobr) {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <nfeProc>
@@ -43,10 +47,11 @@ class NfeXmlParserTest {
                       %s
                       %s
                       %s
+                      %s
                     </infNFe>
                   </NFe>
                 </nfeProc>
-                """.formatted(CHAVE_44_DIGITOS, tagIde, tagTotal, tagDet);
+                """.formatted(CHAVE_44_DIGITOS, tagIde, tagTotal, tagDet, tagCobr);
     }
 
     private static final String IDE_PADRAO = """
@@ -119,6 +124,68 @@ class NfeXmlParserTest {
             NfeXmlParser.DadosNfe dados = NfeXmlParser.parse(doc);
 
             assertThat(dados.dataEmissao).isEqualTo(LocalDate.of(2026, 3, 20));
+        }
+
+        @Test
+        void deveAssumirAVistaComVencimentoNaEmissaoQuandoCobrAusente() {
+            byte[] doc = xml(nfeCompleta(IDE_PADRAO, TOTAL_PADRAO, DET_PADRAO));
+
+            NfeXmlParser.DadosNfe dados = NfeXmlParser.parse(doc);
+
+            assertThat(dados.formaPagamento).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(dados.dataVencimento).isEqualTo(dados.dataEmissao);
+            assertThat(dados.numeroParcelas).isEqualTo(1);
+            assertThat(dados.valorParcela).isNull();
+        }
+
+        @Test
+        void deveExtrairUnicaDuplicataComoAVistaQuandoCobrTemUmaDup() {
+            String cobr = """
+                    <cobr>
+                      <dup>
+                        <nDup>001</nDup>
+                        <dVenc>2026-02-10</dVenc>
+                        <vDup>50.00</vDup>
+                      </dup>
+                    </cobr>""";
+            byte[] doc = xml(nfeCompleta(IDE_PADRAO, TOTAL_PADRAO, DET_PADRAO, cobr));
+
+            NfeXmlParser.DadosNfe dados = NfeXmlParser.parse(doc);
+
+            assertThat(dados.formaPagamento).isEqualTo(br.com.gado.enums.EnFormaPagamento.A_VISTA);
+            assertThat(dados.dataVencimento).isEqualTo(LocalDate.of(2026, 2, 10));
+            assertThat(dados.numeroParcelas).isEqualTo(1);
+            assertThat(dados.valorParcela).isNull();
+        }
+
+        @Test
+        void deveExtrairParceladoQuandoCobrTemMultiplasDup() {
+            String cobr = """
+                    <cobr>
+                      <dup>
+                        <nDup>001</nDup>
+                        <dVenc>2026-02-10</dVenc>
+                        <vDup>16.67</vDup>
+                      </dup>
+                      <dup>
+                        <nDup>002</nDup>
+                        <dVenc>2026-03-10</dVenc>
+                        <vDup>16.67</vDup>
+                      </dup>
+                      <dup>
+                        <nDup>003</nDup>
+                        <dVenc>2026-04-10</dVenc>
+                        <vDup>16.66</vDup>
+                      </dup>
+                    </cobr>""";
+            byte[] doc = xml(nfeCompleta(IDE_PADRAO, TOTAL_PADRAO, DET_PADRAO, cobr));
+
+            NfeXmlParser.DadosNfe dados = NfeXmlParser.parse(doc);
+
+            assertThat(dados.formaPagamento).isEqualTo(br.com.gado.enums.EnFormaPagamento.PARCELADO);
+            assertThat(dados.dataVencimento).isEqualTo(LocalDate.of(2026, 2, 10));
+            assertThat(dados.numeroParcelas).isEqualTo(3);
+            assertThat(dados.valorParcela).isEqualByComparingTo("16.67");
         }
     }
 

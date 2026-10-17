@@ -1,5 +1,6 @@
 package br.com.gado.dto.documentoSaidaDto;
 
+import br.com.gado.enums.EnFormaPagamento;
 import br.com.gado.enums.EnStatusAnimal;
 import br.com.gado.enums.EnTipoDocumentoSaida;
 import lombok.Data;
@@ -17,6 +18,10 @@ public class DocumentoSaidaRespostaDto {
     private String chaveAcesso;
     private LocalDate dataEmissao;
     private BigDecimal valorTotal;
+    private EnFormaPagamento formaPagamento;
+    private LocalDate dataVencimento;
+    private Integer numeroParcelas;
+    private BigDecimal valorParcela;
     private String criadoPorEmail;
     private Long compradorId;
     private String compradorNome;

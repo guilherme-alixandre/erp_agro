@@ -97,6 +97,32 @@ function ReciboSimplesFormModal({ formData, produtos, isSaving, feedback, onClos
             </select>
           </label>
 
+          <label>
+            <span>Forma de pagamento</span>
+            <select name="formaPagamento" value={formData.formaPagamento} onChange={onChange}>
+              <option value="A_VISTA">À vista</option>
+              <option value="PARCELADO">Parcelado</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Data de vencimento{formData.formaPagamento === 'PARCELADO' ? ' (1ª parcela)' : ''}</span>
+            <input type="date" name="dataVencimento" value={formData.dataVencimento} onChange={onChange} />
+          </label>
+
+          {formData.formaPagamento === 'PARCELADO' ? (
+            <>
+              <label>
+                <span>Número de parcelas <span className="required-marker" aria-hidden="true">*</span></span>
+                <input type="number" name="numeroParcelas" value={formData.numeroParcelas} onChange={onChange} min="2" step="1" required />
+              </label>
+              <label>
+                <span>Valor de cada parcela (R$) <span className="required-marker" aria-hidden="true">*</span></span>
+                <input type="number" name="valorParcela" value={formData.valorParcela} onChange={onChange} min="0.01" step="0.01" required />
+              </label>
+            </>
+          ) : null}
+
           {feedback ? <p className="feedback feedback--error">{feedback}</p> : null}
 
           <div className="modal-actions">
