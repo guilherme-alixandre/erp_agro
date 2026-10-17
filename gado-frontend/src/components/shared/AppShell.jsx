@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { APP_VERSION } from '../../version'
 
 const SIDEBAR_WIDTH_KEY = 'erp_agro_sidebar_width'
 const SIDEBAR_MIN_WIDTH = 238
@@ -178,6 +179,7 @@ function AppShell({ activePage, currentUser, onNavigate, onLogout, children }) {
       style={{ '--app-sidebar-width': `${sidebarWidth}px` }}
     >
       <aside className="app-sidebar" aria-label="Navegação principal">
+        <div className="app-version">v{APP_VERSION}</div>
         <button type="button" className="app-brand" onClick={() => navigate('resumo')}>
           <img src="/logo.png" alt="" />
           <span><strong>GADO</strong><small>Gestão rural</small></span>

@@ -167,6 +167,15 @@ textarea:focus-visible {
   user-select: none !important;
 }
 
+.app-version {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(238, 247, 239, 0.65);
+  padding: 0 9px;
+}
+
 .app-brand {
   display: flex;
   align-items: center;
