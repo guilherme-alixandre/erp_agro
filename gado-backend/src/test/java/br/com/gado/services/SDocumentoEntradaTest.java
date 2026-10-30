@@ -590,7 +590,8 @@ class SDocumentoEntradaTest {
         @Test
         void listarPendentesAprovacao_deveDelegarParaRepositorio() {
             stubUsuario(financeiro);
-            when(documentoInterface.findByStatusAprovacaoOrderByDataEntradaDesc(EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO))
+            when(documentoInterface.findByStatusAndStatusAprovacaoOrderByDataEntradaDesc(
+                    EnStatus.A, EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO))
                     .thenReturn(List.of());
 
             assertThat(sDocumentoEntrada.listarPendentesAprovacao(financeiro.getEmail())).isEmpty();

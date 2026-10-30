@@ -5,6 +5,7 @@ import br.com.gado.entities.EAnimal;
 import br.com.gado.entities.ERaca;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.enums.EnStatus;
+import br.com.gado.enums.EnStatusAnimal;
 import br.com.gado.repositories.IAnimal;
 import br.com.gado.repositories.IRaca;
 import br.com.gado.repositories.IUsuario;
@@ -88,6 +89,10 @@ public class SAnimal {
             return "animal não encontrado";
 
         EAnimal animal = animalOptional.get();
+        if (animal.getStatusAnimal() == EnStatusAnimal.VENDIDO || animal.getStatusAnimal() == EnStatusAnimal.ABATIDO) {
+            throw new IllegalArgumentException(
+                    "Não é possível excluir um animal vendido ou abatido, pois ele está envolvido em uma operação de venda.");
+        }
         animal.setStatus(EnStatus.I);
         return "Animal deletado com sucesso";
     }

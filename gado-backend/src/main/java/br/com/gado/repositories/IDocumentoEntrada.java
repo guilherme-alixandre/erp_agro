@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface IDocumentoEntrada extends JpaRepository<EDocumentoEntrada, Long> {
     Optional<EDocumentoEntrada> findByChaveAcessoNfe(String chaveAcessoNfe);
     List<EDocumentoEntrada> findByStatusAprovacaoOrderByDataEntradaDesc(EnStatusAprovacaoFinanceira status);
+    List<EDocumentoEntrada> findByStatusAndStatusAprovacaoOrderByDataEntradaDesc(
+            EnStatus status, EnStatusAprovacaoFinanceira statusAprovacao);
     List<EDocumentoEntrada> findAllByOrderByDataEntradaDesc();
     List<EDocumentoEntrada> findByStatusOrderByDataEntradaDesc(EnStatus status);
     List<EDocumentoEntrada> findByStatusAndDataVencimentoBetween(EnStatus status, LocalDate inicio, LocalDate fim);

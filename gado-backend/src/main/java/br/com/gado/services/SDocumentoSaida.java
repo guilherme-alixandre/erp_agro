@@ -15,6 +15,7 @@ import br.com.gado.entities.EVendaAnimalItem;
 import br.com.gado.entities.EVendaLeiteItem;
 import br.com.gado.entities.EVendaMetaLote;
 import br.com.gado.enums.EnFormaPagamento;
+import br.com.gado.enums.EnMotivoCancelamentoVenda;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAnimal;
@@ -162,7 +163,7 @@ public class SDocumentoSaida {
         EDocumentoSaida salvo = documentoSaidaInterface.save(documento);
 
         for (EVendaLeiteItem item : salvo.getItensLeite()) {
-            registrarVendidoNaMeta(item.getLote(), item.getLitros().doubleValue(), salvo.getDataEmissao(), emailUsuarioLogado);
+            registrarVendidoNaMeta(item, item.getLote(), item.getLitros().doubleValue(), salvo.getDataEmissao(), emailUsuarioLogado);
         }
 
         lancamentoFinanceiroService.registrarEntradaVenda(
@@ -177,7 +178,8 @@ public class SDocumentoSaida {
      * cobrindo a data da venda, registra os litros vendidos para alimentar a barra "Vendido".
      * Um lote alocado a mais de um setor conta a venda para a primeira meta de LEITE encontrada.
      */
-    private void registrarVendidoNaMeta(ELote lote, double litros, LocalDate dataVenda, String emailUsuarioLogado) {
+    private void registrarVendidoNaMeta(EVendaLeiteItem vendaLeiteItem, ELote lote, double litros,
+                                         LocalDate dataVenda, String emailUsuarioLogado) {
         List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_Id(lote.getId());
         for (ELoteSetor alocacao : alocacoes) {
             List<EMetaSetor> metas = metaSetorInterface.findBySetor_IdAndStatus(alocacao.getSetor().getId(), EnStatus.A);
@@ -191,10 +193,17 @@ public class SDocumentoSaida {
                 venda.setDataVenda(dataVenda);
                 venda.setLitrosVendidos(litros);
                 venda.setCriadoPorEmail(emailUsuarioLogado != null ? emailUsuarioLogado.trim() : null);
+                venda.setVendaLeiteItem(vendaLeiteItem);
                 vendaMetaLoteInterface.save(venda);
                 return;
             }
         }
+    }
+
+    /** Reverte os registros de "vendido" na meta (EVendaMetaLote) gerados para um item de venda de leite. */
+    private void reverterVendidoNaMeta(EVendaLeiteItem vendaLeiteItem) {
+        vendaMetaLoteInterface.findByVendaLeiteItem_Id(vendaLeiteItem.getId())
+                .forEach(vendaMetaLoteInterface::delete);
     }
 
     // ── Venda / abate de animais ─────────────────────────────────────────
@@ -271,6 +280,51 @@ public class SDocumentoSaida {
                 salvo.getValorTotal(), salvo.getDataEmissao(), emailUsuarioLogado.trim());
 
         return toRespostaDto(salvo);
+    }
+
+    // ── Exclusão / cancelamento ──────────────────────────────────────────
+
+    /**
+     * Exclui uma venda (leite ou animal/abate) já registrada, revertendo seus efeitos: devolve o
+     * animal ao status ATIVO e o estoque debitado (venda de animal), ou reverte o registro de
+     * "vendido" na meta de leite (venda de leite); em ambos os casos estorna a receita lançada.
+     * O motivo (DEVOLVIDA ou CANCELADA) é apenas informativo — a reversão é a mesma nos dois casos.
+     */
+    @Transactional
+    public String excluirVenda(Long idDocumento, EnMotivoCancelamentoVenda motivo, String emailUsuarioLogado) {
+        resolveUsuarioModulo(emailUsuarioLogado);
+
+        if (motivo == null) {
+            throw new IllegalArgumentException("Informe o motivo da exclusão (devolvida ou cancelada).");
+        }
+
+        EDocumentoSaida documento = documentoSaidaInterface.findById(idDocumento)
+                .filter(d -> d.getStatus() == EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Venda não encontrada."));
+
+        if (documento.getTipoDocumento() == EnTipoDocumentoSaida.VENDA_ANIMAL) {
+            for (EVendaAnimalItem item : documento.getItensAnimal()) {
+                EAnimal animal = item.getAnimal();
+                animal.setStatusAnimal(EnStatusAnimal.ATIVO);
+                animalInterface.save(animal);
+
+                if (item.getProduto() != null) {
+                    insumoService.devolverEstoque(item.getProduto().getId(), 1, animal, documento.getDataEmissao());
+                }
+            }
+        } else {
+            for (EVendaLeiteItem item : documento.getItensLeite()) {
+                reverterVendidoNaMeta(item);
+            }
+        }
+
+        lancamentoFinanceiroService.estornarEntradaVenda(documento.getId());
+
+        documento.setMotivoCancelamento(motivo);
+        documento.setStatus(EnStatus.I);
+        documentoSaidaInterface.save(documento);
+
+        return "Venda excluída com sucesso.";
     }
 
     // ── Leitura ──────────────────────────────────────────────────────────

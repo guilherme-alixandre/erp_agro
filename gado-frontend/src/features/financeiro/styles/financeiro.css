@@ -45,6 +45,12 @@
   font-size: 0.92rem;
 }
 
+/* ── Rolagem horizontal da tabela (colunas largas, ex.: chave de acesso) ── */
+
+.data-table-wrapper {
+  overflow-x: auto;
+}
+
 /* ── Edição segura de NF-e (dupla validação por senha) ─────────────────── */
 
 .form-info.financeiro-senha-gate__aviso {

@@ -402,6 +402,8 @@ public class SConsumoInsumo {
 
         dto.setSobraRegistrada(sobra != null);
         if (sobra != null) {
+            dto.setQuantidadeSobraRegistrada(sobra.getQuantidadeSobraRegistrada());
+            dto.setUnidadeSobraRegistroId(sobra.getUnidadeRegistro().getId());
             dto.setPercentualSobra(sobra.getPercentualSobra());
             dto.setReaproveitado(sobra.getReaproveitado());
             dto.setStatusFaixa(sobra.getStatusFaixa());

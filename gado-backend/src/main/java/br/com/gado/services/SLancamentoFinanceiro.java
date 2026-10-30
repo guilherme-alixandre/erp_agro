@@ -239,6 +239,17 @@ public class SLancamentoFinanceiro {
     }
 
     /**
+     * Reverte a Entrada Financeira gerada para uma venda (leite ou animal). Chamado por
+     * SDocumentoSaida.excluirVenda ao excluir/cancelar/marcar como devolvida uma venda já
+     * registrada — sem isso, a receita continuaria no DRE mesmo sem efeito real.
+     */
+    @Transactional
+    void estornarEntradaVenda(Long documentoSaidaId) {
+        lancamentoInterface.findByOrigemAndOrigemId(EnOrigemLancamentoFinanceiro.VENDA, documentoSaidaId)
+                .ifPresent(lancamentoInterface::delete);
+    }
+
+    /**
      * Lançamento manual, para movimentos ainda sem módulo de origem automatizado (ex: registrar
      * uma venda até o módulo de Vendas existir). Diferente dos métodos acima, é chamado
      * diretamente por um usuário do módulo — por isso valida o perfil aqui.

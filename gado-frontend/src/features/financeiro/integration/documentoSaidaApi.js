@@ -54,4 +54,12 @@ async function cadastrarVendaAnimal(email, formData) {
   })
 }
 
-export { cadastrarVendaLeite, cadastrarVendaAnimal }
+/** motivo: 'DEVOLVIDA' ou 'CANCELADA' — reverte o status do animal/estoque ou o "vendido" na meta de leite. */
+async function excluirVenda(id, motivo, email) {
+  return request(`/documentos-saida/${id}?motivo=${encodeURIComponent(motivo)}`, {
+    method: 'DELETE',
+    headers: usuarioHeaders(email),
+  })
+}
+
+export { cadastrarVendaLeite, cadastrarVendaAnimal, excluirVenda }

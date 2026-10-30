@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface IVendaMetaLote extends JpaRepository<EVendaMetaLote, Long> {
     List<EVendaMetaLote> findByMetaSetor_Id(Long metaSetorId);
+    List<EVendaMetaLote> findByVendaLeiteItem_Id(Long vendaLeiteItemId);
 }

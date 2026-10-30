@@ -1,6 +1,7 @@
 package br.com.gado.entities;
 
 import br.com.gado.enums.EnFormaPagamento;
+import br.com.gado.enums.EnMotivoCancelamentoVenda;
 import br.com.gado.enums.EnTipoDocumentoSaida;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -74,4 +75,9 @@ public class EDocumentoSaida extends EAbstract {
 
     @OneToMany(mappedBy = "documentoSaida", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EVendaAnimalItem> itensAnimal = new ArrayList<>();
+
+    /** Preenchido ao excluir a venda, indicando se os itens foram devolvidos ou a operação cancelada. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_cancelamento", length = 20)
+    private EnMotivoCancelamentoVenda motivoCancelamento;
 }

@@ -7,6 +7,7 @@ import br.com.gado.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.dto.usuarioDto.UsuarioResumoDto;
 import br.com.gado.security.JwtService;
 import br.com.gado.services.SUsuario;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,7 @@ public class CUsuario {
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PostMapping
-    public ResponseEntity<UsuarioDto> postUsuario(@RequestBody UsuarioCadastroDto dto) {
+    public ResponseEntity<UsuarioDto> postUsuario(@Valid @RequestBody UsuarioCadastroDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastra(dto));
     }
 

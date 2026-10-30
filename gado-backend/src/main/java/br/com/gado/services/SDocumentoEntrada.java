@@ -473,7 +473,8 @@ public class SDocumentoEntrada {
     @Transactional
     public List<DocumentoEntradaRespostaDto> listarPendentesAprovacao(String emailUsuarioLogado) {
         resolveUsuarioModulo(emailUsuarioLogado);
-        return documentoInterface.findByStatusAprovacaoOrderByDataEntradaDesc(EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO)
+        return documentoInterface.findByStatusAndStatusAprovacaoOrderByDataEntradaDesc(
+                        EnStatus.A, EnStatusAprovacaoFinanceira.PENDENTE_APROVACAO)
                 .stream().map(this::toRespostaDto).collect(Collectors.toList());
     }
 

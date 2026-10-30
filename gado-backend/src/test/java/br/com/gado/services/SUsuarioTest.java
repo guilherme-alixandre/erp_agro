@@ -301,6 +301,45 @@ class SUsuarioTest {
         }
 
         @Test
+        void deveBloquearRebaixamento_QuandoUsuarioEhAdminSeed() {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                    "admin@erp.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"))));
+
+            EUsuario usuario = new EUsuario();
+            usuario.setEmail("admin@erp.com");
+            usuario.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+            when(usuarioInterface.findByEmailAndStatus("admin@erp.com", EnStatus.A))
+                    .thenReturn(Optional.of(usuario));
+
+            UsuarioPutDto dto = new UsuarioPutDto();
+            dto.setPerfil(EnPerfilUsuario.CUIDADOR);
+
+            assertThatThrownBy(() -> sUsuario.altera("admin@erp.com", dto))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("administrador inicial");
+        }
+
+        @Test
+        void devePermitirAlterarAdminSeed_QuandoPerfilContinuaAdministrador() {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                    "admin@erp.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"))));
+
+            EUsuario usuario = new EUsuario();
+            usuario.setEmail("admin@erp.com");
+            usuario.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+            when(usuarioInterface.findByEmailAndStatus("admin@erp.com", EnStatus.A))
+                    .thenReturn(Optional.of(usuario));
+            when(usuarioInterface.save(any(EUsuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            UsuarioPutDto dto = new UsuarioPutDto();
+            dto.setPerfil(EnPerfilUsuario.ADMINISTRADOR);
+
+            UsuarioDto resultado = sUsuario.altera("admin@erp.com", dto);
+
+            assertThat(resultado.getPerfil()).isEqualTo(EnPerfilUsuario.ADMINISTRADOR);
+        }
+
+        @Test
         void deveCodificarNovaSenha_QuandoInformada() {
             EUsuario usuario = new EUsuario();
             usuario.setEmail("cuidador@fazenda.com");
@@ -315,6 +354,21 @@ class SUsuarioTest {
             sUsuario.altera("cuidador@fazenda.com", dto);
 
             assertThat(usuario.getSenha()).isEqualTo("hash-nova-senha");
+        }
+
+        @Test
+        void deveRejeitarSenhaCurta() {
+            EUsuario usuario = new EUsuario();
+            usuario.setEmail("cuidador@fazenda.com");
+            when(usuarioInterface.findByEmailAndStatus("cuidador@fazenda.com", EnStatus.A))
+                    .thenReturn(Optional.of(usuario));
+
+            UsuarioPutDto dto = new UsuarioPutDto();
+            dto.setSenha("123");
+
+            assertThatThrownBy(() -> sUsuario.altera("cuidador@fazenda.com", dto))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("6 ou mais caracteres");
         }
 
         @Test

@@ -31,6 +31,8 @@ public class ConsumoInsumoRespostaDto {
     private String registradoPorNome;
 
     private Boolean sobraRegistrada;
+    private Double quantidadeSobraRegistrada;
+    private Long unidadeSobraRegistroId;
     private Double percentualSobra;
     private Boolean reaproveitado;
     private EnStatusSobra statusFaixa;

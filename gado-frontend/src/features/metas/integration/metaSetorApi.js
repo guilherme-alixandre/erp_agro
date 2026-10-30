@@ -78,6 +78,11 @@ function deletarMeta(id, emailUsuario) {
   })
 }
 
+/** Litros de leite disponíveis para venda a partir de um lote (null se não houver meta de LEITE ativa). */
+function buscarLeiteDisponivelPorLote(loteId) {
+  return request(`/metas-setor/leite-disponivel/${loteId}`)
+}
+
 // ── MedicaoMeta ─────────────────────────────────────────────────────────
 
 function cadastrarMedicao(emailUsuario, dto) {
@@ -214,6 +219,7 @@ function exportarMetasPDF(setorId) {
 export {
   atualizarMedicao,
   atualizarMeta,
+  buscarLeiteDisponivelPorLote,
   cadastrarMedicao,
   cadastrarMeta,
   deletarMedicao,

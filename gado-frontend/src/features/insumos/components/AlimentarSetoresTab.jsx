@@ -188,7 +188,15 @@ function AlimentarSetoresTab({ currentUser, insumosEstoque }) {
 
   function abrirSobra(consumo) {
     setSobraModal(consumo)
-    setSobraForm(defaultSobraForm)
+    setSobraForm(
+      consumo.sobraRegistrada
+        ? {
+            quantidade: String(consumo.quantidadeSobraRegistrada ?? ''),
+            unidadeMedidaId: consumo.unidadeSobraRegistroId ? String(consumo.unidadeSobraRegistroId) : '',
+            reaproveitado: consumo.reaproveitado ? 'true' : 'false',
+          }
+        : defaultSobraForm,
+    )
     setSobraFeedback('')
     setSobraResultado(null)
   }

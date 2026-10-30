@@ -1,5 +1,8 @@
 import { useState } from 'react'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const SENHA_MIN_LENGTH = 6
+
 const PERFIL_OPTIONS = ['GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO', 'ADMINISTRADOR']
 
 const PERFIL_LABELS = {
@@ -22,9 +25,34 @@ function UsuarioFormModal({
   const [showConfirmar, setShowConfirmar] = useState(false)
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [senhaError, setSenhaError] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [senhaMinError, setSenhaMinError] = useState('')
+
+  function handleEmailChange(event) {
+    onChange(event)
+    const valor = event.target.value
+    setEmailError(valor && !EMAIL_REGEX.test(valor) ? 'Digite um e-mail válido.' : '')
+  }
+
+  function handleSenhaChange(event) {
+    onChange(event)
+    setSenhaError('')
+    const valor = event.target.value
+    setSenhaMinError(
+      valor && valor.length < SENHA_MIN_LENGTH ? 'A senha deve possuir 6 ou mais caracteres.' : '',
+    )
+  }
 
   function handleLocalSubmit(event) {
     event.preventDefault()
+    if (formData.email && !EMAIL_REGEX.test(formData.email)) {
+      setEmailError('Digite um e-mail válido.')
+      return
+    }
+    if (formData.senha && formData.senha.length < SENHA_MIN_LENGTH) {
+      setSenhaMinError('A senha deve possuir 6 ou mais caracteres.')
+      return
+    }
     if (formData.senha !== confirmarSenha) {
       setSenhaError('As senhas não coincidem.')
       return
@@ -32,6 +60,8 @@ function UsuarioFormModal({
     setSenhaError('')
     onSubmit(event)
   }
+
+  const hasBlockingError = Boolean(emailError) || Boolean(senhaMinError)
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -66,11 +96,12 @@ function UsuarioFormModal({
             <span>
               E-mail <span className="required-marker" aria-hidden="true">*</span>
             </span>
+            {emailError ? <span className="field-error-msg">{emailError}</span> : null}
             <input
               type="email"
               name="email"
               value={formData.email}
-              onChange={onChange}
+              onChange={handleEmailChange}
               required
             />
           </label>
@@ -79,13 +110,14 @@ function UsuarioFormModal({
             <span>
               Senha inicial <span className="required-marker" aria-hidden="true">*</span>
             </span>
+            {senhaMinError ? <span className="field-error-msg">{senhaMinError}</span> : null}
             <div className="password-field">
               <input
                 type={showSenha ? 'text' : 'password'}
                 name="senha"
                 value={formData.senha}
-                onChange={(e) => { onChange(e); setSenhaError('') }}
-                minLength={4}
+                onChange={handleSenhaChange}
+                minLength={SENHA_MIN_LENGTH}
                 required
               />
               <button
@@ -109,7 +141,7 @@ function UsuarioFormModal({
                 name="confirmarSenha"
                 value={confirmarSenha}
                 onChange={(e) => { setConfirmarSenha(e.target.value); setSenhaError('') }}
-                minLength={4}
+                minLength={SENHA_MIN_LENGTH}
                 required
               />
               <button
@@ -143,7 +175,7 @@ function UsuarioFormModal({
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" disabled={isSaving}>
+            <button type="submit" className="btn-primary" disabled={isSaving || hasBlockingError}>
               {isSaving ? 'Cadastrando...' : 'Cadastrar usuário'}
             </button>
           </div>

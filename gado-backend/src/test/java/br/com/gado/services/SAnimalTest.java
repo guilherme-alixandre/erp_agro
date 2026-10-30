@@ -198,6 +198,33 @@ class SAnimalTest {
 
             assertThat(resultado).isEqualTo("animal não encontrado");
         }
+
+        @Test
+        void deveBloquearExclusao_QuandoAnimalVendido() {
+            EAnimal animal = new EAnimal();
+            animal.setCodigoBrinco("NE0001");
+            animal.setStatus(EnStatus.A);
+            animal.setStatusAnimal(br.com.gado.enums.EnStatusAnimal.VENDIDO);
+            when(animalInterface.findByCodigoBrincoAndStatus("NE0001", EnStatus.A)).thenReturn(Optional.of(animal));
+
+            assertThatThrownBy(() -> sAnimal.deletaAnimal("NE0001"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("vendido ou abatido");
+            assertThat(animal.getStatus()).isEqualTo(EnStatus.A);
+        }
+
+        @Test
+        void deveBloquearExclusao_QuandoAnimalAbatido() {
+            EAnimal animal = new EAnimal();
+            animal.setCodigoBrinco("NE0002");
+            animal.setStatus(EnStatus.A);
+            animal.setStatusAnimal(br.com.gado.enums.EnStatusAnimal.ABATIDO);
+            when(animalInterface.findByCodigoBrincoAndStatus("NE0002", EnStatus.A)).thenReturn(Optional.of(animal));
+
+            assertThatThrownBy(() -> sAnimal.deletaAnimal("NE0002"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("vendido ou abatido");
+        }
     }
 
     @Nested

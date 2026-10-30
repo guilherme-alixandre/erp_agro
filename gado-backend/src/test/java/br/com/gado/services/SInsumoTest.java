@@ -410,5 +410,21 @@ class SInsumoTest {
                     .hasMessageContaining("Apenas produtos inativos");
             verify(insumoInterface, never()).delete(any());
         }
+
+        @Test
+        void deveBloquearExclusao_QuandoInsumoTemMovimentacoes() {
+            stubUsuario(admin);
+            EInsumo insumo = new EInsumo();
+            insumo.setId(100L);
+            insumo.setStatus(EnStatus.I);
+            when(insumoInterface.findById(100L)).thenReturn(Optional.of(insumo));
+            when(movimentacaoEstoqueInterface.findByInsumoId_IdOrderByDataMovimentacaoDesc(100L))
+                    .thenReturn(List.of(new EMovimentacaoEstoque()));
+
+            assertThatThrownBy(() -> sInsumo.excluirDefinitivamenteInsumo(100L, admin.getEmail()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("movimentações de estoque associadas");
+            verify(insumoInterface, never()).delete(any());
+        }
     }
 }

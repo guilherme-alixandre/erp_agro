@@ -3,6 +3,7 @@ package br.com.gado.controllers;
 import br.com.gado.dto.documentoSaidaDto.DocumentoSaidaRespostaDto;
 import br.com.gado.dto.documentoSaidaDto.VendaAnimalCadastroDto;
 import br.com.gado.dto.documentoSaidaDto.VendaLeiteCadastroDto;
+import br.com.gado.enums.EnMotivoCancelamentoVenda;
 import br.com.gado.security.SecurityUtils;
 import br.com.gado.services.SDocumentoSaida;
 import jakarta.validation.Valid;
@@ -36,5 +37,10 @@ public class CDocumentoSaida {
     public ResponseEntity<DocumentoSaidaRespostaDto> cadastrarVendaAnimal(@Valid @RequestBody VendaAnimalCadastroDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(documentoSaidaService.cadastrarVendaAnimal(dto, SecurityUtils.currentUserEmail()));
+    }
+
+    @DeleteMapping("/{id}")
+    public String excluirVenda(@PathVariable Long id, @RequestParam EnMotivoCancelamentoVenda motivo) {
+        return documentoSaidaService.excluirVenda(id, motivo, SecurityUtils.currentUserEmail());
     }
 }

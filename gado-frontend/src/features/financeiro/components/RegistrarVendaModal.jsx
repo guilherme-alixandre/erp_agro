@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import SearchSelectModal from '../../../components/shared/SearchSelectModal'
+import { buscarLeiteDisponivelPorLote } from '../../metas/integration/metaSetorApi'
 
 const ANIMAL_COLUMNS = [
   { key: 'codigoBrinco', label: 'Código' },
@@ -36,11 +37,19 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
     setLeiteForm((c) => ({ ...c, [name]: value }))
   }
 
+  const [litrosDisponiveisPorLote, setLitrosDisponiveisPorLote] = useState({})
+
   function handleLeiteItemChange(index, field, value) {
     setLeiteForm((c) => ({
       ...c,
       itens: c.itens.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }))
+    if (field === 'loteId' && value && !(value in litrosDisponiveisPorLote)) {
+      setLitrosDisponiveisPorLote((c) => ({ ...c, [value]: 'carregando' }))
+      buscarLeiteDisponivelPorLote(value)
+        .then((litros) => setLitrosDisponiveisPorLote((c) => ({ ...c, [value]: litros })))
+        .catch(() => setLitrosDisponiveisPorLote((c) => ({ ...c, [value]: null })))
+    }
   }
 
   function addLeiteItem() {
@@ -171,6 +180,15 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
                       step="0.01"
                       required
                     />
+                    {item.loteId && litrosDisponiveisPorLote[item.loteId] !== undefined ? (
+                      <span className="form-help">
+                        {litrosDisponiveisPorLote[item.loteId] === 'carregando'
+                          ? 'Consultando disponível...'
+                          : litrosDisponiveisPorLote[item.loteId] === null
+                            ? 'Sem meta de leite ativa para este lote.'
+                            : `Disponível: ${litrosDisponiveisPorLote[item.loteId]} L`}
+                      </span>
+                    ) : null}
                   </label>
                   <button
                     type="button"
@@ -272,6 +290,8 @@ function RegistrarVendaModal({ lotes, animaisDisponiveis, compradores, isSaving,
                 <option value="ABATIDO">Abatido</option>
               </select>
             </label>
+
+            <p className="form-help">{animaisVendaveis.length} animal(is) disponível(is) para venda.</p>
 
             <label>
               <span>Seleção <span className="required-marker">*</span></span>

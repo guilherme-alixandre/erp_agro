@@ -149,6 +149,10 @@ public class SInsumo {
             throw new IllegalArgumentException(
                     "Apenas produtos inativos podem ser excluídos definitivamente. Inative o produto primeiro.");
         }
+        if (!movimentacaoEstoqueInterface.findByInsumoId_IdOrderByDataMovimentacaoDesc(id).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Não foi possível excluir: o produto possui movimentações de estoque associadas.");
+        }
         insumoInterface.delete(insumo);
         return "Produto excluído definitivamente com sucesso.";
     }
@@ -330,6 +334,26 @@ public class SInsumo {
         EInsumo insumoSalvo = insumoInterface.save(insumo);
 
         registrarMovimentacao(insumoSalvo, EnTipoMovimentacaoEstoque.SAIDA, quantidade,
+                insumoSalvo.getPrecoCompraMedio(),
+                (dataMovimentacao != null ? dataMovimentacao : LocalDate.now()).atStartOfDay(),
+                null, null, animal);
+    }
+
+    /**
+     * Inverso de {@link #baixarEstoque}: devolve ao saldo a quantidade debitada por uma venda de
+     * animal que está sendo excluída/cancelada/devolvida. Package-private, sem checagem de
+     * permissão — o chamador (SDocumentoSaida) já validou a permissão da própria operação.
+     */
+    @Transactional
+    void devolverEstoque(Long produtoId, double quantidade, EAnimal animal, LocalDate dataMovimentacao) {
+        EInsumo insumo = insumoInterface.findByIdAndStatus(produtoId, EnStatus.A)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado ou inativo."));
+
+        double saldoAtual = insumo.getSaldoAtual() != null ? insumo.getSaldoAtual() : 0.0;
+        insumo.setSaldoAtual(saldoAtual + quantidade);
+        EInsumo insumoSalvo = insumoInterface.save(insumo);
+
+        registrarMovimentacao(insumoSalvo, EnTipoMovimentacaoEstoque.ENTRADA, quantidade,
                 insumoSalvo.getPrecoCompraMedio(),
                 (dataMovimentacao != null ? dataMovimentacao : LocalDate.now()).atStartOfDay(),
                 null, null, animal);

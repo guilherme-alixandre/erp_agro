@@ -12,10 +12,16 @@ import br.com.gado.entities.EMetaSetor;
 import br.com.gado.entities.EParceiro;
 import br.com.gado.entities.ERaca;
 import br.com.gado.entities.ESetor;
+import br.com.gado.entities.EInsumo;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.entities.EVendaAnimalItem;
+import br.com.gado.entities.EVendaLeiteItem;
+import br.com.gado.entities.EVendaMetaLote;
+import br.com.gado.enums.EnMotivoCancelamentoVenda;
 import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnStatusAnimal;
+import br.com.gado.enums.EnTipoDocumentoSaida;
 import br.com.gado.enums.EnTipoMeta;
 import br.com.gado.repositories.IAnimal;
 import br.com.gado.repositories.IDocumentoSaida;
@@ -378,6 +384,93 @@ class SDocumentoSaidaTest {
                     dtoBase(EnStatusAnimal.VENDIDO, 1L), financeiro.getEmail()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("não pode ser vendido/abatido");
+        }
+    }
+
+    @Nested
+    class ExcluirVendaTests {
+
+        @Test
+        void deveReverterAnimalEEstoque_QuandoExcluirVendaAnimal() {
+            stubUsuario(financeiro);
+
+            EAnimal animal = new EAnimal();
+            animal.setId(1L);
+            animal.setStatusAnimal(EnStatusAnimal.VENDIDO);
+
+            EInsumo produto = new EInsumo();
+            produto.setId(500L);
+
+            EVendaAnimalItem item = new EVendaAnimalItem();
+            item.setAnimal(animal);
+            item.setProduto(produto);
+
+            EDocumentoSaida documento = new EDocumentoSaida();
+            documento.setId(99L);
+            documento.setStatus(EnStatus.A);
+            documento.setTipoDocumento(EnTipoDocumentoSaida.VENDA_ANIMAL);
+            documento.setDataEmissao(LocalDate.of(2026, 3, 1));
+            documento.setItensAnimal(List.of(item));
+            documento.setItensLeite(List.of());
+            when(documentoSaidaInterface.findById(99L)).thenReturn(Optional.of(documento));
+
+            String resultado = sDocumentoSaida.excluirVenda(99L, EnMotivoCancelamentoVenda.DEVOLVIDA, financeiro.getEmail());
+
+            assertThat(resultado).contains("excluída com sucesso");
+            assertThat(animal.getStatusAnimal()).isEqualTo(EnStatusAnimal.ATIVO);
+            assertThat(documento.getStatus()).isEqualTo(EnStatus.I);
+            assertThat(documento.getMotivoCancelamento()).isEqualTo(EnMotivoCancelamentoVenda.DEVOLVIDA);
+            verify(insumoService).devolverEstoque(500L, 1, animal, documento.getDataEmissao());
+            verify(lancamentoFinanceiroService).estornarEntradaVenda(99L);
+        }
+
+        @Test
+        void deveReverterVendidoNaMeta_QuandoExcluirVendaLeite() {
+            stubUsuario(financeiro);
+
+            ELote lote = new ELote();
+            lote.setId(10L);
+
+            EVendaLeiteItem item = new EVendaLeiteItem();
+            item.setId(7L);
+            item.setLote(lote);
+            item.setLitros(new BigDecimal("100"));
+
+            EDocumentoSaida documento = new EDocumentoSaida();
+            documento.setId(99L);
+            documento.setStatus(EnStatus.A);
+            documento.setTipoDocumento(EnTipoDocumentoSaida.VENDA_LEITE);
+            documento.setDataEmissao(LocalDate.of(2026, 3, 1));
+            documento.setItensLeite(List.of(item));
+            documento.setItensAnimal(List.of());
+            when(documentoSaidaInterface.findById(99L)).thenReturn(Optional.of(documento));
+
+            EVendaMetaLote vendaMetaLote = new EVendaMetaLote();
+            when(vendaMetaLoteInterface.findByVendaLeiteItem_Id(7L)).thenReturn(List.of(vendaMetaLote));
+
+            sDocumentoSaida.excluirVenda(99L, EnMotivoCancelamentoVenda.CANCELADA, financeiro.getEmail());
+
+            verify(vendaMetaLoteInterface).delete(vendaMetaLote);
+            verify(lancamentoFinanceiroService).estornarEntradaVenda(99L);
+            verifyNoInteractions(insumoService);
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoMotivoNaoInformado() {
+            stubUsuario(financeiro);
+
+            assertThatThrownBy(() -> sDocumentoSaida.excluirVenda(99L, null, financeiro.getEmail()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("motivo");
+        }
+
+        @Test
+        void deveLancarExcecao_QuandoVendaNaoEncontrada() {
+            stubUsuario(financeiro);
+            when(documentoSaidaInterface.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> sDocumentoSaida.excluirVenda(99L, EnMotivoCancelamentoVenda.CANCELADA, financeiro.getEmail()))
+                    .isInstanceOf(jakarta.persistence.EntityNotFoundException.class);
         }
     }
 

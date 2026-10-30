@@ -7,7 +7,7 @@ import {
   listarDocumentos,
   vincularProduto,
 } from '../integration/documentoEntradaApi'
-import { cadastrarVendaAnimal, cadastrarVendaLeite } from '../integration/documentoSaidaApi'
+import { cadastrarVendaAnimal, cadastrarVendaLeite, excluirVenda } from '../integration/documentoSaidaApi'
 import { listarNotasFiscais } from '../integration/notaFiscalApi'
 import { cadastrarInsumoEstoque, listarEstoque } from '../../insumos/integration/insumoApi'
 import { listarUnidadesMedida } from '../../insumos/integration/unidadeMedidaApi'
@@ -250,6 +250,30 @@ function NotasFiscaisTab({ currentUser }) {
     }
   }
 
+  async function handleExcluirVenda(nf, motivo) {
+    const acao = motivo === 'DEVOLVIDA' ? 'devolver' : 'cancelar'
+    const confirmar = window.confirm(
+      `Deseja ${acao} esta venda (${TIPO_DOC_LABEL[nf.tipoDocumento] ?? nf.tipoDocumento} ${nf.numeroDocumento || 's/nº'})? ` +
+        'Isso reverte o status do animal (ou devolve o estoque) e o lançamento financeiro correspondente.',
+    )
+    if (!confirmar) return
+
+    setIsExcluindo(true)
+    setFeedback({ type: '', message: '' })
+    try {
+      await excluirVenda(nf.id, motivo, currentUser.email)
+      setFeedback({
+        type: 'info',
+        message: motivo === 'DEVOLVIDA' ? 'Venda marcada como devolvida.' : 'Venda cancelada com sucesso.',
+      })
+      await fetchDocumentos()
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'Falha ao excluir a venda.' })
+    } finally {
+      setIsExcluindo(false)
+    }
+  }
+
   function abrirVendaModal() {
     setVendaFeedback('')
     setVendaModalOpen(true)
@@ -436,6 +460,25 @@ function NotasFiscaisTab({ currentUser }) {
                               Excluir
                             </button>
                           ) : null}
+                        </div>
+                      ) : nf.direcao === 'RECEITA' && PERFIS_EXCLUSAO_NF.includes(currentUser?.perfil) ? (
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-row"
+                            onClick={() => handleExcluirVenda(nf, 'DEVOLVIDA')}
+                            disabled={isExcluindo}
+                          >
+                            Devolver
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-row btn-row--danger"
+                            onClick={() => handleExcluirVenda(nf, 'CANCELADA')}
+                            disabled={isExcluindo}
+                          >
+                            Cancelar
+                          </button>
                         </div>
                       ) : (
                         <span>—</span>

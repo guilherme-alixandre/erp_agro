@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+const SENHA_MIN_LENGTH = 6
+
 const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO']
 
 const PERFIL_LABELS = {
@@ -30,8 +32,8 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (form.novaSenha || form.confirmarSenha) {
-      if (form.novaSenha.length < 4) {
-        setSenhaError('A nova senha deve ter ao menos 4 caracteres.')
+      if (form.novaSenha.length < SENHA_MIN_LENGTH) {
+        setSenhaError('A senha deve possuir 6 ou mais caracteres.')
         return
       }
       if (form.novaSenha !== form.confirmarSenha) {
@@ -105,8 +107,8 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
                   name="novaSenha"
                   value={form.novaSenha}
                   onChange={handleChange}
-                  minLength={4}
-                  placeholder="Mínimo 4 caracteres"
+                  minLength={SENHA_MIN_LENGTH}
+                  placeholder="Mínimo 6 caracteres"
                   autoComplete="new-password"
                 />
                 <button

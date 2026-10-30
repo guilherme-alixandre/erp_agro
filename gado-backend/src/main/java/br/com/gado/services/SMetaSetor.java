@@ -9,6 +9,7 @@ import br.com.gado.dto.metaSetorDto.MetaSetorRespostaDto;
 import br.com.gado.entities.EMedicaoMeta;
 import br.com.gado.entities.EMetaSetor;
 import br.com.gado.entities.ELote;
+import br.com.gado.entities.ELoteSetor;
 import br.com.gado.entities.ESetor;
 import br.com.gado.entities.EUsuario;
 import br.com.gado.entities.EVendaMetaLote;
@@ -16,6 +17,7 @@ import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.enums.EnTipoMeta;
 import br.com.gado.repositories.ILote;
+import br.com.gado.repositories.ILoteSetor;
 import br.com.gado.repositories.IMedicaoMeta;
 import br.com.gado.repositories.IMetaSetor;
 import br.com.gado.repositories.ISetor;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +59,9 @@ public class SMetaSetor {
 
     @Autowired
     private IVendaMetaLote vendaMetaLoteInterface;
+
+    @Autowired
+    private ILoteSetor loteSetorInterface;
 
     // ── Validação de acesso ───────────────────────────────────────────────
 
@@ -239,6 +245,35 @@ public class SMetaSetor {
 
         medicaoMetaInterface.deleteById(medicaoId);
         return "Medição removida com sucesso.";
+    }
+
+    /**
+     * Litros de leite disponíveis para venda a partir de um lote: soma das medições já
+     * lançadas menos o que já foi vendido, na meta de LEITE ativa do setor onde o lote está
+     * alocado hoje (mesma meta que {@code SDocumentoSaida.registrarVendidoNaMeta} usa ao
+     * registrar uma venda). Retorna {@code null} se o lote não estiver em nenhum setor com
+     * meta de LEITE ativa cobrindo a data de hoje.
+     */
+    @Transactional(readOnly = true)
+    public Double buscarLeiteDisponivelPorLote(Long loteId) {
+        LocalDate hoje = LocalDate.now();
+        List<ELoteSetor> alocacoes = loteSetorInterface.findByLote_Id(loteId);
+        for (ELoteSetor alocacao : alocacoes) {
+            List<EMetaSetor> metas = metaSetorInterface.findBySetor_IdAndStatus(alocacao.getSetor().getId(), EnStatus.A);
+            for (EMetaSetor meta : metas) {
+                if (meta.getTipoMeta() != EnTipoMeta.LEITE) continue;
+                if (hoje.isBefore(meta.getDataInicial()) || hoje.isAfter(meta.getDataFinal())) continue;
+
+                double totalRealizado = medicaoMetaInterface.findByMetaSetor_Id(meta.getId()).stream()
+                        .mapToDouble(m -> converterQuantidade(m, meta))
+                        .sum();
+                double totalVendido = vendaMetaLoteInterface.findByMetaSetor_Id(meta.getId()).stream()
+                        .mapToDouble(EVendaMetaLote::getLitrosVendidos)
+                        .sum();
+                return arredondar(Math.max(0, totalRealizado - totalVendido));
+            }
+        }
+        return null;
     }
 
     // ── Cálculo de progresso ─────────────────────────────────────────────

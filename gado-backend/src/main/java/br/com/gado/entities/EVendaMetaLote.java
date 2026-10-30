@@ -40,4 +40,10 @@ public class EVendaMetaLote extends EAbstract {
 
     @Column(name = "criado_por_email")
     private String criadoPorEmail;
+
+    /** Item da venda de leite que originou este registro — usado para reverter ao excluir a venda. */
+    @ManyToOne
+    @JoinColumn(name = "venda_leite_item_id")
+    @JsonIgnore
+    private EVendaLeiteItem vendaLeiteItem;
 }

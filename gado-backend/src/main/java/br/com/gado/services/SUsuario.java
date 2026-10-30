@@ -6,6 +6,7 @@ import br.com.gado.dto.usuarioDto.UsuarioLoginDto;
 import br.com.gado.dto.usuarioDto.UsuarioPutDto;
 import br.com.gado.dto.usuarioDto.UsuarioResumoDto;
 import br.com.gado.entities.EUsuario;
+import br.com.gado.enums.EnPerfilUsuario;
 import br.com.gado.enums.EnStatus;
 import br.com.gado.repositories.IUsuario;
 import br.com.gado.security.SecurityUtils;
@@ -30,6 +31,9 @@ import java.util.stream.Collectors;
 public class SUsuario {
 
     private static final Pattern SHA256_HEX = Pattern.compile("^[a-fA-F0-9]{64}$");
+
+    /** E-mail do administrador criado pela migration V6__seed_admin_inicial.sql — não pode ter o perfil rebaixado. */
+    private static final String EMAIL_ADMIN_SEED = "admin@erp.com";
 
     @Autowired
     private IUsuario usuarioInterface;
@@ -171,9 +175,19 @@ public class SUsuario {
             throw new IllegalArgumentException("Apenas administradores podem alterar o perfil de um usuário.");
         }
 
+        if (dto.getPerfil() != null
+                && dto.getPerfil() != EnPerfilUsuario.ADMINISTRADOR
+                && EMAIL_ADMIN_SEED.equalsIgnoreCase(usuario.getEmail())) {
+            throw new IllegalArgumentException("O administrador inicial não pode ter o perfil alterado.");
+        }
+
         // Extrai e nulifica a senha antes do ModelMapper para evitar gravar texto puro
         String novaSenha = dto.getSenha();
         dto.setSenha(null);
+
+        if (novaSenha != null && !novaSenha.isBlank() && novaSenha.length() < 6) {
+            throw new IllegalArgumentException("A senha deve possuir 6 ou mais caracteres.");
+        }
 
         this.modelMapper.getConfiguration().setSkipNullEnabled(true);
         modelMapper.map(dto, usuario);

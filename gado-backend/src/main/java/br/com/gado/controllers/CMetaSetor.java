@@ -49,6 +49,12 @@ public class CMetaSetor {
         return metaSetorService.buscarPorId(id);
     }
 
+    /** Litros de leite disponíveis para venda a partir de um lote (null se não houver meta de LEITE ativa). */
+    @GetMapping("/leite-disponivel/{loteId}")
+    public Double buscarLeiteDisponivelPorLote(@PathVariable Long loteId) {
+        return metaSetorService.buscarLeiteDisponivelPorLote(loteId);
+    }
+
     @PostMapping
     public String cadastrar(@Valid @RequestBody MetaSetorCadastroDto dto) {
         metaSetorService.validaAdminOuGerente(SecurityUtils.currentUserEmail());
