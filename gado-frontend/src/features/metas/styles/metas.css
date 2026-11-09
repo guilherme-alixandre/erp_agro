@@ -5,6 +5,52 @@
    deste módulo. Cores vêm dos tokens do sistema visual (tema claro/escuro).
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Blocos de setor (visão geral de quantas metas cada um tem) ──────── */
+
+.metas-setor-blocos {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1.5rem;
+  padding-bottom: 0.25rem;
+  overflow-x: auto;
+}
+
+.metas-setor-bloco {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 170px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-ink);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.metas-setor-bloco:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.metas-setor-bloco--ativo {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.metas-setor-bloco__nome {
+  font-size: 0.98rem;
+}
+
+.metas-setor-bloco__contagem {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
 /* ── Lista de metas ───────────────────────────────────────────────── */
 
 .metas-list {

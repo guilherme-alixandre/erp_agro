@@ -14,6 +14,8 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
   const [setorSelecionado, setSetorSelecionado] = useState('')
   const [metas, setMetas] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [contagemPorSetor, setContagemPorSetor] = useState({})
+  const [isLoadingContagem, setIsLoadingContagem] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
   const [modal, setModal] = useState({ type: null, meta: null })
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -31,6 +33,28 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
     listarSetores().then(setSetores).catch(() => setSetores([]))
     listarLotes().then(setLotes).catch(() => setLotes([]))
   }, [])
+
+  const fetchContagemPorSetor = useCallback((listaSetores) => {
+    if (listaSetores.length === 0) {
+      setContagemPorSetor({})
+      return
+    }
+    setIsLoadingContagem(true)
+    Promise.all(
+      listaSetores.map((s) =>
+        listarMetasPorSetor(s.id)
+          .then((lista) => [s.id, lista.length])
+          .catch(() => [s.id, null]),
+      ),
+    ).then((pares) => {
+      setContagemPorSetor(Object.fromEntries(pares))
+      setIsLoadingContagem(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    fetchContagemPorSetor(setores)
+  }, [setores, fetchContagemPorSetor])
 
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -83,6 +107,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
   function handleMetaSalva() {
     closeModal()
     fetchMetas(setorSelecionado)
+    fetchContagemPorSetor(setores)
     setFeedback({ type: 'info', message: 'Meta salva com sucesso.' })
   }
 
@@ -94,6 +119,7 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
       await deletarMeta(meta.id, currentUser.email)
       setFeedback({ type: 'info', message: 'Meta excluída com sucesso.' })
       fetchMetas(setorSelecionado)
+      fetchContagemPorSetor(setores)
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'Falha ao excluir a meta.' })
     }
@@ -162,6 +188,31 @@ function MetasPage({ currentUser, onNavigate, onLogout }) {
 
         {feedback.message ? (
           <p className={`feedback ${feedback.type === 'error' ? 'feedback--error' : 'feedback--info'}`}>{feedback.message}</p>
+        ) : null}
+
+        {setores.length > 0 ? (
+          <div className="metas-setor-blocos">
+            {setores.map((s) => {
+              const contagem = contagemPorSetor[s.id]
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`metas-setor-bloco${String(s.id) === String(setorSelecionado) ? ' metas-setor-bloco--ativo' : ''}`}
+                  onClick={() => setSetorSelecionado(String(s.id))}
+                >
+                  <strong className="metas-setor-bloco__nome">{s.nome}</strong>
+                  <span className="metas-setor-bloco__contagem">
+                    {isLoadingContagem && contagem === undefined
+                      ? 'Carregando...'
+                      : contagem
+                        ? `${contagem} ${contagem === 1 ? 'meta' : 'metas'}`
+                        : 'Nenhuma meta'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         ) : null}
 
         <div className="data-toolbar">
