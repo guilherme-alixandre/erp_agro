@@ -1,0 +1,840 @@
+LISTA DE TESTES AUTOMATIZADOS — GADO-BACKEND
+Para cada teste: nome do metodo, o que ele verifica e (quando aplicavel) o bug/regressao que ele ajuda a evitar.
+Gerado em 2026-11-08. Base: 64 arquivos de teste JUnit 5, ~580 metodos @Test/@ParameterizedTest.
+
+
+====================================================================
+CAMADA: SERVICES (regras de negocio, testadas com mocks)
+====================================================================
+
+### SAnimalTest
+
+- BuscarTests.buscarPorBrinco_deveRetornarAnimal_QuandoEncontrado — O que verifica: busca de animal pelo codigo de brinco retorna o DTO correto quando o registro ativo existe. Bug que evita: —.
+- BuscarTests.buscarPorBrinco_deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: busca por brinco inexistente/inativo lanca EntityNotFoundException em vez de retornar nulo. Bug que evita: chamada subsequente explodir com NullPointerException em vez de um erro 404 tratavel.
+- BuscarTests.buscarTodosAnimais_semTermo_deveListarTodosAtivos — O que verifica: listagem sem termo de busca retorna todos os animais ativos. Bug que evita: —.
+- BuscarTests.buscarTodosAnimais_comTermo_deveFiltrar — O que verifica: listagem com termo de busca delega para o filtro por termo do repositorio. Bug que evita: busca cair no fluxo "listar todos" e ignorar o filtro informado pelo usuario.
+- CadastraAnimalTests.deveCadastrarAnimal_GerandoPrimeiroCodigoDaRaca — O que verifica: cadastro de animal gera o primeiro codigo de brinco da raca (ex. NE0001) quando nao ha animais anteriores dessa raca. Bug que evita: —.
+- CadastraAnimalTests.deveIncrementarUltimoCodigo_QuandoJaExistemAnimaisDaRaca — O que verifica: cadastro incrementa corretamente o ultimo codigo de brinco existente da raca (NE0007 -> NE0008). Bug que evita: gerar codigo duplicado ou reiniciar a sequencia ao cadastrar novo animal de raca ja usada.
+- CadastraAnimalTests.deveLancarExcecao_QuandoRacaIdAusente — O que verifica: cadastro sem informar raca lanca IllegalArgumentException com mensagem mencionando "raca". Bug que evita: salvar animal sem raca vinculada, corrompendo a geracao de codigo de brinco.
+- CadastraAnimalTests.deveLancarExcecao_QuandoRacaNaoEncontradaOuInativa — O que verifica: cadastro com raca inexistente/inativa e rejeitado. Bug que evita: vincular animal a uma raca invalida ou inativada.
+- CadastraAnimalTests.deveLancarEntityNotFoundException_QuandoUsuarioNaoEncontrado — O que verifica: cadastro feito por usuario inexistente/inativo lanca EntityNotFoundException. Bug que evita: registrar animal sem rastreabilidade de autor valido.
+- DeletaAnimalTests.deveInativarAnimal_QuandoEncontrado — O que verifica: exclusao logica marca o animal como status Inativo e retorna mensagem de sucesso. Bug que evita: —.
+- DeletaAnimalTests.deveRetornarMensagem_QuandoNaoEncontrado — O que verifica: exclusao de animal inexistente retorna mensagem "animal nao encontrado" em vez de lancar excecao. Bug que evita: —.
+- DeletaAnimalTests.deveBloquearExclusao_QuandoAnimalVendido — O que verifica: tentativa de excluir animal ja vendido e bloqueada e o status permanece Ativo. Bug que evita: apagar do cadastro um animal que ja foi vendido, perdendo o historico de uma venda real.
+- DeletaAnimalTests.deveBloquearExclusao_QuandoAnimalAbatido — O que verifica: tentativa de excluir animal abatido e bloqueada da mesma forma. Bug que evita: apagar historico de um animal ja abatido.
+- AlteraAnimalTests.deveAtualizarCampos_SemAlterarCodigoBrinco — O que verifica: edicao atualiza campos como peso mas ignora tentativa de sobrescrever o codigo de brinco vindo do DTO. Bug que evita: cliente malicioso ou bug de frontend forjar/trocar o codigo de brinco (identificador unico) via edicao.
+- AlteraAnimalTests.deveTrocarRaca_QuandoRacaIdInformadaEValida — O que verifica: edicao troca a raca do animal quando um racaId valido e informado. Bug que evita: —.
+- AlteraAnimalTests.deveLancarExcecao_QuandoNovaRacaInvalida — O que verifica: edicao com raca invalida e rejeitada antes de persistir. Bug que evita: animal ficar com referencia de raca inexistente apos edicao.
+- AlteraAnimalTests.deveLancarEntityNotFoundException_QuandoAnimalNaoExiste — O que verifica: edicao de animal inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SCategoriaTest
+
+- deveCriarCategoria — O que verifica: criacao de categoria persiste e retorna DTO com id gerado e nome correto. Bug que evita: —.
+- deveBuscarCategoriaAtivaPorId — O que verifica: busca por id retorna apenas categoria ativa. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoBuscarInativaOuInexistente — O que verifica: busca de categoria inativa ou inexistente lanca EntityNotFoundException. Bug que evita: expor ou operar sobre uma categoria ja excluida logicamente.
+- deveAtualizarCategoria — O que verifica: atualizacao altera o nome da categoria existente. Bug que evita: —.
+- deveExcluirCategoria_InativandoStatus — O que verifica: exclusao marca a categoria como Inativa e retorna mensagem de sucesso. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoExcluirInexistente — O que verifica: exclusao de categoria inexistente/inativa lanca EntityNotFoundException. Bug que evita: —.
+
+### SConsumoEstoqueTest
+
+- RegistrarConsumoTests.deveRegistrarConsumo_DebitandoEstoque — O que verifica: registrar consumo debita o saldo do insumo, cria item de resposta com a quantidade baixada e aciona a contabilizacao financeira. Bug que evita: —.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoEhCabecaDeAnimal — O que verifica: insumo do tipo ANIMAL nao pode ser dado baixa por consumo de estoque comum, mensagem orienta usar venda no Financeiro. Bug que evita: dar baixa de cabeca de animal como consumo generico, bypassando o fluxo correto de venda/abate e descasando o controle financeiro.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoEhVacina — O que verifica: insumo do tipo VACINA nao pode ser baixado via consumo de estoque, deve usar o fluxo de vacinacao. Bug que evita: baixa de vacina sem vincular ao animal vacinado, perdendo o registro sanitario/custo por animal.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoEstoqueInsuficiente — O que verifica: registrar consumo maior que o saldo disponivel e rejeitado. Bug que evita: saldo de estoque ficar negativo.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoProdutoNaoEncontrado — O que verifica: consumo referenciando insumo inexistente/inativo e rejeitado. Bug que evita: —.
+- CancelarConsumoTests.deveCancelar_EstornandoEstoque — O que verifica: cancelar um consumo devolve a quantidade ao saldo do insumo, marca o consumo como cancelado e aciona o estorno financeiro. Bug que evita: cancelar um consumo sem devolver o estoque, deixando o saldo incorretamente baixo.
+- CancelarConsumoTests.deveLancarExcecao_QuandoJaCancelado — O que verifica: cancelar um consumo ja cancelado e bloqueado. Bug que evita: estornar o mesmo consumo duas vezes, devolvendo estoque em duplicidade.
+- CancelarConsumoTests.deveLancarExcecao_QuandoUsuarioNaoEhAutorNemAdministrador — O que verifica: apenas o autor do consumo ou um administrador pode cancela-lo. Bug que evita: qualquer usuario cancelar consumo registrado por outra pessoa.
+- EditarConsumoTests.deveEditar_EstornandoBaixaAntigaEAplicandoNova — O que verifica: editar consumo primeiro estorna a baixa antiga (no insumo antigo) e so entao aplica a nova quantidade no insumo novo, recalculando saldo de ambos corretamente. Bug que evita: editar um consumo trocando de insumo sem devolver o saldo ao insumo original, deixando-o permanentemente descontado.
+- EditarConsumoTests.deveLancarExcecao_QuandoConsumoJaCancelado — O que verifica: nao e possivel editar um consumo ja cancelado. Bug que evita: reativar efeitos de estoque de um consumo que ja foi estornado/cancelado.
+- ListarTodosTests.deveListarSemFiltroDeData — O que verifica: listagem geral sem filtro de data retorna lista ordenada do repositorio. Bug que evita: —.
+
+### SConsumoInsumoTest
+
+- RegistrarConsumoTests.deveRegistrarConsumo_DebitandoEstoqueERateandoPorAnimal — O que verifica: registrar consumo em um setor debita o insumo, calcula o consumo por animal (quantidade / no de animais alocados no setor) e registra a movimentacao de saida de estoque. Bug que evita: —.
+- RegistrarConsumoTests.deveRegistrarComConsumoPorAnimalNulo_QuandoSetorSemAnimaisAlocados — O que verifica: quando o setor nao tem animais alocados, o total de animais e zero e o consumo por animal fica nulo (nao divide por zero). Bug que evita: ArithmeticException de divisao por zero ou calculo incorreto quando o setor esta vazio.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoNaoEncontrado — O que verifica: consumo referenciando insumo inexistente e rejeitado com mensagem especifica. Bug que evita: —.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoEhCabecaDeAnimal — O que verifica: insumo do tipo ANIMAL nao pode ser consumido via alimentacao de setor, deve usar venda no Financeiro. Bug que evita: baixa de cabeca de animal pelo fluxo errado de consumo de racao/insumo.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoEhVacina — O que verifica: insumo do tipo VACINA nao pode ser consumido pelo fluxo de alimentacao de setor. Bug que evita: baixa de vacina sem o registro sanitario por animal do fluxo de vacinacao.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoSetorNaoEncontrado — O que verifica: consumo referenciando setor inexistente/inativo e rejeitado. Bug que evita: —.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoInsumoSemUnidadeMedidaPrimaria — O que verifica: insumo sem unidade de medida primaria cadastrada impede o registro de consumo. Bug que evita: salvar consumo sem unidade de referencia, corrompendo calculos de saldo e rateio.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoDataDeConsumoNoFuturo — O que verifica: data de consumo informada no futuro e rejeitada. Bug que evita: lancamentos de consumo com data futura distorcendo relatorios e saldo projetado.
+- RegistrarConsumoTests.deveLancarExcecao_QuandoEstoqueInsuficiente — O que verifica: consumo maior que o saldo disponivel e rejeitado e nada e salvo. Bug que evita: saldo de estoque negativo; confirma que o repositorio de save nao e chamado nesse cenario.
+- EditarConsumoTests.deveEditarConsumo_RecalculandoSaldo — O que verifica: editar a quantidade de um consumo existente estorna a baixa antiga e aplica a nova, resultando no saldo correto (100 + estorno 10 - nova baixa 20 = 90). Bug que evita: editar consumo aplicando so a nova baixa sem devolver a antiga, duplicando o debito no estoque.
+- EditarConsumoTests.deveLancarEntityNotFoundException_QuandoConsumoNaoExiste — O que verifica: editar consumo inexistente lanca EntityNotFoundException. Bug que evita: —.
+- EditarConsumoTests.deveLancarExcecao_QuandoUsuarioSemPermissaoDeEdicao — O que verifica: apenas quem registrou o consumo pode edita-lo. Bug que evita: qualquer usuario alterar quantidade/dados de consumo registrado por outro.
+- EditarConsumoTests.deveLancarExcecao_QuandoEstoqueInsuficienteAposEstorno — O que verifica: mesmo apos estornar a baixa antiga, se a nova quantidade exceder o saldo resultante a edicao e rejeitada. Bug que evita: editar consumo para uma quantidade absurda e deixar saldo negativo.
+- ListarPorSetorTests.deveListarSemFiltroDeData_QuandoDatasNaoInformadas — O que verifica: listagem por setor sem datas usa o metodo sem filtro de periodo e nunca chama o metodo com filtro de data. Bug que evita: —.
+- ListarPorSetorTests.deveListarComFiltroDeData_QuandoDatasInformadas — O que verifica: listagem por setor com datas informadas usa o metodo de busca filtrado por periodo. Bug que evita: —.
+- ExcluirConsumoTests.deveExcluirEDevolverEstoque_QuandoSemSobraRegistrada — O que verifica: excluir consumo sem sobra registrada devolve a quantidade ao saldo do insumo e inativa o registro, sem tocar no servico financeiro. Bug que evita: —.
+- ExcluirConsumoTests.deveEstornarPerda_QuandoHaviaSobraNaoReaproveitada — O que verifica: excluir consumo que tinha sobra nao reaproveitada tambem estorna o lancamento financeiro de perda e remove o registro de sobra. Bug que evita: excluir o consumo e deixar um lancamento financeiro de "perda" orfao, inflando despesas indevidamente.
+- ExcluirConsumoTests.deveLancarEntityNotFoundException_QuandoConsumoNaoExiste — O que verifica: excluir consumo inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ResumoPorSetorEPeriodoTests.deveAgregarTotalPorInsumo — O que verifica: resumo por setor e periodo agrega quantidade total por insumo e preenche nome do insumo e sigla da unidade corretamente a partir da projecao do banco. Bug que evita: —.
+
+### SCustoAnimalTest
+
+- RegistrarOuAtualizarAquisicaoTests.deveCriarLancamento_QuandoValorAquisicaoInformado — O que verifica: animal com valor de aquisicao preenchido gera um lancamento de custo do tipo AQUISICAO com o valor correto. Bug que evita: —.
+- RegistrarOuAtualizarAquisicaoTests.naoDeveCriarLancamento_QuandoValorAquisicaoAusente — O que verifica: quando nao ha valor de aquisicao informado, nenhum lancamento de custo e criado. Bug que evita: gerar custo de aquisicao fantasma (zero ou nulo) para animais sem valor de compra informado.
+- RegistrarOuAtualizarAquisicaoTests.deveEstornarLancamentoAnterior_AntesDeRecriar — O que verifica: ao atualizar o valor de aquisicao, o lancamento antigo e inativado (saveAll) antes de criar o novo. Bug que evita: duplicar o custo de aquisicao do animal ao editar o valor, somando o antigo com o novo no custo de vida total.
+- RegistrarCustoAlimentacaoTests.deveCriarUmLancamentoPorAnimal_ComPrecoFotografado — O que verifica: registrar custo de alimentacao cria um lancamento individual por animal do setor, usando o preco do insumo "fotografado" no momento do consumo (consumoPorAnimal x preco). Bug que evita: usar o preco atual do insumo em vez do preco vigente na data do consumo, distorcendo o historico de custos apos reajustes de preco.
+- RegistrarCustoAlimentacaoTests.naoDeveCriarLancamento_QuandoConsumoPorAnimalNulo — O que verifica: quando o consumo nao tem rateio por animal calculado (nulo), nenhum lancamento de custo de alimentacao e criado. Bug que evita: lancar custo de alimentacao com valor incorreto/zero quando nao ha como ratear por animal.
+- RegistrarCustoVacinacaoTests.deveCriarLancamentoComValorDaDoseVezesPreco — O que verifica: custo de vacinacao por item e calculado como quantidade da dose aplicada vezes o preco do insumo vacina. Bug que evita: —.
+- EstornoTests.estornarCustoAlimentacao_deveInativarLancamentosDaOrigem — O que verifica: estornar custo de alimentacao de uma origem (consumo) inativa todos os lancamentos vinculados a essa origem. Bug que evita: excluir/editar um consumo de insumo e deixar o custo de alimentacao ja lancado "pendurado" no custo de vida do animal.
+- EstornoTests.estornarCustoVacinacaoItem_deveInativarLancamentosDaOrigem — O que verifica: estornar custo de vacinacao de um item inativa o(s) lancamento(s) vinculados aquele item de vacinacao. Bug que evita: custo de vacinacao permanecer contabilizado apos a vacinacao ser desfeita/cancelada.
+- CalcularCustoVidaTests.deveLancarEntityNotFoundException_QuandoAnimalNaoEncontrado — O que verifica: calcular custo de vida de animal inexistente/inativo lanca EntityNotFoundException. Bug que evita: —.
+- CalcularCustoVidaTests.deveSomarCadaCategoriaSeparadamente — O que verifica: custo de vida soma corretamente por categoria (aquisicao, alimentacao somando multiplos eventos, vacinacao) e calcula o total geral como a soma de todas as categorias. Bug que evita: somar categorias de custo incorretamente (ex. ignorar um evento de alimentacao ou somar categorias erradas no total geral).
+- CalcularCustoTotalAnimaisTests.deveRetornarMapaVazio_QuandoListaVazia — O que verifica: calcular custo total para uma lista vazia de animais retorna mapa vazio sem consultar o repositorio. Bug que evita: consulta desnecessaria ao banco (ex. IN () invalido) quando a lista de ids esta vazia.
+- CalcularCustoTotalAnimaisTests.deveAgruparLancamentosPorAnimal — O que verifica: lancamentos de custo de multiplos animais sao corretamente agrupados por id do animal no mapa de resultado. Bug que evita: misturar custos de animais diferentes no mesmo agregado por erro de agrupamento.
+
+### SDocumentoEntradaTest
+
+- ImportarNfeXmlTests.deveImportarNfe_ComSucesso — O que verifica: importacao de XML de NF-e valida cria documento com tipo NF_E, status ja APROVADO, chave de acesso de 44 digitos, um item, e aciona o registro do lancamento financeiro de saida do item. Bug que evita: —.
+- ImportarNfeXmlTests.deveImportarNfe_AVista_QuandoXmlSemCobr — O que verifica: NF-e sem bloco de cobranca (cobr) no XML e interpretada como pagamento a vista, com vencimento igual a emissao e uma unica parcela. Bug que evita: NF-e sem informacao de parcelamento ficar com forma de pagamento indefinida ou numero de parcelas incorreto.
+- ImportarNfeXmlTests.deveImportarNfe_Parcelada_QuandoXmlComCobr — O que verifica: NF-e com bloco de cobranca no XML e corretamente interpretada como parcelada, extraindo vencimento, numero de parcelas e valor de cada parcela do XML. Bug que evita: ignorar as parcelas reais da nota e trata-la incorretamente como a vista.
+- ImportarNfeXmlTests.deveLancarExcecao_QuandoArquivoVazio — O que verifica: upload de arquivo vazio e rejeitado com mensagem orientando selecionar o arquivo. Bug que evita: —.
+- ImportarNfeXmlTests.deveLancarExcecao_QuandoFornecedorIdNulo — O que verifica: importacao sem informar o fornecedor e rejeitada. Bug que evita: —.
+- ImportarNfeXmlTests.deveLancarExcecao_QuandoFornecedorNaoEncontrado — O que verifica: importacao referenciando fornecedor (parceiro) inexistente e rejeitada. Bug que evita: —.
+- ImportarNfeXmlTests.deveLancarExcecao_QuandoChaveDeAcessoJaImportada — O que verifica: NF-e cuja chave de acesso ja foi importada anteriormente e rejeitada. Bug que evita: importar a mesma nota fiscal duas vezes, duplicando entrada de estoque e lancamento financeiro.
+- ImportarNfeXmlTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: usuario sem perfil adequado (ex. cuidador comum) nao pode importar NF-e, e o repositorio de parceiros nem e consultado. Bug que evita: usuario sem permissao financeira criar documentos de entrada/dividas.
+- CadastrarReciboSimplesTests.deveCadastrarRecibo_SempreComoPendenteEmAprovacao — O que verifica: recibo simples cadastrado entra sempre como PENDENTE_APROVACAO (nunca ja aprovado automaticamente), a vista por padrao, sem acionar lancamento financeiro ou servico de insumo antes da aprovacao. Bug que evita: recibo simples ser considerado aprovado/contabilizado sem passar pelo fluxo de aprovacao financeira.
+- CadastrarReciboSimplesTests.deveCadastrarRecibo_Parcelado_QuandoInformado — O que verifica: recibo simples aceita forma de pagamento parcelada com vencimento, numero de parcelas e valor de parcela informados explicitamente. Bug que evita: —.
+- CadastrarReciboSimplesTests.deveLancarExcecao_QuandoProdutoNaoEncontrado — O que verifica: recibo referenciando produto/insumo inexistente e rejeitado. Bug que evita: —.
+- AprovarDocumentoTests.deveAprovarDocumentoPendente — O que verifica: aprovar documento pendente muda status para APROVADO e registra o email de quem aprovou. Bug que evita: —.
+- AprovarDocumentoTests.deveLancarIllegalStateException_QuandoDocumentoJaAprovado — O que verifica: tentar aprovar um documento ja aprovado e bloqueado. Bug que evita: reaprovar documento gerando efeitos colaterais financeiros/estoque duplicados.
+- AprovarDocumentoTests.deveLancarEntityNotFoundException_QuandoDocumentoNaoExiste — O que verifica: aprovar documento inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ExcluirDocumentoTests.deveExcluirDocumento_RevertendoEstoqueELancamento — O que verifica: excluir documento de entrada reverte a quantidade aplicada ao estoque do produto, inativa o documento e estorna o lancamento financeiro do item. Bug que evita: excluir uma nota de entrada e deixar o estoque "inflado" indevidamente (sem devolver a baixa) ou o lancamento financeiro ativo.
+- ExcluirDocumentoTests.deveLancarExcecao_QuandoSaldoJaConsumidoNaoComportaReversao — O que verifica: se o saldo atual do insumo e menor que a quantidade a devolver (porque parte ja foi consumida), a exclusao e bloqueada e nada e salvo. Bug que evita: reverter entrada de estoque e deixar o saldo do insumo negativo porque parte do estoque ja tinha sido consumida por outro processo.
+- RecusarDocumentoTests.deveRecusarDocumentoPendente — O que verifica: recusar documento pendente muda status para RECUSADO e grava a justificativa informada. Bug que evita: —.
+- RecusarDocumentoTests.deveLancarIllegalStateException_QuandoNaoPendente — O que verifica: so e possivel recusar documento que esteja pendente de aprovacao. Bug que evita: recusar um documento ja aprovado, deixando estado inconsistente entre aprovacao e recusa.
+- EditarNfeTests.deveEditar_QuandoSenhaCorreta — O que verifica: editar NF-e exige confirmacao de senha do usuario e, com senha correta, atualiza campos como numero do documento e registra quem fez a ultima edicao. Bug que evita: —.
+- EditarNfeTests.deveLancarExcecao_QuandoSenhaIncorreta — O que verifica: edicao de NF-e com senha de confirmacao incorreta e rejeitada sem nenhuma interacao com o repositorio de documentos. Bug que evita: editar dados fiscais sensiveis de uma nota fiscal sem confirmacao de identidade valida.
+- EditarNfeTests.deveLancarExcecao_QuandoDocumentoNaoENfE — O que verifica: a edicao via editarNfe so pode ser usada em documentos do tipo NF_E, rejeitando recibos simples etc. Bug que evita: usar o endpoint de edicao de NF-e para alterar indevidamente um recibo simples, que tem regras diferentes.
+- EditarNfeTests.deveLancarExcecao_QuandoItemNaoPertenceAoDocumento — O que verifica: tentar editar um item cujo id nao pertence ao documento informado e rejeitado. Bug que evita: editar/corromper item de outro documento por erro ou manipulacao do id no payload.
+- VincularProdutoTests.deveVincular_SemGerarLancamento_QuandoDocumentoAindaNaoAprovado — O que verifica: vincular produto a um item de documento ainda pendente de aprovacao nao gera lancamento financeiro. Bug que evita: contabilizar financeiramente um item antes do documento estar aprovado.
+- VincularProdutoTests.deveVincularEGerarLancamento_QuandoDocumentoJaAprovado — O que verifica: vincular produto a item de documento ja aprovado aciona o registro/atualizacao do lancamento financeiro de saida daquele item. Bug que evita: vincular produto a item de nota ja aprovada e nunca gerar o lancamento financeiro correspondente.
+- VincularProdutoTests.deveLancarExcecao_QuandoProdutoNaoEncontrado — O que verifica: vincular um produto/insumo inexistente ao item e rejeitado. Bug que evita: —.
+- LeituraTests.buscarPorId_deveRetornarDocumento — O que verifica: busca de documento por id retorna o documento correto. Bug que evita: —.
+- LeituraTests.buscarPorId_deveLancarEntityNotFoundException_QuandoNaoExiste — O que verifica: busca de documento inexistente lanca EntityNotFoundException. Bug que evita: —.
+- LeituraTests.listarPendentesAprovacao_deveDelegarParaRepositorio — O que verifica: listagem de documentos pendentes de aprovacao delega corretamente ao metodo do repositorio filtrado por status ativo e pendente. Bug que evita: —.
+
+### SDocumentoSaidaTest
+
+- CadastrarVendaLeiteTests.deveCalcularPrecoLitro_QuandoValorTotalInformado — O que verifica: ao informar apenas o valor total da venda de leite, o preco por litro e calculado (valorTotal/litros) e a venda e registrada a vista com 1 parcela, acionando o lancamento financeiro de entrada. Bug que evita: —.
+- CadastrarVendaLeiteTests.deveCadastrarParcelado_QuandoFormaPagamentoInformada — O que verifica: venda de leite aceita forma de pagamento parcelada com vencimento, numero de parcelas e valor de parcela definidos explicitamente. Bug que evita: —.
+- CadastrarVendaLeiteTests.deveCalcularValorTotal_QuandoPrecoLitroInformado — O que verifica: ao informar o preco por litro em vez do valor total, o valor total da venda e calculado (preco x litros). Bug que evita: —.
+- CadastrarVendaLeiteTests.deveLancarExcecao_QuandoNemPrecoNemValorInformado — O que verifica: venda de leite sem preco por litro nem valor total informado e rejeitada. Bug que evita: criar venda de leite sem nenhuma base de calculo de valor, gerando lancamento financeiro com valor indefinido/zero.
+- CadastrarVendaLeiteTests.deveLancarExcecao_QuandoLoteNaoEncontrado — O que verifica: venda referenciando lote inexistente/inativo e rejeitada. Bug que evita: —.
+- CadastrarVendaLeiteTests.deveRegistrarVendidoNaMeta_QuandoMetaLeiteAtivaCobreData — O que verifica: ao vender leite de um lote alocado em setor com meta de leite vigente cobrindo a data da venda, o volume vendido e registrado contra essa meta. Bug que evita: venda de leite nao refletir no progresso/acompanhamento da meta de producao do setor.
+- CadastrarVendaLeiteTests.naoDeveRegistrarNaMeta_QuandoDataForaDoPeriodoDaMeta — O que verifica: quando a meta encontrada no setor nao cobre a data da venda (periodo expirado), nenhum registro de venda-meta e criado. Bug que evita: contabilizar venda de leite contra uma meta de periodo diferente (ex. do ano anterior), distorcendo o progresso da meta errada.
+- CadastrarVendaAnimalTests.deveVenderAnimais_DividindoValorIgualmenteEntreEles — O que verifica: venda de multiplos animais divide o valor total igualmente entre eles e marca todos com o status de destino (VENDIDO), com pagamento a vista por padrao. Bug que evita: —.
+- CadastrarVendaAnimalTests.deveLiberarAnimalDeAlocacaoDeSetor_AoVender — O que verifica: vender um animal remove-o da lista de animais da alocacao de lote/setor ativa, liberando a vaga. Bug que evita: animal vendido continuar contado como presente no setor/lote, inflando estatisticas e capacidade ocupada.
+- CadastrarVendaAnimalTests.deveBaixarEstoqueDoProdutoDaRaca_QuandoRacaVinculadaAUmProduto — O que verifica: quando a raca do animal vendido esta vinculada a um produto de estoque (cabeca de gado como insumo), a venda aciona a baixa de 1 unidade desse produto. Bug que evita: vender/abater um animal e nao dar baixa no insumo "cabeca" vinculado, descasando o controle de estoque de gado com a venda real.
+- CadastrarVendaAnimalTests.deveLancarExcecao_QuandoDestinoInvalido — O que verifica: destino diferente de VENDIDO/ABATIDO e rejeitado na venda. Bug que evita: —.
+- CadastrarVendaAnimalTests.deveLancarExcecao_QuandoAnimalNaoEncontrado — O que verifica: venda referenciando ids de animais nao encontrados e rejeitada. Bug que evita: —.
+- CadastrarVendaAnimalTests.deveLancarExcecao_QuandoAnimalJaVendido — O que verifica: tentar vender/abater animal ja marcado como vendido e bloqueado. Bug que evita: vender o mesmo animal duas vezes, duplicando receita e descasando o estoque de gado.
+- ExcluirVendaTests.deveReverterAnimalEEstoque_QuandoExcluirVendaAnimal — O que verifica: excluir venda de animal reverte o status do animal para ATIVO, devolve o estoque do produto vinculado a raca, grava o motivo do cancelamento e estorna a entrada financeira da venda. Bug que evita: cancelar uma venda de animal e o animal continuar marcado como vendido, ou o estoque de cabecas nao ser devolvido.
+- ExcluirVendaTests.deveReverterVendidoNaMeta_QuandoExcluirVendaLeite — O que verifica: excluir venda de leite remove o registro de venda-meta vinculado, estorna a entrada financeira, e nao toca no servico de insumo (que e exclusivo do fluxo de animal). Bug que evita: cancelar venda de leite e deixar o volume ainda contabilizado como "vendido" na meta do setor.
+- ExcluirVendaTests.deveLancarExcecao_QuandoMotivoNaoInformado — O que verifica: exclusao de venda sem motivo de cancelamento informado e rejeitada. Bug que evita: cancelamentos de venda sem rastreabilidade do motivo.
+- ExcluirVendaTests.deveLancarExcecao_QuandoVendaNaoEncontrada — O que verifica: excluir venda inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ListarTodosTests.deveListarDocumentosDeSaidaAtivos — O que verifica: listagem geral retorna os documentos de saida ativos convertidos corretamente para DTO. Bug que evita: —.
+
+### SFolhaPagamentoTest
+
+- CadastrarFuncionarioTests.deveCadastrarFuncionario_ComNaturezaFinanceiraSempreCusto — O que verifica: cadastro de funcionario normaliza o cargo para maiusculas e sempre define a natureza financeira como CUSTO, independentemente do que for informado. Bug que evita: funcionario ser cadastrado com natureza financeira diferente de Custo, distorcendo relatorios de custo de folha de pagamento.
+- CadastrarFuncionarioTests.deveLancarExcecao_QuandoCpfJaCadastrado — O que verifica: cadastro com CPF ja existente e rejeitado. Bug que evita: duplicar funcionario com o mesmo CPF.
+- CadastrarFuncionarioTests.deveLancarExcecao_QuandoCargoInvalido — O que verifica: cadastro com cargo fora da lista de cargos validos e rejeitado. Bug que evita: —.
+- CadastrarFuncionarioTests.deveLancarExcecao_QuandoUsuarioSemPermissaoGerencial — O que verifica: apenas Administrador ou Gerente podem cadastrar funcionarios; usuario do perfil Financeiro e rejeitado. Bug que evita: usuario sem alcada de RH criar/alterar quadro de funcionarios.
+- AtualizarFuncionarioTests.deveAtualizarCamposInformados — O que verifica: atualizacao de funcionario altera apenas os campos informados no PUT (ex. salario base). Bug que evita: —.
+- AtualizarFuncionarioTests.deveLancarEntityNotFoundException_QuandoFuncionarioNaoExiste — O que verifica: atualizar funcionario inexistente lanca EntityNotFoundException. Bug que evita: —.
+- LancarPagamentoTests.deveLancarPagamentoPago_CalculandoDescontosEEncargosEGerandoLancamento — O que verifica: lancar pagamento com data ja ocorrida calcula desconto de INSS, encargo de FGTS, soma de beneficios e valor liquido corretamente, marca status PAGO e aciona o lancamento financeiro de saida da folha. Bug que evita: —.
+- LancarPagamentoTests.deveLancarPagamentoPendente_SemGerarLancamento_QuandoDataFutura — O que verifica: pagamento com data futura e registrado como PENDENTE e nao gera lancamento financeiro ainda. Bug que evita: contabilizar uma despesa de folha de pagamento antes dela efetivamente ocorrer, antecipando indevidamente o fluxo de caixa.
+- LancarPagamentoTests.deveLancarExcecao_QuandoJaExistePagamentoNoMes — O que verifica: ja existindo um pagamento lancado para o mesmo funcionario/ano/mes, novo lancamento e bloqueado. Bug que evita: pagar o mesmo funcionario duas vezes no mesmo mes de referencia por erro de duplo clique/retry.
+- LancarPagamentoTests.deveLancarEntityNotFoundException_QuandoFuncionarioNaoExiste — O que verifica: lancar pagamento para funcionario inexistente lanca EntityNotFoundException. Bug que evita: —.
+- EstornarPagamentoTests.deveEstornarPagamentoPago_RevertendoLancamento — O que verifica: estornar um pagamento ja marcado como PAGO aciona o estorno do lancamento financeiro correspondente e marca o pagamento como estornado. Bug que evita: —.
+- EstornarPagamentoTests.deveEstornarPagamentoPendente_SemChamarEstornoDeLancamento — O que verifica: estornar um pagamento que ainda estava PENDENTE (sem lancamento financeiro gerado) nao tenta estornar nada no servico financeiro. Bug que evita: tentar estornar um lancamento financeiro que nunca existiu, potencialmente lancando erro ou criando estorno fantasma.
+- EstornarPagamentoTests.deveLancarExcecao_QuandoJaEstornado — O que verifica: estornar um pagamento ja estornado anteriormente e bloqueado. Bug que evita: estornar o mesmo pagamento duas vezes, duplicando o credito revertido no financeiro.
+- EstornarPagamentoTests.deveLancarEntityNotFoundException_QuandoPagamentoNaoExiste — O que verifica: estornar pagamento inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ListarFuncionariosTests.deveListarFuncionariosAtivos — O que verifica: listagem retorna apenas funcionarios ativos ordenados por nome. Bug que evita: —.
+
+### SGrupoProdutoTest
+
+- ListarTests.deveListarTodos_QuandoSemFiltroDeStatusOuBusca — O que verifica: listagem sem filtros usa o metodo "todos" do repositorio e nao chama o metodo filtrado por status. Bug que evita: —.
+- ListarTests.deveFiltrarPorBusca_QuandoTermoInformado — O que verifica: listagem com termo de busca filtra por nome (case-insensitive). Bug que evita: —.
+- ListarTests.deveFiltrarPorStatusAtivo_QuandoStatusAInformado — O que verifica: listagem com filtro de status "A" delega para o metodo filtrado por status ativo. Bug que evita: —.
+- ListarTests.deveFiltrarPorStatusEBusca_QuandoAmbosInformados — O que verifica: listagem com status e termo de busca combinados usa o metodo que filtra por ambos simultaneamente. Bug que evita: aplicar so um dos dois filtros e retornar resultados que o usuario nao esperava (ex. grupos inativos aparecendo numa busca por status ativo).
+- ListarTests.deveLancarExcecao_QuandoStatusInvalido — O que verifica: filtro de status com valor invalido (fora de A/I) e rejeitado. Bug que evita: —.
+- BuscarPorIdTests.deveRetornarGrupo_QuandoEncontrado — O que verifica: busca por id retorna o grupo de produto correto. Bug que evita: —.
+- BuscarPorIdTests.deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: busca de grupo inexistente lanca EntityNotFoundException. Bug que evita: —.
+- CriarTests.deveCriarGrupo_QuandoNomeEPrefixoUnicos — O que verifica: criacao de grupo com nome e prefixo unicos e bem-sucedida. Bug que evita: —.
+- CriarTests.deveLancarExcecao_QuandoNomeJaExiste — O que verifica: criacao com nome ja usado por outro grupo e rejeitada. Bug que evita: dois grupos de produto com o mesmo nome confundindo a categorizacao de insumos.
+- CriarTests.deveLancarExcecao_QuandoPrefixoJaExiste — O que verifica: criacao com codigo de prefixo ja usado por outro grupo e rejeitada. Bug que evita: dois grupos compartilharem o mesmo prefixo de codigo, gerando colisao na geracao de codigo de produto dos insumos.
+- AtualizarTests.deveAtualizarNome_QuandoNomeNaoConflita — O que verifica: atualizacao de nome e aceita quando nao conflita com outro grupo existente. Bug que evita: —.
+- AtualizarTests.deveLancarExcecao_QuandoNovoNomeConflitaComOutroGrupo — O que verifica: atualizacao para um nome ja usado por outro grupo diferente e rejeitada. Bug que evita: —.
+- AtualizarTests.devePermitirManterMesmoNome_QuandoConflitoEhComElePropio — O que verifica: atualizacao que "conflita" apenas com o proprio registro (mesmo nome que ja tinha) e permitida normalmente. Bug que evita: usuario ser impedido de salvar o grupo sem alterar o nome, por falso positivo de duplicidade comparando o registro com ele mesmo.
+- AtualizarTests.deveLancarExcecao_QuandoAlteraPrefixoComProdutosVinculados — O que verifica: alterar o prefixo de codigo de um grupo que ja possui produtos/insumos vinculados e bloqueado, e nada e salvo. Bug que evita: trocar o prefixo de um grupo com produtos ja cadastrados, descasando o codigo de produto existente dos insumos com o novo prefixo do grupo.
+- AtualizarTests.deveLancarEntityNotFoundException_QuandoGrupoNaoExiste — O que verifica: atualizar grupo inexistente lanca EntityNotFoundException. Bug que evita: —.
+- InativarReativarTests.deveInativarGrupo — O que verifica: inativacao muda o status do grupo para Inativo. Bug que evita: —.
+- InativarReativarTests.deveReativarGrupo — O que verifica: reativacao muda o status do grupo de Inativo para Ativo. Bug que evita: —.
+- InativarReativarTests.deveLancarEntityNotFoundException_QuandoInativarInexistente — O que verifica: inativar grupo inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SInsumoTest
+
+- ValidaGestaoEstoqueTests.devePermitir_QuandoAdministrador — O que verifica: administrador tem permissao de gestao de estoque (nao lanca excecao). Bug que evita: —.
+- ValidaGestaoEstoqueTests.deveNegar_QuandoCuidadorComum — O que verifica: cuidador comum (sem ser chefe) nao tem permissao de gestao de estoque, mensagem cita quais perfis sao permitidos. Bug que evita: cuidador comum criar/editar produtos de estoque ou alterar precos sem alcada.
+- ListarEstoqueTests.deveListarTodos_SemFiltro — O que verifica: listagem de estoque sem filtros retorna todos os insumos. Bug que evita: —.
+- ListarEstoqueTests.deveFiltrarPorBuscaEStatus — O que verifica: listagem com busca e status combinados filtra corretamente. Bug que evita: —.
+- ListarEstoqueTests.deveLancarExcecao_QuandoStatusInvalido — O que verifica: filtro de status invalido na listagem de estoque e rejeitado. Bug que evita: —.
+- CriarInsumoEstoqueTests.deveCriarComPrimeiroCodigoDoGrupo_QuandoGrupoSemProdutosAnteriores — O que verifica: criar insumo em grupo sem produtos anteriores gera o primeiro codigo de produto da faixa do grupo (ex. 01000001) e inicia saldo em zero. Bug que evita: —.
+- CriarInsumoEstoqueTests.deveIncrementarUltimoCodigo_QuandoJaExistemProdutosNoGrupo — O que verifica: criar insumo em grupo que ja tem produtos incrementa corretamente o ultimo codigo dentro da faixa do grupo. Bug que evita: gerar codigo de produto duplicado ou fora da faixa reservada ao grupo.
+- CriarInsumoEstoqueTests.deveLancarExcecao_QuandoUnidadeSecundariaSemFatorConversao — O que verifica: informar unidade de medida secundaria sem fator de conversao definido e rejeitado. Bug que evita: cadastrar insumo com duas unidades de medida sem conversao definida, impossibilitando o calculo correto de saldo/baixa entre unidades.
+- CriarInsumoEstoqueTests.deveLancarExcecao_QuandoGrupoNaoEncontrado — O que verifica: criar insumo referenciando grupo de produto inexistente e rejeitado. Bug que evita: —.
+- CriarInsumoEstoqueTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: usuario sem permissao de gestao de estoque nao pode criar insumo, e os repositorios de unidade/grupo nem sao consultados. Bug que evita: —.
+- AtualizarDadosEstoqueTests.deveAtualizarNome — O que verifica: atualizacao de dados do insumo altera o nome corretamente. Bug que evita: —.
+- AtualizarDadosEstoqueTests.deveLancarExcecao_QuandoNomeVazio — O que verifica: atualizar o nome do insumo para uma string em branco (so espacos) e rejeitado. Bug que evita: insumo ficar com nome vazio/em branco, dificultando sua identificacao em listagens e relatorios.
+- AtualizarDadosEstoqueTests.deveArredondarPrecos_ParaDuasCasas — O que verifica: preco de compra medio informado com mais de duas casas decimais e arredondado para duas casas (10.005 -> 10.01). Bug que evita: acumular erro de arredondamento/precisao nos valores monetarios do insumo ao longo de sucessivas edicoes.
+- AtualizarDadosEstoqueTests.deveLancarEntityNotFoundException_QuandoInsumoNaoExiste — O que verifica: atualizar insumo inexistente/inativo lanca EntityNotFoundException. Bug que evita: —.
+- RegistrarEntradaEstoqueTests.devePrecoMedioIgualAoDaEntrada_QuandoPrimeiraEntrada — O que verifica: primeira entrada de estoque (saldo zero) define o preco de compra medio igual ao preco da propria entrada e registra a movimentacao. Bug que evita: —.
+- RegistrarEntradaEstoqueTests.deveCalcularMediaPonderada_QuandoJaHavianoSaldo — O que verifica: nova entrada com saldo pre-existente calcula o preco medio ponderado corretamente ((10x5 + 10x7)/20 = 6.0) e soma a quantidade ao saldo. Bug que evita: substituir o preco medio pelo preco da nova entrada em vez de ponderar pelo saldo anterior, distorcendo o custo medio do insumo e, por consequencia, os custos de alimentacao/vacinacao calculados a partir dele.
+- RegistrarEntradaEstoqueTests.deveLancarEntityNotFoundException_QuandoInsumoNaoExiste — O que verifica: registrar entrada para insumo inexistente/inativo lanca EntityNotFoundException. Bug que evita: —.
+- BaixarEstoqueTests.deveBaixarEstoque_QuandoSaldoSuficiente — O que verifica: baixar estoque com saldo suficiente debita a quantidade e registra a movimentacao de saida. Bug que evita: —.
+- BaixarEstoqueTests.deveLancarExcecao_QuandoEstoqueInsuficiente — O que verifica: baixar estoque maior que o saldo disponivel e rejeitado. Bug que evita: saldo de estoque ficar negativo ao vender/abater um animal cuja raca esta vinculada a um produto sem estoque suficiente.
+- GestaoDeStatusTests.deveInativarInsumo — O que verifica: inativar insumo muda o status para Inativo. Bug que evita: —.
+- GestaoDeStatusTests.deveReativarInsumo — O que verifica: reativar insumo muda o status de Inativo para Ativo. Bug que evita: —.
+- GestaoDeStatusTests.deveExcluirDefinitivamente_QuandoInativo — O que verifica: exclusao fisica (delete) de um insumo so e permitida quando ele ja esta inativo. Bug que evita: —.
+- GestaoDeStatusTests.deveLancarExcecao_QuandoExcluirInsumoAindaAtivo — O que verifica: exclusao definitiva de insumo ainda ativo e bloqueada, e delete nunca e chamado. Bug que evita: apagar permanentemente um insumo que ainda esta em uso ativo no sistema, sem o passo intermediario de inativacao.
+- GestaoDeStatusTests.deveBloquearExclusao_QuandoInsumoTemMovimentacoes — O que verifica: exclusao definitiva e bloqueada se o insumo tem movimentacoes de estoque associadas, mesmo estando inativo. Bug que evita: apagar permanentemente um insumo que tem historico de movimentacoes, quebrando a integridade referencial/relatorios historicos de estoque.
+
+### SLancamentoFinanceiroTest
+
+- ContabilizarPerdaAlimentacaoTests.deveCriarNovoLancamento_QuandoNaoExisteAindaParaEssaSobra — O que verifica: contabilizar perda de alimentacao de uma sobra nao reaproveitada cria lancamento financeiro de SAIDA/GASTO virtual, com valor = quantidade x preco medio do insumo, na data de registro da sobra e atribuido a quem registrou. Bug que evita: —.
+- ContabilizarPerdaAlimentacaoTests.deveAtualizarLancamentoExistente_EmVezDeCriarNovo — O que verifica: se ja existe lancamento para aquela sobra, ele e atualizado (mantendo o mesmo id) em vez de criar um novo. Bug que evita: contabilizar a mesma perda de alimentacao duas vezes ao recalcular/editar a sobra.
+- ContabilizarPerdaAlimentacaoTests.deveUsarValorZero_QuandoInsumoSemPrecoCompraMedio — O que verifica: quando o insumo da sobra nao tem preco de compra medio cadastrado, o lancamento e criado com valor zero em vez de falhar. Bug que evita: NullPointerException ou excecao de calculo ao contabilizar perda de um insumo sem preco medio definido.
+- EstornarPerdaAlimentacaoTests.deveExcluirLancamento_QuandoExiste — O que verifica: estornar perda de alimentacao exclui o lancamento financeiro vinculado a origem. Bug que evita: —.
+- EstornarPerdaAlimentacaoTests.naoDeveLancarExcecao_QuandoNaoExisteLancamentoParaEstornar — O que verifica: estornar perda de uma sobra que nunca gerou lancamento financeiro nao lanca excecao e nao chama delete. Bug que evita: erro ao excluir um consumo/sobra cuja perda nunca foi contabilizada (ex. estava reaproveitada), interrompendo o fluxo de exclusao.
+- RegistrarLancamentoManualTests.deveRegistrarEntrada_SemNaturezaFinanceira — O que verifica: lancamento manual do tipo ENTRADA e aceito sem natureza financeira informada. Bug que evita: —.
+- RegistrarLancamentoManualTests.deveRegistrarSaida_ComNaturezaFinanceira — O que verifica: lancamento manual do tipo SAIDA com natureza financeira (ex. GASTO) e registrado corretamente. Bug que evita: —.
+- RegistrarLancamentoManualTests.deveLancarExcecao_QuandoEntradaComNaturezaInformada — O que verifica: lancamento de ENTRADA nao aceita natureza financeira diferente de Custo/Despesa (entrada nao deveria ter natureza de gasto). Bug que evita: lancamento de entrada (receita) ser classificado incorretamente com natureza de custo/gasto, distorcendo o resumo financeiro.
+- RegistrarLancamentoManualTests.deveLancarExcecao_QuandoSaidaSemNatureza — O que verifica: lancamento de SAIDA exige natureza financeira classificada como CUSTO ou GASTO. Bug que evita: lancamento de saida sem classificacao, impossibilitando a separacao de custos vs despesas no resumo mensal.
+- RegistrarLancamentoManualTests.deveLancarExcecao_QuandoUsuarioSemPerfilDoModulo — O que verifica: usuario fora dos perfis Administrador/Gerente/Financeiro nao pode registrar lancamento manual. Bug que evita: —.
+- RegistrarLancamentoManualTests.deveLancarExcecao_QuandoEmailEmBranco — O que verifica: email de autor em branco e rejeitado antes de qualquer interacao com o repositorio de lancamentos. Bug que evita: —.
+- GerarResumoMensalTests.deveCalcularTotaisELucroLiquido — O que verifica: resumo mensal soma entradas, soma saidas (excluindo a origem de consumo de estoque que e tratada separadamente, somando custo e gasto) e calcula o lucro liquido como entradas menos saidas. Bug que evita: contar a mesma saida (ex. consumo de estoque) duas vezes ao somar por bloco, inflando o total de saidas e distorcendo o lucro liquido.
+- GerarResumoMensalTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: usuario sem permissao (cuidador) nao pode gerar o resumo mensal financeiro. Bug que evita: —.
+- ListarPorBlocoTests.deveListarLancamentosDoBloco — O que verifica: listagem por bloco (ano/mes) retorna os lancamentos financeiros daquele periodo ordenados corretamente. Bug que evita: —.
+
+### SListasTarefasTest
+
+- deveCriarListaDeTarefas — O que verifica: criacao de lista de tarefas persiste e retorna DTO com id gerado e nome correto. Bug que evita: —.
+- deveBuscarListaPorId — O que verifica: busca de lista de tarefas por id retorna o nome correto. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoListaNaoExiste — O que verifica: busca de lista inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveAtualizarListaDeTarefas — O que verifica: atualizacao de lista altera o nome corretamente. Bug que evita: —.
+- deveExcluirListaDeTarefas_InativandoStatus — O que verifica: exclusao marca a lista como Inativa e retorna mensagem de sucesso. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoExcluirListaInexistente — O que verifica: excluir lista inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SLoteTest
+
+- ValidacaoDePermissaoTests.validaPermissao_devePermitir_QuandoAdministradorOuGerente — O que verifica: Administrador tem permissao geral de lote. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaPermissaoTransferencia_devePermitir_QuandoAdministrador — O que verifica: Administrador tem permissao de transferencia de animal entre lotes/setores. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaPermissao_deveNegar_QuandoCuidador — O que verifica: cuidador comum nao tem permissao geral sobre lotes, mensagem cita Administradores e Gerentes. Bug que evita: cuidador comum criar/excluir lotes sem alcada.
+- ValidacaoDePermissaoTests.validaPermissaoEdicao_devePermitir_QuandoCuidadorChefe — O que verifica: cuidador chefe tem permissao de edicao de lote (nivel intermediario entre cuidador comum e gerencia). Bug que evita: —.
+- ValidacaoDePermissaoTests.validaPermissaoEdicao_deveNegar_QuandoCuidadorComum — O que verifica: cuidador comum nao tem permissao de edicao de lote. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaPermissaoTransferencia_deveNegar_QuandoCuidadorComum — O que verifica: cuidador comum nao tem permissao de transferir animais entre lotes/setores. Bug que evita: cuidador comum mover animais entre lotes sem autorizacao, afetando rastreabilidade de manejo.
+- BuscaTests.buscaPorId_deveRetornarDto_QuandoLoteAtivoExiste — O que verifica: busca de lote ativo por id retorna DTO com codigo e contagem de animais zero quando sem alocacoes. Bug que evita: —.
+- BuscaTests.buscaPorId_deveLancarEntityNotFoundException_QuandoNaoExiste — O que verifica: busca de lote inexistente/inativo lanca EntityNotFoundException. Bug que evita: —.
+- BuscaTests.listarTodos_deveRetornarTodosOsLotesAtivos — O que verifica: listagem geral retorna todos os lotes ativos corretamente convertidos. Bug que evita: —.
+- GerarProximoCodigoTests.deveGerarPrimeiroCodigo_QuandoNenhumLoteCadastrado — O que verifica: geracao de codigo quando nao ha lote algum cadastrado retorna o primeiro codigo (LOT001). Bug que evita: —.
+- GerarProximoCodigoTests.deveIncrementarUltimoCodigo — O que verifica: geracao de codigo incrementa corretamente o ultimo codigo existente (LOT007 -> LOT008). Bug que evita: gerar codigo de lote duplicado.
+- CadastraTests.deveCadastrarLote_ComAlocacaoDeAnimais — O que verifica: cadastro de lote com alocacao de animais num setor gera o codigo sequencial, salva a alocacao lote-setor e retorna mensagem de sucesso contendo o codigo gerado. Bug que evita: —.
+- CadastraTests.deveLancarExcecao_QuandoSetorDaAlocacaoNaoEncontrado — O que verifica: cadastro de lote referenciando setor inexistente/inativo na alocacao e rejeitado. Bug que evita: —.
+- CadastraTests.deveNegarCadastro_QuandoUsuarioSemPermissao — O que verifica: usuario sem permissao (cuidador) nao pode cadastrar lote, e o repositorio de lote nem e tocado. Bug que evita: —.
+- DeletaTests.deveInativarLote_QuandoEncontrado — O que verifica: excluir lote marca o status como Inativo e retorna mensagem com o codigo do lote. Bug que evita: —.
+- DeletaTests.deveLancarEntityNotFoundException_QuandoLoteNaoExiste — O que verifica: excluir lote inexistente/inativo lanca EntityNotFoundException. Bug que evita: —.
+- TransferirAnimalTests.deveTransferirAnimal_ParaNovaAlocacaoNoDestino — O que verifica: transferir um animal cria a alocacao no lote/setor destino e remove o animal da alocacao de origem. Bug que evita: animal ser contado simultaneamente em dois setores/lotes (origem e destino) apos uma transferencia.
+- TransferirAnimalTests.deveLancarExcecao_QuandoAnimalComStatusBloqueado — O que verifica: animal com status bloqueado para movimentacao (ex. VENDIDO) nao pode ser transferido entre lotes/setores. Bug que evita: transferir um animal ja vendido/abatido, criando alocacao inconsistente de um animal que nao deveria mais estar no rebanho ativo.
+- TransferirAnimalTests.deveLancarExcecao_QuandoAnimalNaoAlocadoEmLoteAtivo — O que verifica: transferir animal que nao esta atualmente alocado em nenhum lote ativo e rejeitado. Bug que evita: —.
+- TransferirAnimalTests.deveLancarExcecao_QuandoJaAlocadoNoLoteESetorInformados — O que verifica: transferir animal para o mesmo lote e setor onde ele ja esta alocado e rejeitado (transferencia redundante). Bug que evita: criar alocacoes duplicadas do mesmo animal no mesmo lote/setor por uma "transferencia" sem efeito real.
+- TransferirAnimalTests.deveLancarExcecao_QuandoSetorDestinoExcedeCapacidadeMaxima — O que verifica: transferir animal para um setor que ja esta na capacidade maxima (considerando os animais ja alocados) e bloqueado. Bug que evita: superpovoar um setor acima da capacidade maxima cadastrada, ignorando a restricao de manejo/bem-estar animal.
+- CalcularCustoRacaoAcumuladoTests.deveLancarEntityNotFoundException_QuandoLoteNaoEncontrado — O que verifica: calcular custo de racao acumulado de lote inexistente lanca EntityNotFoundException. Bug que evita: —.
+- CalcularCustoRacaoAcumuladoTests.deveCalcularCustoTotalECustoPorAnimal — O que verifica: custo de racao do lote e calculado somando consumo por animal x preco medio do insumo, por setor, e dividido pelo total de animais para o custo por animal. Bug que evita: —.
+- CalcularCustoRacaoAcumuladoTests.deveIgnorarSetorSemAnimaisDoLote — O que verifica: setor alocado ao lote mas sem nenhum animal e ignorado no calculo (custo zero), sem nem consultar o repositorio de consumo de insumo. Bug que evita: erro de divisao por zero ou calculo incorreto quando um setor alocado ao lote esta vazio.
+- CalcularCustoRacaoAcumuladoTests.deveIgnorarConsumoSemPrecoMedioCadastrado — O que verifica: consumo de um insumo sem preco de compra medio cadastrado e ignorado no somatorio (tratado como zero), nao quebrando o calculo. Bug que evita: NullPointerException ou excecao aritmetica ao calcular custo de racao quando algum insumo consumido nao tem preco medio definido.
+- CalcularCustoTotalAcumuladoTests.deveLancarEntityNotFoundException_QuandoLoteNaoEncontrado — O que verifica: calcular custo total acumulado de lote inexistente lanca EntityNotFoundException. Bug que evita: —.
+- CalcularCustoTotalAcumuladoTests.deveSomarOLedgerDosAnimaisAtualmenteNoLote — O que verifica: custo total do lote soma os custos de vida (aquisicao, alimentacao, vacinacao) de todos os animais atualmente alocados e calcula custo total por animal (media). Bug que evita: —.
+- CalcularCustoTotalAcumuladoTests.deveRetornarZero_QuandoLoteSemAnimais — O que verifica: lote sem nenhum animal alocado retorna todos os totais de custo como zero, sem erro. Bug que evita: divisao por zero ao calcular custo medio por animal de um lote vazio.
+- CalcularPerdaAlimentacaoAcumuladaTests.deveLancarEntityNotFoundException_QuandoLoteNaoEncontrado — O que verifica: calcular perda de alimentacao acumulada de lote inexistente lanca EntityNotFoundException. Bug que evita: —.
+- CalcularPerdaAlimentacaoAcumuladaTests.deveCalcularPerdaTotalEPorAnimalQuandoSobraNaoReaproveitada — O que verifica: perda de alimentacao acumulada do lote soma o valor das sobras nao reaproveitadas (quantidade x preco medio) e divide pelo total de animais do lote. Bug que evita: —.
+- CalcularPerdaAlimentacaoAcumuladaTests.deveIgnorarSobraReaproveitada — O que verifica: sobras marcadas como reaproveitadas nao entram no calculo de perda financeira do lote. Bug que evita: contabilizar como "perda" uma sobra de racao que na verdade foi reaproveitada (ex. dada a outro lote), inflando indevidamente o valor de desperdicio do lote.
+- CalcularPerdaAlimentacaoAcumuladaTests.deveIgnorarQuandoNenhumaSobraRegistradaParaOConsumo — O que verifica: consumo sem nenhuma sobra registrada resulta em perda zero para aquele consumo. Bug que evita: —.
+
+### SMetaSetorTest
+
+- ValidacaoDePermissaoTests.validaAdminOuGerente_devePermitirAdministrador — O que verifica: Administrador tem permissao para operacoes administrativas de meta de setor. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaAdminOuGerente_deveNegarCuidador — O que verifica: cuidador comum nao tem permissao administrativa sobre metas de setor. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaEdicaoMedicao_devePermitirAdministrador_SempreQueForACriacao — O que verifica: Administrador pode editar/criar medicao de meta independentemente de quem a criou originalmente. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaEdicaoMedicao_deveNegarCuidadorChefe_QuandoCriadaPorGerente — O que verifica: cuidador chefe nao pode alterar medicao que foi originalmente criada por um Gerente (hierarquia de edicao respeitada). Bug que evita: cuidador chefe sobrescrever/corrigir indevidamente uma medicao lancada por um superior hierarquico (gerente), mascarando dados de origem gerencial.
+- ValidacaoDePermissaoTests.validaEdicaoMedicao_devePermitirCuidadorChefe_QuandoCriadaPorCuidador — O que verifica: cuidador chefe pode editar medicao criada por um cuidador comum (hierarquia permite editar "para baixo"). Bug que evita: —.
+- ValidacaoDePermissaoTests.validaEdicaoMedicao_devePermitirCuidador_QuandoCriouAMedicao — O que verifica: cuidador comum pode editar a propria medicao que ele mesmo criou. Bug que evita: —.
+- ValidacaoDePermissaoTests.validaEdicaoMedicao_deveNegarCuidador_QuandoNaoCriouAMedicao — O que verifica: cuidador comum nao pode editar medicao criada por outro usuario, mensagem explica que so pode editar as que ele mesmo criou. Bug que evita: cuidador comum alterar/corromper medicoes de meta lancadas por colegas, sem rastreabilidade de quem de fato mediu.
+- CadastrarTests.deveCadastrarMetaLeite_ForcandoTipoGadoNulo — O que verifica: cadastro de meta do tipo LEITE forca o campo tipoGado a permanecer nulo (campo nao se aplica a metas de leite). Bug que evita: meta de leite ser salva com um tipo de gado residual/incorreto, confundindo relatorios que distinguem metas por tipo de gado (arroba) das metas de leite.
+- CadastrarTests.deveLancarExcecao_QuandoDataFinalAnteriorAInicial — O que verifica: cadastro de meta com data final anterior a data inicial e rejeitado. Bug que evita: meta com periodo invertido/invalido, quebrando calculos de progresso baseados no intervalo de datas.
+- CadastrarTests.deveLancarExcecao_QuandoArrobaSemTipoGado — O que verifica: meta do tipo ARROBA exige que o tipo de gado seja informado (necessario para a conversao kg->arroba). Bug que evita: meta de arroba sem tipo de gado definido, impossibilitando a conversao correta de kg para arrobas (que depende da taxa de rendimento por tipo de gado).
+- CadastrarTests.deveLancarExcecao_QuandoSetorNaoEncontrado — O que verifica: cadastro de meta referenciando setor inexistente/inativo e rejeitado. Bug que evita: —.
+- AlterarTests.deveAtualizarQuantidadeEsperada — O que verifica: alteracao de meta atualiza a quantidade esperada corretamente. Bug que evita: —.
+- AlterarTests.deveLancarExcecao_QuandoTipoGadoInformadoParaMetaLeite — O que verifica: tentar informar tipo de gado ao editar uma meta de LEITE (que nao possui esse campo) e rejeitado. Bug que evita: meta de leite acabar com um tipo de gado indevidamente setado via edicao, mesmo tendo sido corretamente criada sem ele.
+- AlterarTests.deveLancarEntityNotFoundException_QuandoMetaNaoExiste — O que verifica: alterar meta inexistente/inativa lanca EntityNotFoundException. Bug que evita: —.
+- DeletarTests.deveInativarMeta — O que verifica: exclusao de meta marca o status como Inativo. Bug que evita: —.
+- MedicaoTests.cadastrarMedicao_deveSalvarComSucesso — O que verifica: cadastro de medicao vinculada a uma meta e a um lote e salvo com sucesso. Bug que evita: —.
+- MedicaoTests.cadastrarMedicao_deveLancarExcecao_QuandoMetaNaoEncontrada — O que verifica: cadastro de medicao referenciando meta inexistente/inativa e rejeitado com mensagem "Meta nao encontrada". Bug que evita: —.
+- MedicaoTests.validarEAtualizarMedicao_deveNegar_QuandoUsuarioSemPermissao — O que verifica: atualizar medicao criada por outro usuario (sem ser quem criou, nem ter hierarquia suficiente) e bloqueado. Bug que evita: usuario alterar medicao de progresso de meta registrada por outra pessoa sem autorizacao.
+- MedicaoTests.validarEDeletarMedicao_devePermitirAutor — O que verifica: o proprio autor de uma medicao pode excluí-la, e a exclusao de fato chama deleteById. Bug que evita: —.
+- ProgressoTests.buscarPorId_deveCalcularProgressoEValoresParaMetaLeite — O que verifica: progresso de meta de leite soma as medicoes lancadas (quantidade realizada), calcula percentual de progresso sobre o esperado, valor realizado/esperado (quantidade x preco medio), e tambem separa quanto ja foi efetivamente vendido (via venda-meta) com seu percentual. Bug que evita: misturar "quantidade medida/produzida" com "quantidade vendida" no mesmo indicador, escondendo do usuario quanto do que foi produzido ainda nao foi comercializado.
+- ProgressoTests.buscarPorId_deveConverterKgParaArroba_QuandoMetaArroba — O que verifica: progresso de meta do tipo ARROBA converte a quantidade lancada em kg para arrobas usando a taxa de rendimento do tipo de gado e o fator de 15kg por arroba (450kg x 0.50 / 15 = 15 arrobas). Bug que evita: exibir progresso de meta de arroba em quilos (ou com fator de conversao errado), levando o usuario a interpretar incorretamente se a meta de arrobas produzidas foi atingida.
+
+### SMovimentacaoEstoqueTest
+
+- deveListarTodasAsMovimentacoes_QuandoSemFiltroDeInsumo — O que verifica: listagem sem filtro de insumo retorna todas as movimentacoes ordenadas por data, com tipo correto no DTO. Bug que evita: —.
+- deveFiltrarPorInsumo_QuandoIdInformado — O que verifica: listagem filtrada por id de insumo retorna apenas as movimentacoes daquele insumo, incluindo o nome do insumo no DTO. Bug que evita: —.
+- deveCriarMovimentacaoEstoque — O que verifica: criacao de movimentacao de estoque persiste e retorna DTO com id gerado e quantidade correta. Bug que evita: —.
+- deveBuscarMovimentacaoPorId — O que verifica: busca de movimentacao por id retorna a quantidade correta. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoBuscarMovimentacaoInexistente — O que verifica: busca de movimentacao inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveExcluirMovimentacao_InativandoStatus — O que verifica: exclusao de movimentacao marca o status como Inativo e retorna mensagem de sucesso, sem remover o registro fisicamente. Bug que evita: apagar fisicamente um registro de movimentacao de estoque, perdendo o historico auditavel de entradas/saidas.
+
+### SNotaFiscalTest
+
+- deveListarEntradasESaidas_OrdenadasPorDataDesc — O que verifica: listar() combina notas de entrada e de saida numa unica lista, ordenada por data desc, com a direcao certa (RECEITA para saida, ENTRADA para entrada). Bug que evita: misturar as duas fontes sem reordenar, exibindo notas fora de ordem cronologica ou com a direcao trocada.
+- deveFiltrarApenasEntradas_QuandoDirecaoEntrada — O que verifica: filtro por direcao "ENTRADA" retorna so documentos de entrada. Bug que evita: filtro de direcao ignorado, misturando saidas na listagem de entradas.
+- deveFiltrarApenasSaidas_QuandoDirecaoReceita — O que verifica: filtro por direcao "RECEITA" retorna so documentos de saida. Bug que evita: mesmo problema espelhado, entradas aparecendo numa consulta de receitas.
+- deveFiltrarPorNumeroDoDocumento — O que verifica: filtro pelo numero do documento retorna apenas o item que bate, mesmo havendo outros numeros na base. Bug que evita: filtro por numero ignorado, retornando documentos de numeros diferentes do pesquisado.
+- deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: perfil CUIDADOR nao pode listar notas fiscais, recebendo IllegalArgumentException. Bug que evita: cuidador acessando dados financeiros sensiveis (notas fiscais) sem ter permissao para isso.
+
+### SOcorrenciaAnimalTest
+
+- ListarPorAnimalTests.deveListarOcorrenciasAtivasDoAnimal — O que verifica: lista ocorrencias ativas de um animal especifico, ordenadas por data decrescente. Bug que evita: —.
+- CriarOcorrenciaTests.deveCriarOcorrencia_QuandoAnimalEncontrado — O que verifica: cria ocorrencia vinculada ao animal informado, retornando dto com id gerado e tipo correto. Bug que evita: —.
+- CriarOcorrenciaTests.deveLancarEntityNotFoundException_QuandoAnimalNaoEncontrado — O que verifica: criar ocorrencia apontando para animal inexistente lanca EntityNotFoundException. Bug que evita: criar ocorrencia "orfa", sem animal vinculado de fato, corrompendo o historico.
+- AtualizarOcorrenciaTests.deveAtualizarCampos — O que verifica: atualiza tipo, data e observacao de uma ocorrencia existente. Bug que evita: —.
+- AtualizarOcorrenciaTests.deveLancarEntityNotFoundException_QuandoOcorrenciaNaoExiste — O que verifica: atualizar ocorrencia inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ExcluirOcorrenciaTests.deveInativarOcorrencia — O que verifica: exclusao de ocorrencia e soft-delete (status muda para I), nao remocao fisica. Bug que evita: apagar fisicamente o registro e perder o historico de ocorrencias do animal.
+- ExcluirOcorrenciaTests.deveLancarEntityNotFoundException_QuandoOcorrenciaNaoExiste — O que verifica: excluir ocorrencia inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SParceiroTest
+
+- BuscaPorCpfCnpjTests.deveRetornarParceiro_QuandoEncontrado — O que verifica: busca por CPF/CNPJ retorna o parceiro correspondente. Bug que evita: —.
+- BuscaPorCpfCnpjTests.deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: busca por CPF/CNPJ inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ListarTodosTests.deveListarTodosOsParceirosAtivos — O que verifica: lista todos os parceiros ativos quando nenhum filtro de tipo e informado. Bug que evita: —.
+- ListarTodosTests.deveFiltrarPorTipo — O que verifica: filtro por tipo (ex. FORNECEDOR) retorna somente parceiros daquele tipo. Bug que evita: filtro de tipo ignorado, misturando fornecedores e compradores no mesmo resultado.
+- CadastraTests.deveCadastrarParceiro_QuandoDocumentoValido — O que verifica: cadastro e aceito quando o CPF/CNPJ informado e valido. Bug que evita: —.
+- CadastraTests.deveLancarExcecao_QuandoDocumentoInvalido — O que verifica: CPF/CNPJ com digitos verificadores invalidos (ex. todos zeros) e rejeitado com mensagem especifica. Bug que evita: cadastrar parceiro com documento fiscal invalido por falta de validacao de digito verificador.
+- CadastraTests.deveLancarExcecao_QuandoParceiroJaExiste — O que verifica: impede cadastrar um parceiro com CPF/CNPJ ja existente na base. Bug que evita: duplicar parceiro com o mesmo documento fiscal.
+- CadastraTests.deveLancarExcecao_QuandoUsuarioSemPermissaoGerencial — O que verifica: apenas Administrador ou Gerente pode cadastrar parceiro; perfil FINANCEIRO e bloqueado. Bug que evita: usuario financeiro cadastrando parceiros sem ter alcada para isso.
+- DeletaTests.deveDeletarParceiro_QuandoExiste — O que verifica: deleta (fisicamente, via deleteByCpfCnpj) um parceiro existente e retorna mensagem de sucesso. Bug que evita: —.
+- DeletaTests.deveRetornarMensagem_QuandoNaoExiste — O que verifica: tentar deletar parceiro inexistente retorna mensagem informativa em vez de lancar excecao. Bug que evita: —.
+- AlteraTests.deveAtualizarCamposInformados — O que verifica: altera os campos informados (ex. nome) de um parceiro existente. Bug que evita: —.
+- AlteraTests.deveLancarEntityNotFoundException_QuandoParceiroNaoExiste — O que verifica: alterar parceiro inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SPdfRelatorioTest
+
+- RelatorioMetasTests.deveGerarPdf_ComMetasListadas — O que verifica: gera um PDF valido (com cabecalho %PDF) contendo as metas de setor listadas. Bug que evita: —.
+- RelatorioMetasTests.deveGerarPdf_QuandoNenhumaMetaCadastrada — O que verifica: gera PDF valido mesmo quando nao ha nenhuma meta cadastrada. Bug que evita: lista vazia quebrar a geracao do relatorio (ex. NullPointerException ao iterar lista vazia).
+- RelatorioLotesTests.deveGerarPdf_ComLotesListados — O que verifica: gera PDF valido com os lotes listados. Bug que evita: —.
+- RelatorioLotesTests.deveGerarPdf_QuandoNenhumLoteCadastrado — O que verifica: gera PDF valido mesmo sem nenhum lote cadastrado. Bug que evita: lista vazia quebrar a geracao do PDF de lotes.
+- RelatorioSetoresTests.deveGerarPdf_ComSetoresListados — O que verifica: gera PDF valido com os setores listados. Bug que evita: —.
+- RelatorioSetoresTests.deveGerarPdf_QuandoNenhumSetorCadastrado — O que verifica: gera PDF valido mesmo sem nenhum setor cadastrado. Bug que evita: lista vazia quebrar a geracao do PDF de setores.
+
+### SRacaTest
+
+- CriarTests.deveCriarRaca_EProdutoAssociado — O que verifica: criar raca tambem cria o insumo/produto de estoque associado (grupo "Animais", unidade "CABECA"), vinculando o id do produto criado de volta a raca. Bug que evita: —.
+- CriarTests.deveLancarExcecao_QuandoNomeJaExiste — O que verifica: nome de raca duplicado (comparacao case-insensitive) e rejeitado. Bug que evita: cadastrar racas duplicadas diferindo so na capitalizacao do nome (ex. "Nelore" e "NELORE").
+- CriarTests.deveLancarExcecao_QuandoSiglaJaExiste — O que verifica: sigla de raca ja usada por outra raca e rejeitada. Bug que evita: duas racas com a mesma sigla, ambiguas em telas/relatorios que usam a sigla.
+- CriarTests.deveLancarIllegalStateException_QuandoGrupoAnimaisNaoExiste — O que verifica: se o grupo de produto "Animais" nao existe na configuracao do sistema, lanca IllegalStateException ao inves de seguir adiante. Bug que evita: criar raca sem conseguir associar o produto de estoque, deixando o cadastro inconsistente por falta de configuracao previa.
+- CriarTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: cuidador nao pode criar raca, e a verificacao de permissao ocorre antes de qualquer consulta ao repositorio de racas. Bug que evita: side-effects/consultas ao banco ocorrerem antes da checagem de permissao, desperdicando trabalho ou vazando informacao.
+- AtualizarTests.deveAtualizarNome_EProdutoAssociado — O que verifica: atualizar o nome da raca propaga a atualizacao para o produto/insumo de estoque associado. Bug que evita: atualizar a raca sem sincronizar o nome do produto vinculado, deixando raca e produto com nomes divergentes.
+- AtualizarTests.deveLancarExcecao_QuandoNovoNomeConflitaComOutraRaca — O que verifica: impede renomear uma raca para um nome ja usado por outra raca diferente. Bug que evita: duas racas acabarem com o mesmo nome apos uma edicao.
+- AtualizarTests.deveLancarEntityNotFoundException_QuandoRacaNaoExiste — O que verifica: atualizar raca inexistente lanca EntityNotFoundException. Bug que evita: —.
+- InativarReativarTests.deveInativarRaca_EProdutoAssociado — O que verifica: inativar a raca tambem inativa o insumo/produto de estoque associado a ela. Bug que evita: inativar a raca e deixar o produto de estoque correspondente ativo "zumbi", ainda aparecendo em telas de insumos.
+- InativarReativarTests.deveLancarEntityNotFoundException_QuandoRacaNaoExisteAoInativar — O que verifica: inativar raca inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ListarTests.deveLancarExcecao_QuandoStatusInvalido — O que verifica: filtro de status com valor invalido (ex. "X") e rejeitado com IllegalArgumentException. Bug que evita: —.
+- ListarTests.deveListarTodas_SemFiltro — O que verifica: lista todas as racas ordenadas por nome quando nenhum filtro e informado. Bug que evita: —.
+- BuscarPorIdTests.deveLancarEntityNotFoundException_QuandoNaoEncontrada — O que verifica: buscar raca por id inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SRegistroFinanceiroTest
+
+- deveCriarRegistroFinanceiro — O que verifica: cria registro financeiro vinculando usuario e categoria existentes, retornando o dto com id gerado. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoUsuarioNaoEncontrado — O que verifica: criar registro com usuario inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoCategoriaNaoEncontrada — O que verifica: criar registro com categoria inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveBuscarPorId — O que verifica: busca registro financeiro por id retorna o dto correto. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoBuscarInexistente — O que verifica: buscar id inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveAtualizarRegistro — O que verifica: atualiza a descricao de um registro financeiro existente. Bug que evita: —.
+- deveExcluirRegistro_InativandoStatus — O que verifica: exclusao de registro financeiro e soft-delete (status muda para I). Bug que evita: exclusao fisica apagar historico financeiro que deveria ser preservado para auditoria.
+- deveLancarEntityNotFoundException_QuandoExcluirInexistente — O que verifica: excluir id inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SRentabilidadeTest
+
+- GerarResumoPeriodoTests.deveSomarTotaisEMontarDetalhamentoMensal — O que verifica: soma entradas e saidas (custo e despesa) excluindo a origem CONSUMO_ESTOQUE no calculo direto, calcula lucro liquido do periodo e monta o detalhamento mes a mes cruzando multiplos meses dentro do intervalo. Bug que evita: contabilizar duas vezes valores de consumo de estoque interno que ja sao refletidos em outro lugar, inflando o total de saidas/custos do periodo.
+- GerarResumoPeriodoTests.deveLancarExcecao_QuandoFimAnteriorAoInicio — O que verifica: rejeita periodo cuja data final e anterior a data inicial, com mensagem mencionando "anterior". Bug que evita: —.
+- ListarContasPorParceiroTests.deveAgruparPorParceiroESomarPagarEReceber — O que verifica: agrupa contas a pagar (documentos de entrada) e a receber (documentos de saida) por parceiro, soma os valores, conta a quantidade de notas a pagar e aponta o proximo vencimento mais proximo; ordena o resultado por valor total decrescente. Bug que evita: calcular o "proximo vencimento" como o mais distante em vez do mais proximo, ou deixar de priorizar visualmente o parceiro com maior valor em aberto.
+- ListarVendasPorProdutoTests.deveAgruparPorRacaEIncluirLeite_OrdenadoDecrescente — O que verifica: agrupa vendas de animais por raca e inclui a venda de leite como item separado (com unidade "litro(s)"), ordenando o resultado por valor total decrescente. Bug que evita: vendas de leite e de animais nao aparecerem juntas e ordenadas corretamente no relatorio de produtos vendidos.
+- ListarGastosPorGrupoTests.deveAgruparPorGrupoEExcluirConsumoEstoque — O que verifica: agrupa gastos por grupo de produto (ex. "Racao"), separa a folha de pagamento, agrega itens sem produto/grupo associado em "Administrativo/Outros" e exclui lancamentos de origem CONSUMO_ESTOQUE do total de gastos. Bug que evita: incluir consumo de estoque interno (ja contabilizado como custo de producao) na listagem de gastos operacionais, duplicando valores no relatorio de rentabilidade.
+
+### SResumoTest
+
+- deveGerarResumoCompleto_QuandoUsuarioAdministrador — O que verifica: gera o resumo completo do dashboard (contagem de animais/lotes/setores, dados financeiros do mes, maior fonte de receita, alertas de estoque abaixo do minimo, tarefas pendentes) quando o chamador e administrador. Bug que evita: —.
+- deveOcultarDadosFinanceiros_QuandoUsuarioCuidador — O que verifica: perfil CUIDADOR recebe financeiroVisivel=false e contagens operacionais nulas, sem que os repositorios de animal/lote/setor/financeiro sejam nem consultados. Bug que evita: expor dados financeiros e operacionais sensiveis da fazenda (faturamento, totais de rebanho) a perfis sem permissao para ve-los.
+- deveLancarExcecao_QuandoEmailEmBranco — O que verifica: email em branco e rejeitado antes de consultar os servicos de insumo e tarefa. Bug que evita: —.
+
+### SSetorTest
+
+- ProcuraPorIdTests.deveRetornarSetor_QuandoEncontrado — O que verifica: busca setor por id retorna o dto correto. Bug que evita: —.
+- ProcuraPorIdTests.deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: buscar setor inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ProcuraPorIdTests.deveIgnorarAlocacoesDeLotesInativados — O que verifica: ao montar a lista de lotes alocados num setor, ignora alocacoes cujo lote ja foi inativado, contando corretamente apenas a alocacao ativa. Bug que evita: exibir lotes ja inativados/excluidos como se ainda ocupassem o setor, inflando a contagem de animais alocados.
+- ProcuraPorIdTests.deveRetornarListaVazia_QuandoSetorSemAlocacoes — O que verifica: setor sem nenhuma alocacao de lote retorna lista de lotes vazia. Bug que evita: —.
+- BuscarTodosTests.deveRetornarListaVazia_QuandoNenhumSetorAtivo — O que verifica: retorna lista vazia quando nao ha setores ativos. Bug que evita: —.
+- BuscarTodosTests.deveListarTodosOsSetoresAtivos — O que verifica: lista todos os setores ativos. Bug que evita: —.
+- CadastraTests.deveCadastrarSetor — O que verifica: cadastra um setor novo, registrando o email do usuario que o criou. Bug que evita: —.
+- DeletaTests.deveInativarSetor — O que verifica: exclusao de setor e soft-delete (status muda para I). Bug que evita: exclusao fisica apagar o setor e perder a referencia historica de alocacoes passadas.
+- DeletaTests.deveLancarEntityNotFoundException_QuandoSetorNaoExiste — O que verifica: excluir setor inexistente lanca EntityNotFoundException. Bug que evita: —.
+- AlteraTests.deveAlterarSetor — O que verifica: altera dados do setor (nome, capacidade, tipo) e registra o email do usuario que fez a alteracao. Bug que evita: —.
+
+### SSobraAlimentacaoTest
+
+- RegistrarOuAtualizarSobraTests.deveClassificarComoOk_QuandoPercentualDentroDaFaixaIdeal — O que verifica: sobra dentro da faixa ideal (ex. 4%) e classificada como OK, sem ajuste recomendado, e qualquer perda financeira previamente contabilizada para aquele consumo e estornada. Bug que evita: —.
+- RegistrarOuAtualizarSobraTests.deveClassificarComoAbaixo_QuandoPercentualMenorQue3PorCento — O que verifica: sobra menor que 3% e classificada como ABAIXO, com quantidade de ajuste recomendada calculada. Bug que evita: nao alertar quando se esta fornecendo pouco alimento ao lote (risco de subnutricao), deixando de recomendar o ajuste de quantidade fornecida.
+- RegistrarOuAtualizarSobraTests.deveClassificarComoAcima_QuandoPercentualMaiorQue5PorCento — O que verifica: sobra maior que 5% e classificada como ACIMA, com ajuste recomendado de reducao da quantidade fornecida. Bug que evita: —.
+- RegistrarOuAtualizarSobraTests.deveClassificarComoPerda_QuandoNaoReaproveitada — O que verifica: sobra marcada como nao reaproveitada e classificada como PERDA e gera lancamento financeiro de perda. Bug que evita: sobra descartada sem reaproveitamento nao gerar lancamento de perda financeira, subestimando o custo real da alimentacao do rebanho.
+- RegistrarOuAtualizarSobraTests.deveConverterQuantidadeDaUnidadeSecundariaParaPrimaria — O que verifica: ao registrar sobra numa unidade secundaria (KG), converte corretamente para a unidade primaria (SACA) usando o fator de conversao do insumo, recalculando percentual e sigla de exibicao. Bug que evita: registrar a sobra sem converter a unidade, comparando quantidades em bases diferentes (kg vs. saca) e gerando um percentual de sobra incorreto.
+- RegistrarOuAtualizarSobraTests.deveAtualizarSobraExistente_EmVezDeCriarNova — O que verifica: registrar sobra para um consumo que ja possui sobra registrada atualiza o registro existente (mesmo id), em vez de criar um novo. Bug que evita: criar um registro de sobra duplicado para o mesmo consumo, inflando as estatisticas de desperdicio de alimentacao.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoSobraMaiorQueQuantidadeAplicada — O que verifica: rejeita sobra maior que a quantidade de alimento efetivamente aplicada (baixa) no consumo. Bug que evita: registrar uma sobra matematicamente impossivel (maior que o que foi fornecido), gerando percentual acima de 100% e dados incoerentes.
+- RegistrarOuAtualizarSobraTests.deveLancarEntityNotFoundException_QuandoConsumoNaoEncontrado — O que verifica: registrar sobra para um id de consumo inexistente lanca EntityNotFoundException. Bug que evita: —.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoUsuarioNaoEhAutorNemGerenteNemAdministrador — O que verifica: apenas o autor do consumo original, gerente ou administrador pode registrar a sobra; outro cuidador qualquer e bloqueado. Bug que evita: qualquer cuidador registrando/alterando a sobra de alimentacao lancada por um colega, adulterando dados que nao sao seus.
+- RegistrarOuAtualizarSobraTests.devePermitirGerente_MesmoNaoSendoAutorDoLancamento — O que verifica: gerente pode registrar sobra mesmo nao sendo o autor original do consumo de insumo. Bug que evita: —.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoUnidadeInformadaNaoPertenceAoInsumo — O que verifica: unidade de medida informada que nao e nem a primaria nem a secundaria do insumo do consumo e rejeitada. Bug que evita: aceitar uma conversao usando a unidade de medida de outro insumo, produzindo um calculo de sobra sem sentido.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoUnidadeInformadaNaoExiste — O que verifica: id de unidade de medida inexistente informado no cadastro de sobra e rejeitado. Bug que evita: —.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoInsumoSemFatorConversao_EUnidadeSecundariaInformada — O que verifica: se o insumo nao possui fator de conversao cadastrado, nao permite registrar a sobra usando a unidade secundaria. Bug que evita: dividir/multiplicar por um fator de conversao nulo, causando NullPointerException ou calculo incorreto silencioso.
+- RegistrarOuAtualizarSobraTests.deveLancarExcecao_QuandoEmailDoUsuarioEmBranco — O que verifica: email do usuario em branco e rejeitado antes mesmo de consultar o consumo de insumo. Bug que evita: —.
+- ExcluirSobraTests.deveExcluirEEstornarPerda_QuandoSobraNaoEraReaproveitada — O que verifica: excluir uma sobra que havia sido contabilizada como perda (nao reaproveitada) estorna o lancamento financeiro de perda correspondente antes de remover o registro. Bug que evita: excluir o registro de sobra sem estornar a perda financeira ja lancada, deixando um custo fantasma permanente no sistema.
+- ExcluirSobraTests.deveExcluirSemEstornar_QuandoSobraEraReaproveitada — O que verifica: excluir uma sobra que era reaproveitada nao gera estorno (pois nunca houve lancamento de perda para ela). Bug que evita: tentar estornar um lancamento financeiro que nunca existiu ao excluir uma sobra que foi reaproveitada.
+- ExcluirSobraTests.deveLancarEntityNotFoundException_QuandoNenhumaSobraRegistrada — O que verifica: excluir sobra quando nao ha nenhuma registrada para aquele consumo lanca EntityNotFoundException. Bug que evita: —.
+- ExcluirSobraTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: apenas autor, gerente ou administrador pode excluir o registro de sobra; outro cuidador e bloqueado. Bug que evita: um cuidador terceiro excluindo o registro de sobra lancado por outro colega.
+
+### STarefaTest
+
+- AtribuirTarefaTests.deveCriarListaAutomaticamente_QuandoDestinatarioNaoTemListaAinda — O que verifica: ao atribuir a primeira tarefa a um usuario, cria automaticamente a lista de tarefas dele. Bug que evita: atribuir tarefa a um usuario que ainda nao tem lista e falhar por assumir que ela ja existe (NullPointerException).
+- AtribuirTarefaTests.deveReutilizarListaExistente_QuandoDestinatarioJaTemLista — O que verifica: se o destinatario ja possui lista de tarefas, ela e reutilizada em vez de criada novamente. Bug que evita: criar uma lista de tarefas duplicada a cada nova tarefa atribuida ao mesmo usuario.
+- AtribuirTarefaTests.deveLancarExcecao_QuandoEmailDoAtribuidorEstaEmBranco — O que verifica: email do atribuidor em branco e rejeitado antes de qualquer interacao com o repositorio de tarefas. Bug que evita: —.
+- AtribuirTarefaTests.deveLancarExcecao_QuandoAtribuidorNaoEncontrado — O que verifica: atribuidor inexistente/inativo e rejeitado com mensagem "Usuario nao encontrado". Bug que evita: —.
+- AtribuirTarefaTests.deveLancarExcecao_QuandoDestinatarioNaoEncontrado — O que verifica: destinatario inexistente/inativo e rejeitado com mensagem "Usuario nao encontrado". Bug que evita: —.
+- ListarMinhasTarefasTests.deveListarTarefasDoUsuarioOrdenadasPorDataLimite — O que verifica: lista as tarefas atribuidas ao usuario, ordenadas por data limite ascendente. Bug que evita: —.
+- ListarMinhasTarefasTests.deveLancarExcecao_QuandoUsuarioNaoEncontrado — O que verifica: listar tarefas de um usuario inexistente lanca IllegalArgumentException. Bug que evita: —.
+- ListarTarefasAtribuidasPorMimTests.deveListarTarefasAtribuidasPeloUsuario — O que verifica: lista as tarefas que o usuario atribuiu a outros, filtrando pelo email de quem atribuiu. Bug que evita: —.
+- EditarTarefaTests.deveAtualizarCampos_QuandoChamadorEhDonoDaLista — O que verifica: o dono da lista de tarefas (destinatario) pode editar a tarefa, por exemplo marca-la como concluida. Bug que evita: —.
+- EditarTarefaTests.deveAtualizarCampos_QuandoChamadorEhQuemAtribuiu — O que verifica: quem atribuiu a tarefa tambem tem permissao para edita-la (ex. mudar descricao). Bug que evita: —.
+- EditarTarefaTests.deveManterCamposNaoInformados_QuandoDtoParcial — O que verifica: uma edicao parcial (campos nao enviados no dto, como data limite) preserva os valores originais da tarefa, alterando so o que foi informado. Bug que evita: editar parcialmente a tarefa e sobrescrever campos nao enviados com null, perdendo descricao ou prazo ja cadastrados.
+- EditarTarefaTests.deveLancarEntityNotFoundException_QuandoTarefaNaoExiste — O que verifica: editar tarefa inexistente lanca EntityNotFoundException, sem chamar save. Bug que evita: —.
+- EditarTarefaTests.deveLancarExcecao_QuandoChamadorNaoEhDonoNemAtribuidor — O que verifica: um terceiro usuario sem relacao com a tarefa (nao e dono da lista nem quem atribuiu) nao pode edita-la. Bug que evita: qualquer usuario autenticado conseguindo editar tarefas de terceiros sem nenhuma relacao com elas.
+- ExcluirTarefaTests.deveInativarTarefa_QuandoChamadorTemPermissao — O que verifica: exclusao de tarefa e soft-delete (status muda para I) quando o chamador tem permissao. Bug que evita: exclusao fisica da tarefa, perdendo o historico de tarefas atribuidas/concluidas.
+- ExcluirTarefaTests.deveLancarEntityNotFoundException_QuandoTarefaNaoExiste — O que verifica: excluir tarefa inexistente lanca EntityNotFoundException. Bug que evita: —.
+- ExcluirTarefaTests.deveLancarExcecao_QuandoChamadorSemPermissao — O que verifica: um terceiro sem relacao com a tarefa nao pode exclui-la. Bug que evita: qualquer usuario conseguindo excluir tarefas de terceiros.
+
+### STrasacaoTest
+
+- deveCriarTransacao — O que verifica: cria transacao vinculando parceiro e lote ja existentes, retornando id e valor corretos. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoParceiroNaoEncontrado — O que verifica: criar transacao com parceiro inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoLoteNaoEncontrado — O que verifica: criar transacao com lote inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveBuscarPorId — O que verifica: busca transacao por id retorna o dto correto. Bug que evita: —.
+- deveLancarEntityNotFoundException_QuandoBuscarInexistente — O que verifica: buscar id inexistente lanca EntityNotFoundException. Bug que evita: —.
+- deveAtualizarTransacao — O que verifica: atualiza o valor de uma transacao existente. Bug que evita: —.
+- deveExcluirTransacao_InativandoStatus — O que verifica: exclusao de transacao e soft-delete (status muda para I). Bug que evita: exclusao fisica apagar o historico de transacoes financeiras ligadas a parceiros/lotes.
+- deveLancarEntityNotFoundException_QuandoExcluirInexistente — O que verifica: excluir id inexistente lanca EntityNotFoundException. Bug que evita: —.
+
+### SUnidadeMedidaTest
+
+- ListarTests.deveLancarExcecao_QuandoStatusInvalido — O que verifica: filtro de status com valor invalido (ex. "X") e rejeitado. Bug que evita: —.
+- ListarTests.deveListarTodas_SemFiltro — O que verifica: lista todas as unidades de medida ordenadas por nome quando nenhum filtro e informado. Bug que evita: —.
+- CriarTests.deveCriarUnidadeMedida_EmMaiusculas — O que verifica: unidade cadastrada em minusculas (ex. "kg") e normalizada e persistida em maiusculas ("KG"). Bug que evita: cadastrar unidades com capitalizacao inconsistente ("kg", "Kg", "KG") coexistindo como registros distintos e gerando duplicidade.
+- CriarTests.deveLancarExcecao_QuandoJaExiste — O que verifica: impede cadastrar unidade de medida ja existente, com comparacao case-insensitive. Bug que evita: —.
+- AtualizarTests.deveAtualizarUnidade — O que verifica: atualiza e normaliza (maiusculas) o nome de uma unidade de medida existente. Bug que evita: —.
+- AtualizarTests.deveLancarEntityNotFoundException_QuandoNaoExiste — O que verifica: atualizar unidade inexistente lanca EntityNotFoundException. Bug que evita: —.
+- InativarReativarTests.deveInativarUnidade — O que verifica: inativa (soft-delete) uma unidade de medida existente. Bug que evita: —.
+- InativarReativarTests.deveReativarUnidade — O que verifica: reativa uma unidade de medida previamente inativada. Bug que evita: —.
+
+### SUsuarioTest
+
+- EncontraPorEmailTests.deveRetornarUsuario_QuandoEncontrado — O que verifica: busca usuario ativo por email retorna o dto correto. Bug que evita: —.
+- EncontraPorEmailTests.deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: buscar email inexistente lanca EntityNotFoundException. Bug que evita: —.
+- CadastraTests.deveCadastrarUsuario_CodificandoSenha — O que verifica: cadastro de usuario codifica a senha com o PasswordEncoder (BCrypt) antes de salvar, nunca persistindo o texto puro. Bug que evita: salvar a senha do usuario em texto puro no banco de dados.
+- CadastraTests.deveLancarExcecao_QuandoUsuarioJaExiste — O que verifica: impede cadastrar um email ja existente e ativo. Bug que evita: —.
+- LoginTests.deveLogar_QuandoSenhaBCryptConfere — O que verifica: login com senha ja armazenada em formato BCrypt valido funciona, sem necessidade de re-salvar o usuario. Bug que evita: —.
+- LoginTests.deveLancarExcecao_QuandoSenhaBCryptNaoConfere — O que verifica: senha incorreta contra um hash BCrypt ja existente e rejeitada com a mensagem generica "Credenciais invalidas". Bug que evita: —.
+- LoginTests.deveLogarEFazerUpgradeParaBCrypt_QuandoSenhaEraSha256 — O que verifica: login com senha legada armazenada em SHA-256 migra automaticamente o hash para BCrypt e salva o novo valor. Bug que evita: usuarios legados com senha em SHA-256 (hash fraco, sem salt) nunca serem migrados para BCrypt, perpetuando um algoritmo de hashing inseguro.
+- LoginTests.deveLogarEFazerUpgradeParaBCrypt_QuandoSenhaEraTextoPuro — O que verifica: login com senha legada armazenada em texto puro tambem migra o hash para BCrypt e salva. Bug que evita: senhas antigas em texto puro nunca serem migradas, mantendo risco grave de exposicao caso o banco seja comprometido.
+- LoginTests.deveLancarExcecao_QuandoTextoPuroNaoConfere — O que verifica: senha legada em texto puro incorreta e rejeitada sem disparar a migracao/salvamento. Bug que evita: —.
+- LoginTests.deveLancarExcecao_QuandoEmailOuSenhaEmBranco — O que verifica: email ou senha em branco sao rejeitados antes de qualquer consulta ao banco. Bug que evita: —.
+- LoginTests.deveLancarExcecao_QuandoUsuarioNaoEncontrado — O que verifica: login com email inexistente e rejeitado com a mesma mensagem generica "Credenciais invalidas" usada para senha errada. Bug que evita: mensagem de erro diferente para "email nao existe" vs "senha errada", que permitiria a um atacante enumerar quais emails estao cadastrados no sistema.
+- DeletaTests.deveInativarUsuario — O que verifica: exclusao de usuario e soft-delete (status muda para I). Bug que evita: —.
+- DeletaTests.deveLancarEntityNotFoundException_QuandoNaoEncontrado — O que verifica: excluir usuario inexistente lanca EntityNotFoundException. Bug que evita: —.
+- AlteraTests.devePermitirAlterarNome_SemMudarPerfil — O que verifica: qualquer usuario pode alterar seu proprio nome sem que isso afete o perfil. Bug que evita: —.
+- AlteraTests.devePermitirAlterarPerfil_QuandoChamadorEhAdministrador — O que verifica: apenas quando o chamador autenticado (via SecurityContext) tem papel ADMINISTRADOR e permitido alterar o perfil de um usuario. Bug que evita: —.
+- AlteraTests.deveNegarAlterarPerfil_QuandoChamadorNaoEhAdministrador — O que verifica: um chamador sem papel de administrador tentando alterar o perfil de alguem (inclusive o proprio) e bloqueado. Bug que evita: usuario comum promovendo a si mesmo ou a terceiros para um perfil privilegiado (escalonamento de privilegio).
+- AlteraTests.deveBloquearRebaixamento_QuandoUsuarioEhAdminSeed — O que verifica: impede rebaixar o administrador "seed" (admin@erp.com) do perfil ADMINISTRADOR para outro perfil. Bug que evita: rebaixar/remover acidentalmente (ou maliciosamente) o unico administrador inicial do sistema, travando a administracao de toda a fazenda.
+- AlteraTests.devePermitirAlterarAdminSeed_QuandoPerfilContinuaAdministrador — O que verifica: permite alterar outros dados do admin seed, desde que o perfil informado continue sendo ADMINISTRADOR. Bug que evita: —.
+- AlteraTests.deveCodificarNovaSenha_QuandoInformada — O que verifica: ao alterar um usuario informando nova senha, ela e codificada com BCrypt antes de salvar. Bug que evita: salvar a nova senha em texto puro ao editar o usuario.
+- AlteraTests.deveRejeitarSenhaCurta — O que verifica: rejeita nova senha com menos de 6 caracteres, com mensagem explicita. Bug que evita: permitir senhas fracas/muito curtas, reduzindo a seguranca das contas.
+- AlteraTests.deveLancarEntityNotFoundException_QuandoUsuarioNaoExiste — O que verifica: alterar usuario inexistente lanca EntityNotFoundException. Bug que evita: —.
+- BuscarTodosTests.deveRetornarListaVazia_QuandoNenhumUsuarioAtivo — O que verifica: retorna lista vazia quando nao ha usuarios ativos. Bug que evita: —.
+- BuscarTodosTests.deveListarUsuariosAtivos — O que verifica: lista os usuarios ativos cadastrados. Bug que evita: —.
+
+### SVacinacaoAnimalTest
+
+- RegistrarAplicacaoTests.deveRegistrarAplicacao_DebitandoEstoqueParaTodosOsAnimais — O que verifica: registrar aplicacao de vacina debita o estoque do insumo proporcionalmente a dose por animal multiplicada pelo total de animais, e registra uma movimentacao de estoque por animal. Bug que evita: aplicar a vacina em varios animais e debitar o estoque apenas uma vez (ou de forma incompleta), deixando o saldo do insumo incorreto.
+- RegistrarAplicacaoTests.deveLancarExcecao_QuandoProdutoNaoEhVacina — O que verifica: rejeita aplicar como "vacinacao" um insumo cujo tipo nao e VACINA (ex. RACAO). Bug que evita: registrar vacinacao usando qualquer insumo do estoque, misturando dados de racao/outros produtos com o historico sanitario dos animais.
+- RegistrarAplicacaoTests.deveLancarExcecao_QuandoAnimalNaoEncontradoOuInativo — O que verifica: rejeita a aplicacao quando algum animal informado nao e encontrado (ou esta inativo). Bug que evita: registrar vacinacao para animal inexistente/inativo, criando historico sanitario inconsistente.
+- RegistrarAplicacaoTests.deveLancarExcecao_QuandoEstoqueInsuficiente — O que verifica: rejeita a aplicacao quando a dose total solicitada excede o saldo disponivel do insumo. Bug que evita: debitar o estoque do insumo para um valor negativo ao aplicar uma dose maior que o saldo existente.
+- CancelarAplicacaoTests.deveCancelar_EstornandoEstoque — O que verifica: cancelar uma aplicacao de vacina estorna a quantidade debitada de volta ao saldo do insumo e marca a vacinacao como cancelada. Bug que evita: cancelar o registro sem devolver o estoque debitado, fazendo o saldo do insumo ficar permanentemente menor do que deveria.
+- CancelarAplicacaoTests.deveLancarExcecao_QuandoJaCancelada — O que verifica: impede cancelar uma aplicacao que ja havia sido cancelada anteriormente. Bug que evita: cancelar a mesma aplicacao duas vezes, estornando o estoque em dobro.
+- CancelarAplicacaoTests.deveLancarExcecao_QuandoUsuarioSemPermissao — O que verifica: apenas quem criou o registro de vacinacao (ou perfil com alcada) pode cancela-lo; outro usuario e bloqueado. Bug que evita: qualquer usuario cancelando aplicacoes de vacina registradas por outro colega.
+- EditarAplicacaoTests.deveEditar_RecalculandoSaldo — O que verifica: editar a dose por animal de uma vacinacao primeiro estorna a baixa antiga do estoque e so entao aplica a nova quantidade, recalculando o saldo do insumo corretamente. Bug que evita: editar uma aplicacao de vacina antiga sem recalcular corretamente o saldo (ex.: aplicar so a nova baixa sem primeiro devolver a antiga, dobrando o debito no estoque).
+- EditarAplicacaoTests.deveLancarExcecao_QuandoJaCancelada — O que verifica: impede editar uma aplicacao de vacina que ja foi cancelada. Bug que evita: editar um registro cancelado e reativar indiretamente um debito de estoque que ja havia sido estornado.
+- ListarTests.listarTodos_deveDelegarParaRepositorio — O que verifica: listarTodos delega ao repositorio e retorna a lista ordenada por data de aplicacao desc. Bug que evita: —.
+- ListarTests.listarPorAnimal_deveDelegarParaRepositorio — O que verifica: listarPorAnimal delega ao repositorio filtrando pelo id do animal. Bug que evita: —.
+
+
+====================================================================
+CAMADA: CONTROLLERS (contrato HTTP, testados com @WebMvcTest)
+====================================================================
+
+### CAnimalTest
+
+- getAnimal_deveRetornar200 — O que verifica: GET /api/animais/{brinco} retorna 200 com o codigoBrinco no corpo quando o servico encontra o animal. Bug que evita: —.
+- getAnimal_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET com brinco inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao deixar de capturar EntityNotFoundException e vazar stacktrace/status errado para o frontend.
+- getAnimals_deveRetornar200ComLista — O que verifica: GET /api/animais sem filtro retorna 200 com lista (vazia) do servico. Bug que evita: —.
+- postAnimal_deveRetornar201 — O que verifica: POST /api/animais/usuarios/{email} com dto valido (raca e peso) retorna 201 e o codigoBrinco criado. Bug que evita: quebra de contrato com o frontend (endpoint passar a exigir campo novo sem retornar 400 claro, ou mudar o status de criacao esperado).
+- postAnimal_deveRetornar400_QuandoPesoAbaixoDoMinimo — O que verifica: POST com pesoAtual abaixo do minimo permitido retorna 400 (validacao de bean). Bug que evita: endpoint aceitar cadastro de animal com peso invalido por falta de validacao.
+- getCustoVida_deveRetornar200ComOsTotais — O que verifica: GET /api/animais/{id}/custo-vida retorna 200 com totalGeral e totalAquisicao vindos do servico de custo. Bug que evita: calculo de custo de vida do animal expor campos errados ou quebrar a serializacao do DTO.
+- deleteAnimal_deveRetornarMensagem — O que verifica: DELETE /api/animais/{brinco} retorna 200 com a mensagem de sucesso literal do servico. Bug que evita: —.
+
+### CCategoriaTest
+
+- getCategoria_deveRetornar200 — O que verifica: GET /api/categoria/{id} retorna 200 com o campo categoria no corpo. Bug que evita: —.
+- getCategoria_deveRetornar500_QuandoNaoEncontrada — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear EntityNotFoundException corretamente.
+- postCategoria_deveRetornar200 — O que verifica: POST /api/categoria com nome valido retorna 200 e o id da categoria criada. Bug que evita: quebra de contrato com o frontend (endpoint mudar o status de sucesso esperado no cadastro).
+- deleteCategoria_deveRetornarMensagem — O que verifica: DELETE /api/categoria/{id} retorna 200 com a mensagem de exclusao retornada pelo servico. Bug que evita: —.
+
+### CConsumoEstoqueTest
+
+- listarTodos_deveRetornar200 — O que verifica: GET /api/consumo-estoque sem filtros retorna 200 com a lista do servico. Bug que evita: —.
+- registrarConsumo_deveRetornar201 — O que verifica: POST /api/consumo-estoque com motivo e itens validos retorna 201 e o id do consumo registrado. Bug que evita: quebra de contrato com o frontend (endpoint passar a retornar outro status no registro de consumo).
+- registrarConsumo_deveRetornar400_QuandoMotivoEmBranco — O que verifica: POST sem motivo preenchido (itens vazios) retorna 400 por validacao. Bug que evita: endpoint aceitar registro de consumo de estoque sem motivo por falta de validacao.
+- cancelarConsumo_deveRetornar200 — O que verifica: POST /api/consumo-estoque/{id}/cancelar com motivo de cancelamento retorna 200 e cancelado=true. Bug que evita: —.
+
+### CConsumoInsumoTest
+
+- listarPorSetor_deveRetornar200 — O que verifica: GET /api/consumos-insumo?setorId=10 retorna 200 delegando ao servico com o setorId informado. Bug que evita: parametro setorId deixar de ser repassado ao servico, quebrando o filtro por setor na tela.
+- registrarConsumo_deveRetornar201 — O que verifica: POST /api/consumos-insumo com insumo, setor e quantidade validos retorna 201 e o id criado. Bug que evita: quebra de contrato com o frontend (status de criacao mudar sem aviso).
+- registrarConsumo_deveRetornar400_QuandoQuantidadeAusente — O que verifica: POST sem quantidade retorna 400 por validacao de bean. Bug que evita: endpoint aceitar consumo de insumo sem quantidade por falta de validacao.
+- excluirConsumo_deveRetornar204 — O que verifica: DELETE /api/consumos-insumo/{id} retorna 204 sem corpo. Bug que evita: —.
+- registrarSobra_deveRetornar200 — O que verifica: PUT /api/consumos-insumo/{id}/sobra com quantidade e reaproveitamento registra/atualiza a sobra e retorna 200 com consumoInsumoId. Bug que evita: —.
+- excluirSobra_deveRetornar204 — O que verifica: DELETE /api/consumos-insumo/{id}/sobra retorna 204 sem corpo. Bug que evita: —.
+
+### CDocumentoEntradaTest
+
+- listarTodos_deveRetornar200 — O que verifica: GET /api/documentos-entrada retorna 200 com a lista do servico para o usuario autenticado. Bug que evita: —.
+- importarNfeXml_deveRetornar201 — O que verifica: POST multipart /api/documentos-entrada/importar-nfe com arquivo XML e fornecedorId retorna 201 e o id do documento importado. Bug que evita: endpoint de importacao de NFe deixar de aceitar multipart/arquivo corretamente, quebrando a importacao de XML.
+- aprovarDocumento_deveRetornar200 — O que verifica: POST /api/documentos-entrada/{id}/aprovar retorna 200 com o id do documento aprovado. Bug que evita: —.
+- recusarDocumento_deveRetornar400_QuandoJustificativaEmBranco — O que verifica: POST /api/documentos-entrada/{id}/recusar sem justificativa retorna 400 por validacao. Bug que evita: endpoint aceitar recusa de documento sem justificativa por falta de validacao.
+- excluirDocumento_deveRetornarMensagem — O que verifica: DELETE /api/documentos-entrada/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CDocumentoSaidaTest
+
+- listarTodos_deveRetornar200 — O que verifica: GET /api/documentos-saida retorna 200 com a lista do servico. Bug que evita: —.
+- cadastrarVendaLeite_deveRetornar201 — O que verifica: POST /api/documentos-saida/venda-leite com data, comprador, preco e itens de litros retorna 201 e o id criado. Bug que evita: quebra de contrato com o frontend (status de criacao de venda de leite mudar sem aviso).
+- cadastrarVendaAnimal_deveRetornar400_QuandoDestinoAusente — O que verifica: POST /api/documentos-saida/venda-animal sem o campo destino retorna 400 por validacao. Bug que evita: endpoint aceitar venda de animal sem destino (ex.: VENDIDO) definido, corrompendo o status do animal no sistema.
+- cadastrarVendaAnimal_deveRetornar201 — O que verifica: POST /api/documentos-saida/venda-animal com destino=VENDIDO e demais campos validos retorna 201 e o id criado. Bug que evita: —.
+
+### CFolhaPagamentoTest
+
+- listarFuncionarios_deveRetornar200 — O que verifica: GET /api/folha-pagamento/funcionarios retorna 200 com a lista do servico. Bug que evita: —.
+- cadastrarFuncionario_deveRetornar201 — O que verifica: POST /api/folha-pagamento/funcionarios com dados completos (CPF, cargo, salario, percentuais de INSS/FGTS) retorna 201 e o id/nomeCompleto criados. Bug que evita: quebra de contrato com o frontend (status de cadastro de funcionario mudar sem aviso).
+- cadastrarFuncionario_deveRetornar400_QuandoCamposObrigatoriosAusentes — O que verifica: POST com DTO vazio (todos campos obrigatorios ausentes) retorna 400 por validacao. Bug que evita: endpoint aceitar cadastro de funcionario sem dados minimos (nome, CPF, salario) por falta de validacao.
+- lancarPagamento_deveRetornar201 — O que verifica: POST /api/folha-pagamento/pagamentos com funcionario, mes/ano de referencia e data de pagamento retorna 201 e o id criado. Bug que evita: —.
+- estornarPagamento_deveRetornar200 — O que verifica: POST /api/folha-pagamento/pagamentos/{id}/estornar com motivo de estorno retorna 200 e estornado=true. Bug que evita: —.
+
+### CGrupoProdutoTest
+
+Nota: comentario Javadoc da classe deixa explicito que @PreAuthorize do controller nao e reforcado neste slice (@EnableMethodSecurity vem do SecurityConfig real, nao carregado no @WebMvcTest) — os testes cobrem so mapeamento HTTP/serializacao, nao autorizacao.
+
+- getGrupos_deveRetornar200 — O que verifica: GET /api/grupos-produto sem filtro retorna 200 com a lista e o nome do primeiro grupo. Bug que evita: —.
+- postGrupo_deveRetornar200 — O que verifica: POST /api/grupos-produto com nome, prefixo numerico, categoria e natureza financeira validos retorna 200 e o id criado. Bug que evita: —.
+- postGrupo_deveRetornar400_QuandoPrefixoInvalido — O que verifica: POST com codigoPrefixo nao numerico ("ABC") retorna 400 por validacao de formato. Bug que evita: endpoint aceitar prefixo de codigo de grupo de produto em formato invalido, quebrando a geracao de codigos de insumo.
+- deleteGrupo_deveRetornarMensagem — O que verifica: DELETE /api/grupos-produto/{id} retorna 200 com a mensagem de inativacao do servico. Bug que evita: —.
+
+### CInsumoTest
+
+- getEstoque_deveRetornar200ComLista — O que verifica: GET /api/insumos/estoque sem filtros retorna 200 com a lista e o nome do insumo. Bug que evita: —.
+- getEstoquePorId_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET /api/insumos/estoque/{id} com id inexistente/inativo, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de capturar insumo nao encontrado/inativo.
+- postInsumoEstoque_deveCriarERetornar200 — O que verifica: POST /api/insumos/estoque com nome, tipo, grupo e unidade de medida validos retorna 200 e o id criado. Bug que evita: —.
+- postInsumoEstoque_deveRetornar400_QuandoNomeEmBranco — O que verifica: POST sem nome retorna 400 por validacao de bean. Bug que evita: endpoint aceitar cadastro de insumo sem nome por falta de validacao.
+- postInsumoEstoque_deveRetornar400_QuandoServicoRejeitaPermissao — O que verifica: quando o servico lanca IllegalArgumentException (perfil sem permissao para gerenciar estoque), o controller converte para 400. Bug que evita: excecao de regra de negocio sobre permissao de perfil (Admin/Gerente/Cuidador Chefe) nao ser traduzida para 400, vazando como 500 generico.
+- postEntradaEstoque_deveRetornar200 — O que verifica: POST /api/insumos/estoque/{id}/entradas com quantidade e preco unitario retorna 200 com o saldoAtual atualizado. Bug que evita: —.
+- deleteInsumoEstoque_deveRetornarMensagem — O que verifica: DELETE /api/insumos/estoque/{id} retorna 200 com a mensagem de inativacao do servico. Bug que evita: —.
+
+### CListaTarefaTest
+
+Nota: comentario no setup explica que JwtService precisa ser mockado porque o JwtAuthenticationFilter entra no slice do @WebMvcTest.
+
+- getListaTarefa_deveRetornar200_QuandoEncontrada — O que verifica: GET /api/listaTarefa/{id} retorna 200 com nomeLista quando encontrada. Bug que evita: —.
+- getListaTarefa_deveRetornar500_QuandoNaoEncontrada — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao deixar de mapear lista de tarefas inexistente.
+- postListaTarefa_deveCriarECretornar200 — O que verifica: POST /api/listaTarefa com nomeLista retorna 200 e o id da lista criada. Bug que evita: —.
+- deleteListaTarefa_deveRetornarMensagem — O que verifica: DELETE /api/listaTarefa/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+- putListaTarefa_deveAtualizarERetornar200 — O que verifica: PUT /api/listaTarefa/{id} com novo nomeLista retorna 200 com o nome atualizado. Bug que evita: —.
+
+### CLoteTest
+
+- getLote_deveRetornar200 — O que verifica: GET /api/lotes/{id} retorna 200 com o codigo do lote. Bug que evita: —.
+- getLote_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException ("Nenhum lote ativo encontrado"), resposta e 500. Bug que evita: handler de excecao parar de capturar lote inativo/inexistente.
+- getCustoRacao_deveRetornar200 — O que verifica: GET /api/lotes/{id}/custo-racao retorna 200 com custoTotalAcumulado calculado pelo servico. Bug que evita: —.
+- getCustoTotal_deveRetornar200 — O que verifica: GET /api/lotes/{id}/custo-total retorna 200 com totalGeral agregando os custos do lote. Bug que evita: calculo de custo total do lote expor campo errado ou quebrar serializacao do DTO agregado.
+- postLote_deveRetornar200_ComMensagem — O que verifica: POST /api/lotes com cor do brinco e alocacao de setor retorna 200 com a mensagem textual de sucesso contendo o codigo do lote. Bug que evita: —.
+- postLote_deveRetornar400_QuandoCorBrincoAusente — O que verifica: POST sem corBrinco (alocacoes vazias) retorna 400 por validacao. Bug que evita: endpoint aceitar cadastro de lote sem cor do brinco por falta de validacao.
+- deleteLote_deveRetornarMensagem — O que verifica: DELETE /api/lotes/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CMetaSetorTest
+
+- listarPorSetor_deveRetornar200 — O que verifica: GET /api/metas-setor?setorId=1 retorna 200 delegando ao servico com o setorId. Bug que evita: —.
+- buscarPorId_deveRetornar200 — O que verifica: GET /api/metas-setor/{id} retorna 200 com setorNome no corpo. Bug que evita: —.
+- cadastrar_deveValidarPermissaoEDelegar — O que verifica: POST /api/metas-setor com todos os campos validos (setor, datas, tipo de meta LEITE, quantidade esperada, preco medio) retorna 200 com a mensagem de sucesso, e confirma via verify que o servico validaAdminOuGerente foi chamado com o usuario autenticado. Bug que evita: endpoint de cadastro de meta de setor deixar de checar a permissao de Admin/Gerente antes de delegar ao servico.
+- cadastrar_deveRetornar400_QuandoQuantidadeEsperadaAusente — O que verifica: POST sem quantidadeEsperada retorna 400 por validacao de bean. Bug que evita: endpoint aceitar cadastro de meta de setor sem quantidade esperada por falta de validacao.
+- cadastrarMedicao_deveValidarUsuarioEDelegar — O que verifica: POST /api/metas-setor/medicoes com meta, lote, data e quantidade lancada retorna 200 com a mensagem de sucesso do servico. Bug que evita: —.
+- deletarMedicao_deveRetornarMensagem — O que verifica: DELETE /api/metas-setor/medicoes/{id} retorna 200 com a mensagem de remocao do servico. Bug que evita: —.
+
+### CMovimentacaoEstoqueTest
+
+- listar_deveRetornar200 — O que verifica: GET /api/movimentacaoEstoque sem filtro retorna 200 com a lista e o id da primeira movimentacao. Bug que evita: —.
+- postMovimentacaoEstoque_deveRetornar200 — O que verifica: POST /api/movimentacaoEstoque com quantidade retorna 200 e o id da movimentacao criada. Bug que evita: —.
+- deleteMovimentacaoEstoque_deveRetornarMensagem — O que verifica: DELETE /api/movimentacaoEstoque/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CNotaFiscalTest
+
+- listar_deveRetornar200ComLista — O que verifica: GET /api/notas-fiscais sem filtros retorna 200 com a lista e o numeroDocumento da nota. Bug que evita: —.
+- listar_deveRepassarFiltros — O que verifica: GET /api/notas-fiscais?numero=100&chave=chave123&direcao=ENTRADA repassa exatamente esses tres parametros ao servico e retorna 200. Bug que evita: parametros de filtro (numero, chave, direcao) deixarem de ser lidos/repassados corretamente da query string para o servico, quebrando a busca de notas fiscais na tela.
+
+### COcorrenciaAnimalTest
+
+- listarPorAnimal_deveRetornar200 — O que verifica: GET /api/ocorrenciaAnimal?animalId=1 retorna 200 delegando ao servico com o animalId. Bug que evita: —.
+- cadastrar_deveRetornar201 — O que verifica: POST /api/ocorrenciaAnimal com animal, tipo de ocorrencia (PESAGEM) e data retorna 201 com o id criado. Bug que evita: —.
+- cadastrar_deveRetornar400_QuandoTipoAusente — O que verifica: POST sem tipoOcorrencia retorna 400 por validacao de bean. Bug que evita: endpoint aceitar cadastro de ocorrencia de animal sem tipo definido por falta de validacao.
+- excluir_deveRetornar204 — O que verifica: DELETE /api/ocorrenciaAnimal/{id} retorna 204 sem corpo. Bug que evita: —.
+
+### CParceiroTest
+
+- getParceiros_deveRetornar200 — O que verifica: GET /api/parceiros sem filtro retorna 200 com a lista do servico. Bug que evita: —.
+- getParceiro_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET /api/parceiros/{cpfCnpj} com documento inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear parceiro nao encontrado por CPF/CNPJ.
+- postParceiro_deveRetornar200 — O que verifica: POST /api/parceiros com nome, CPF/CNPJ e tipo (FORNECEDOR) retorna 200 com o nome do parceiro criado. Bug que evita: —.
+- deleteParceiro_deveRetornarMensagem — O que verifica: DELETE /api/parceiros/{cpfCnpj} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CRacaTest
+
+- getRacas_deveRetornar200 — O que verifica: GET /api/racas sem filtro retorna 200 com a lista e o nome da raca. Bug que evita: —.
+- getRacaPorId_deveRetornar500_QuandoNaoEncontrada — O que verifica: GET /api/racas/{id} com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de capturar raca nao encontrada.
+- postRaca_deveRetornar200 — O que verifica: POST /api/racas com nome e sigla validos retorna 200 com o id criado. Bug que evita: —.
+- postRaca_deveRetornar400_QuandoSiglaInvalida — O que verifica: POST com sigla numerica ("123") retorna 400 por validacao de formato. Bug que evita: endpoint aceitar sigla de raca em formato invalido (numeros em vez de letras) por falta de validacao.
+- deleteRaca_deveRetornarMensagem — O que verifica: DELETE /api/racas/{id} retorna 200 com a mensagem de inativacao do servico. Bug que evita: —.
+
+### CRegistroFinanceiroTest
+
+Nota: comentario Javadoc da classe registra que o @PreAuthorize de nivel de classe nao e reforcado neste slice (sem @EnableMethodSecurity), cobrindo apenas mapeamento HTTP/serializacao.
+
+- getRegistroFinanceiro_deveRetornar200 — O que verifica: GET /api/registroFinanceiro/{id} retorna 200 com a descricao do registro. Bug que evita: —.
+- getRegistroFinanceiro_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear registro financeiro nao encontrado.
+- postRegistroFinanceiro_deveRetornar200 — O que verifica: POST /api/registroFinanceiro com descricao retorna 200 com o id criado. Bug que evita: —.
+- deleteRegistroFinanceiro_deveRetornarMensagem — O que verifica: DELETE /api/registroFinanceiro/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CRentabilidadeTest
+
+- gerarResumoPeriodo_deveRetornar200 — O que verifica: GET /api/financeiro/rentabilidade/resumo?dataInicio=...&dataFim=... retorna 200 com lucroLiquido calculado repassando as datas parseadas ao servico. Bug que evita: parametros de data da query string deixarem de ser convertidos/repassados corretamente ao servico de rentabilidade.
+- listarContasPorParceiro_deveRetornar200 — O que verifica: GET /api/financeiro/rentabilidade/contas-parceiro com datas retorna 200 com parceiroNome no primeiro item da lista. Bug que evita: —.
+- listarVendasPorProduto_deveRetornar200 — O que verifica: GET /api/financeiro/rentabilidade/vendas-produto com datas retorna 200 com o nome do produto vendido. Bug que evita: —.
+- listarGastosPorGrupo_deveRetornar200 — O que verifica: GET /api/financeiro/rentabilidade/gastos-grupo com datas retorna 200 com grupoNome no primeiro item. Bug que evita: —.
+- gerarPdf_deveRetornar200ComContentTypePdf — O que verifica: GET /api/financeiro/rentabilidade/pdf com datas retorna 200 com Content-Type: application/pdf e os bytes do relatorio. Bug que evita: endpoint de exportacao de PDF de rentabilidade passar a responder com content-type errado, quebrando o download/visualizacao no frontend.
+
+### CResumoTest
+
+- getResumo_deveRetornar200 — O que verifica: GET /api/resumo retorna 200 com financeiroVisivel=false conforme definido pelo servico para o usuario autenticado. Bug que evita: flag de visibilidade financeira no resumo do dashboard ser exposta incorretamente para perfis sem permissao (ex.: cuidador vendo dados financeiros).
+
+### CSetorTest
+
+- getSetor_deveRetornar200 — O que verifica: GET /api/setores/{id} retorna 200 com o nome do setor. Bug que evita: —.
+- getSetor_deveRetornar500_QuandoNaoEncontrado — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear setor nao encontrado.
+- getSetores_deveRetornar200 — O que verifica: GET /api/setores retorna 200 com a lista completa de setores. Bug que evita: —.
+- postSetor_deveRetornar201 — O que verifica: POST /api/setores com nome retorna 201 com o id criado. Bug que evita: —.
+- deleteSetor_deveRetornar204 — O que verifica: DELETE /api/setores/{id} sem erro do servico retorna 204 sem corpo. Bug que evita: —.
+- deleteSetor_deveRetornar409_QuandoServicoLancaExcecao — O que verifica: quando o servico lanca RuntimeException ("Setor possui lotes alocados") ao deletar, o controller converte para 409 Conflict com a mensagem no corpo. Bug que evita: exclusao de setor com lotes alocados retornar 500 generico em vez de 409 com mensagem explicativa, confundindo o usuario sobre a causa real do erro.
+
+### CTarefaTest
+
+- listarMinhasTarefas_deveRetornar200ComLista — O que verifica: GET /api/tarefas retorna 200 com a lista de tarefas do usuario autenticado, incluindo a descricao. Bug que evita: —.
+- listarTarefasAtribuidasPorMim_deveRetornar200 — O que verifica: GET /api/tarefas/atribuidas retorna 200 com um array (ainda que vazio) de tarefas atribuidas pelo usuario. Bug que evita: —.
+- atribuirTarefa_deveRetornar201_QuandoDadosValidos — O que verifica: POST /api/tarefas com descricao e email do destinatario validos retorna 201 com o id da tarefa criada. Bug que evita: —.
+- atribuirTarefa_deveRetornar400_QuandoDescricaoEmBranco — O que verifica: POST com descricao vazia retorna 400 por validacao de bean. Bug que evita: endpoint aceitar atribuicao de tarefa sem descricao por falta de validacao.
+- editarTarefa_deveRetornar200 — O que verifica: PUT /api/tarefas/{id} alterando statusConclusao para true retorna 200 refletindo o novo status. Bug que evita: —.
+- editarTarefa_deveRetornar500_QuandoTarefaNaoEncontrada — O que verifica: PUT em id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear tarefa inexistente na edicao.
+- excluirTarefa_deveRetornarMensagem — O que verifica: DELETE /api/tarefas/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+- excluirTarefa_deveRetornar400_QuandoSemPermissao — O que verifica: quando o servico lanca IllegalArgumentException (usuario nao e dono/atribuidor da tarefa), o controller converte para 400. Bug que evita: usuario conseguir excluir tarefa de terceiros (regressao de seguranca/regra de negocio) por a excecao de permissao nao ser traduzida em 400 — ou, inversamente, virar 500 e mascarar a causa real.
+
+### CTransacaoTest
+
+- getTransacao_deveRetornar200 — O que verifica: GET /api/transacao/{id} retorna 200 com o valor da transacao. Bug que evita: —.
+- getTransacao_deveRetornar500_QuandoNaoEncontrada — O que verifica: GET com id inexistente, servico lanca EntityNotFoundException, resposta e 500. Bug que evita: handler de excecao parar de mapear transacao nao encontrada.
+- postTransacao_deveRetornar200 — O que verifica: POST /api/transacao com valor retorna 200 com o id criado. Bug que evita: —.
+- deleteTransacao_deveRetornarMensagem — O que verifica: DELETE /api/transacao/{id} retorna 200 com a mensagem de exclusao do servico. Bug que evita: —.
+
+### CUnidadeMedidaTest
+
+- getUnidades_deveRetornar200 — O que verifica: GET /api/unidades-medida sem filtro retorna 200 com a lista do servico. Bug que evita: —.
+- postUnidade_deveRetornar200 — O que verifica: POST /api/unidades-medida com unidade="KG" retorna 200 com a unidade criada no corpo. Bug que evita: —.
+- postUnidade_deveRetornar400_QuandoUnidadeEmBranco — O que verifica: POST com DTO vazio (sem unidade) retorna 400 por validacao de bean. Bug que evita: endpoint aceitar cadastro de unidade de medida em branco por falta de validacao.
+- deleteUnidade_deveRetornarMensagem — O que verifica: DELETE /api/unidades-medida/{id} retorna 200 com a mensagem de inativacao do servico. Bug que evita: —.
+
+### CUsuarioTest
+
+Nota: comentario Javadoc registra que @PreAuthorize na maioria dos endpoints nao e reforcado neste slice (sem @EnableMethodSecurity); os testes cobrem apenas mapeamento HTTP/serializacao.
+
+- getUsuariosResumo_deveRetornar200 — O que verifica: GET /api/usuarios/resumo retorna 200 com a lista de usuarios ativos resumidos. Bug que evita: —.
+- getUsuario_deveRetornar200 — O que verifica: GET /api/usuarios/{email} retorna 200 com o nome do usuario encontrado por email. Bug que evita: —.
+- login_deveRetornar200ComTokenEUsuario — O que verifica: POST /api/usuarios/login com email/senha validos retorna 200 com token gerado pelo JwtService e os dados do usuario autenticado. Bug que evita: fluxo de login deixar de retornar o token JWT junto com os dados do usuario, impedindo o frontend de autenticar requisicoes subsequentes.
+- login_deveRetornar400_QuandoCredenciaisInvalidas — O que verifica: quando o servico lanca IllegalArgumentException ("Credenciais invalidas"), o endpoint de login retorna 400. Bug que evita: login com credenciais invalidas retornar 500 generico em vez de 400, ou — pior — autenticar indevidamente.
+- deleteUsuario_deveRetornarMensagem — O que verifica: DELETE /api/usuarios/{email} retorna 200 com a mensagem de inativacao do usuario. Bug que evita: —.
+
+### CVacinacaoAnimalTest
+
+- listar_semAnimalId_deveChamarListarTodos — O que verifica: GET /api/vacinacoes-animal sem parametro animalId delega para listarTodos e retorna 200. Bug que evita: endpoint passar a chamar o metodo errado do servico (listar por animal) quando nenhum filtro e informado, retornando lista incompleta/incorreta.
+- listar_comAnimalId_deveChamarListarPorAnimal — O que verifica: GET /api/vacinacoes-animal?animalId=5 delega para listarPorAnimal com o id informado e retorna 200. Bug que evita: parametro animalId deixar de ser repassado corretamente, fazendo o endpoint retornar vacinacoes de todos os animais em vez de filtrar.
+- registrarAplicacao_deveRetornar201 — O que verifica: POST /api/vacinacoes-animal com insumo, quantidade por animal e lista de animais retorna 201 com o id criado. Bug que evita: —.
+- registrarAplicacao_deveRetornar400_QuandoSemAnimais — O que verifica: POST com animalIds vazio retorna 400 por validacao. Bug que evita: endpoint aceitar registro de aplicacao de vacina sem nenhum animal selecionado por falta de validacao.
+- cancelarAplicacao_deveRetornar200 — O que verifica: POST /api/vacinacoes-animal/{id}/cancelar com motivo de cancelamento retorna 200 e cancelado=true. Bug que evita: —.
+
+
+====================================================================
+CAMADA: INTEGRATION (fluxos ponta a ponta reais, contra H2 + Spring Security)
+====================================================================
+
+### AnimalIntegrationTest
+
+- deveCadastrarRacaAnimalEVacinacaoEOcorrencia_FluxoCompleto — O que verifica: fluxo ponta a ponta sem mocks (contra H2): cadastro de raca gera produto de catalogo, cadastro de animal recebe codigo de brinco sequencial com prefixo da raca (ex. "NI0001"), vacinacao da baixa correta no saldo do insumo (1000 -> 995 apos 5ml), e ocorrencia de pesagem e registrada e listada para o animal certo. Bug que evita: regressao em qualquer ponto da integracao entre SRaca, SAnimal, SVacinacaoAnimal e SOcorrenciaAnimal — ex. numeracao de brinco duplicada/errada, baixa de estoque com valor incorreto, ou ocorrencia vinculada ao animal errado.
+
+### AuthIntegrationTest
+
+- deveLogarEAcessarEndpointProtegido_ComTokenValido — O que verifica: login via /api/usuarios/login retorna um JWT valido no corpo da resposta, e esse token no header Authorization: Bearer da acesso 200 a um endpoint protegido (/api/tarefas), com o SecurityConfig real (nao mockado) ativo. Bug que evita: quebra na cadeia completa login -> emissao de JWT -> filtro de autenticacao -> autorizacao do endpoint.
+- deveRetornar401_QuandoSemToken — O que verifica: requisicao a endpoint protegido sem header Authorization retorna 401 com corpo contendo mensagem, via authenticationEntryPoint customizado. Bug que evita: endpoint protegido ficar acessivel sem autenticacao, ou retornar erro generico sem mensagem amigavel.
+- deveRetornar401_QuandoTokenInvalido — O que verifica: token completamente malformado no header Authorization e rejeitado com 401 em vez de 500 ou 200. Bug que evita: excecao de parsing de JWT nao tratada vazar como erro 500 ou, pior, ser ignorada e deixar passar a requisicao.
+- deveRetornar400_QuandoLoginComSenhaErrada — O que verifica: login com email valido mas senha incorreta retorna 400 (nao 200, nao 500). Bug que evita: autenticacao aceitar senha errada ou lancar excecao nao tratada que vaze stacktrace/500.
+- loginEndpoint_devePermitirAcesso_SemAutenticacaoPrevia — O que verifica: /api/usuarios/login e acessivel sem token (permitAll no SecurityConfig) — a requisicao chega ao controller (resulta em 400 por usuario inexistente, nao em 401). Bug que evita: regra de seguranca bloquear o proprio endpoint de login, impedindo qualquer usuario de autenticar.
+
+### InsumoSobraIntegrationTest
+
+- deveRegistrarSobraComoPerda_EGerarLancamentoFinanceiro_QuandoNaoReaproveitada — O que verifica: registrar consumo de insumo e depois sobra nao reaproveitada classifica a sobra como PERDA e gera lancamento financeiro de origem PERDA_ALIMENTACAO com valor calculado corretamente (5 unidades a R$10 = R$50,00). Bug que evita: sobra nao gerar lancamento financeiro (perda de controle de custo) ou calcular valor errado da perda.
+- deveEstornarLancamento_QuandoSobraExcluidaEraPerda — O que verifica: excluir uma sobra registrada remove o registro de sobra do banco. Bug que evita: exclusao de sobra deixar registro "fantasma" no banco (sobra excluida continuar aparecendo nas consultas).
+- deveClassificarComoOk_QuandoPercentualDentroDaFaixaIdeal — O que verifica: sobra pequena e reaproveitada (4 de 100, reaproveitado=true) e classificada como OK em vez de PERDA. Bug que evita: logica de classificacao de faixa marcar como perda uma sobra dentro do aceitavel, gerando lancamento financeiro indevido.
+- deveNegarRegistroDeSobra_QuandoUsuarioNaoEhAutorNemGerencial — O que verifica: usuario diferente do autor do consumo original (e sem perfil gerencial) tentando registrar sobra sobre aquele consumo recebe IllegalArgumentException. Bug que evita: qualquer cuidador poder registrar/alterar sobra de consumo de outro usuario, violando controle de autoria.
+
+### TarefaIntegrationTest
+
+- deveAtribuirTarefa_CriandoListaAutomaticamente_EPermitirEdicaoEExclusaoPeloDono — O que verifica: atribuir tarefa a usuario sem lista previa cria a lista automaticamente, a tarefa aparece em "minhas tarefas" do destinatario, o proprio destinatario consegue marcar como concluida e excluir a tarefa (mensagem de sucesso confirmada), e a lista fica vazia apos exclusao. Bug que evita: lista de tarefas nao ser criada automaticamente na primeira atribuicao, ou o dono da tarefa ser impedido de edita-la/exclui-la.
+- naoDevePermitirEdicao_PorUsuarioQueNaoEhDonoNemAtribuidor — O que verifica: um terceiro usuario (nem dono, nem atribuidor) tentando editar a tarefa recebe IllegalArgumentException. Bug que evita: falha de autorizacao permitindo qualquer usuario autenticado editar tarefas de terceiros.
+- deveReutilizarMesmaLista_QuandoDestinatarioRecebeSegundaTarefa — O que verifica: atribuir uma segunda tarefa ao mesmo destinatario reutiliza a lista ja existente (nao cria uma segunda lista) e ambas as tarefas aparecem em "minhas tarefas". Bug que evita: criacao de listas duplicadas por usuario, quebrando a contagem/agrupamento de tarefas.
+
+
+====================================================================
+CAMADA: SECURITY (JWT e filtro de autenticacao)
+====================================================================
+
+### JwtAuthenticationFilterTest
+
+- naoDeveAutenticar_QuandoHeaderAusente — O que verifica: requisicao sem header Authorization passa pelo filtro sem autenticar (SecurityContext permanece nulo) e sem chamar o JwtService. Bug que evita: filtro tentar processar token inexistente e lancar excecao, ou autenticar indevidamente requisicoes sem credenciais.
+- naoDeveAutenticar_QuandoHeaderSemPrefixoBearer — O que verifica: header Authorization presente mas sem o prefixo "Bearer " (ex. "Token abc123") e ignorado pelo filtro, sem autenticacao e sem chamar o JwtService. Bug que evita: parsing de header aceitar formatos fora do padrao Bearer, abrindo brecha de bypass de autenticacao.
+- deveAutenticar_ComEmailEPerfilDoToken_QuandoTokenValido — O que verifica: token valido com prefixo "Bearer " faz o filtro extrair claims, popular o SecurityContext com o email como principal e a authority "ROLE_CUIDADOR" derivada do perfil do token, e seguir a cadeia de filtros. Bug que evita: role/perfil do usuario nao ser propagada corretamente para o contexto de seguranca, quebrando autorizacao baseada em perfil.
+- deveLimparContexto_QuandoTokenInvalido — O que verifica: quando validarEExtrairClaims lanca JwtException (token invalido), o filtro nao autentica (contexto permanece nulo) mas ainda assim continua a cadeia de filtros (doFilter e chamado). Bug que evita: excecao de validacao de token nao tratada interromper a cadeia de filtros (gerando 500) em vez de deixar a camada de autorizacao decidir (401/403).
+
+### JwtServiceTest
+
+- deveGerarTokenEValidarExtraindoEmailEPerfil — O que verifica: token gerado com email e perfil CUIDADOR e validado com sucesso e as claims extraidas devolvem o mesmo email e perfil originais. Bug que evita: corrupcao de dados na geracao/extracao de claims (email ou perfil trocados).
+- deveLancarExcecao_QuandoTokenExpirado — O que verifica: token gerado com expiracao no passado (-1000ms) lanca ExpiredJwtException ao ser validado pelo servico "normal". Bug que evita: tokens expirados serem aceitos indefinidamente, permitindo sessoes eternas.
+- deveLancarExcecao_QuandoAssinaturaInvalida — O que verifica: aceitar um token assinado com outra chave secreta lanca SignatureException — ou seja, um JWT forjado por um atacante que nao conhece o segredo real do servidor e rejeitado. Bug que evita: validacao de assinatura ser ignorada/bypassada, permitindo forjar tokens com qualquer claim (ex. elevacao de perfil para ADMINISTRADOR).
+- deveLancarExcecao_QuandoTokenMalformado — O que verifica: uma string arbitraria que nao e um JWT ("token-invalido-qualquer") lanca MalformedJwtException ao tentar validar. Bug que evita: parser nao tratar entrada arbitraria e lancar excecao generica/vazar stacktrace em vez de uma falha de validacao previsivel.
+
+### SecurityUtilsTest
+
+- currentUserEmail_deveRetornarNull_QuandoSemAutenticacao — O que verifica: sem Authentication no SecurityContext, currentUserEmail() retorna null em vez de lancar NullPointerException. Bug que evita: NPE em chamadas nao autenticadas (ex. contexto de teste ou job assincrono) que deveriam apenas retornar ausencia de usuario.
+- currentUserEmail_deveRetornarPrincipal_QuandoAutenticado — O que verifica: com um UsernamePasswordAuthenticationToken autenticado, currentUserEmail() retorna exatamente o principal (email) armazenado. Bug que evita: extracao incorreta do principal, retornando objeto serializado ou valor nulo mesmo autenticado.
+- isAdministrador_deveRetornarFalso_QuandoSemAutenticacao — O que verifica: sem autenticacao, isAdministrador() retorna false em vez de lancar excecao. Bug que evita: NPE ou falha ao checar perfil administrativo em contexto nao autenticado, podendo derrubar fluxos que checam permissao antes de validar login.
+- isAdministrador_deveRetornarTrue_QuandoTemRoleAdministrador — O que verifica: usuario autenticado com authority "ROLE_ADMINISTRADOR" e corretamente identificado como administrador. Bug que evita: checagem de role administrativa nao reconhecer o papel correto, bloqueando acoes legitimas de administrador.
+- isAdministrador_deveRetornarFalso_QuandoOutroPerfil — O que verifica: usuario autenticado apenas com "ROLE_CUIDADOR" nao e identificado como administrador. Bug que evita: vazamento de privilegio — perfil nao administrativo sendo tratado como administrador, dando acesso indevido a funcoes restritas.
+
+
+====================================================================
+CAMADA: CONVERTERS
+====================================================================
+
+### EnStatusAnimalConverterTest
+
+- convertToDatabaseColumn_deveRetornarNomeDoEnum — O que verifica: conversao de EnStatusAnimal.VENDIDO para coluna do banco produz a string "VENDIDO" (nome exato do enum). Bug que evita: persistencia salvar valor diferente do esperado na coluna (ex. ordinal numerico ou nome alterado), corrompendo dados existentes.
+- convertToDatabaseColumn_deveRetornarNull_QuandoAtributoNulo — O que verifica: converter um atributo nulo para coluna do banco retorna null em vez de lancar NullPointerException. Bug que evita: NPE ao persistir entidade com status animal nao definido.
+- convertToEntityAttribute_deveConverterValorValido — O que verifica: valor de coluna "OBITO" e convertido de volta para o enum EnStatusAnimal.OBITO corretamente. Bug que evita: leitura do banco mapear valor de coluna para enum errado, alterando o status real do animal.
+- convertToEntityAttribute_deveRetornarNull_QuandoValorNuloOuVazio — O que verifica: valores de coluna nulo, string vazia e string so com espacos todos retornam null como atributo de entidade. Bug que evita: NPE ou IllegalArgumentException ao carregar registros antigos com coluna de status vazia/nula.
+- convertToEntityAttribute_deveUsarAtivoComoFallback_QuandoValorDesconhecido — O que verifica: um valor de coluna que nao corresponde a nenhuma constante do enum ("VALOR_INEXISTENTE") cai no fallback EnStatusAnimal.ATIVO em vez de lancar excecao. Bug que evita: dados legados ou corrompidos no banco quebrarem o carregamento da entidade (IllegalArgumentException do Enum.valueOf), impedindo a aplicacao de ler o registro.
+
+
+====================================================================
+CAMADA: UTIL (parser de XML, validacao de documentos, senha)
+====================================================================
+
+### DocumentoUtilTest
+
+- deveValidarCpfComDigitosVerificadoresCorretos — O que verifica: CPF numerico "12345678909" com digitos verificadores corretos e validado como true. Bug que evita: algoritmo de validacao de digito verificador de CPF rejeitar CPFs validos.
+- deveValidarCpfFormatadoComPontuacao — O que verifica: mesmo CPF valido formatado com pontos e hifen ("123.456.789-09") tambem e validado como true. Bug que evita: validador nao limpar mascara/pontuacao antes de calcular os digitos, rejeitando entradas formatadas digitadas pelo usuario.
+- deveInvalidarCpfComDigitoVerificadorErrado — O que verifica: CPF com ultimo digito alterado ("12345678900") e invalidado. Bug que evita: validacao aceitar CPF com digito verificador incorreto, permitindo cadastro de documentos invalidos.
+- deveInvalidarCpfComTodosOsDigitosIguais (parametrizado: "00000000000", "11111111111", "99999999999") — O que verifica: CPFs com todos os digitos repetidos (que matematicamente podem passar no calculo de DV em alguns algoritmos ingenuos) sao explicitamente invalidados. Bug que evita: aceitar CPFs notoriamente invalidos/fraudulentos como "111.111.111-11", um erro classico de validadores de CPF mal implementados.
+- deveInvalidarCpfComTamanhoDiferenteDe11Digitos — O que verifica: string com 9 digitos ("123456789") e invalidada por nao ter o tamanho correto de CPF. Bug que evita: validador tentar calcular digito verificador sobre entrada de tamanho errado, podendo lancar IndexOutOfBoundsException ou aceitar entrada truncada.
+- deveInvalidarCpfNulo — O que verifica: isCpfValido(null) retorna false em vez de lancar NullPointerException. Bug que evita: NPE em formularios/cadastros que chamam a validacao antes de garantir que o campo foi preenchido.
+- deveValidarCnpjComDigitosVerificadoresCorretos — O que verifica: CNPJ numerico "12345678000195" com digitos verificadores corretos e validado como true. Bug que evita: algoritmo de validacao de digito verificador de CNPJ rejeitar CNPJs validos.
+- deveValidarCnpjFormatadoComPontuacao — O que verifica: mesmo CNPJ valido formatado ("12.345.678/0001-95") tambem e validado como true. Bug que evita: validador nao remover mascara de CNPJ antes de calcular os digitos.
+- deveInvalidarCnpjComDigitoVerificadorErrado — O que verifica: CNPJ com ultimo digito alterado ("12345678000100") e invalidado. Bug que evita: aceitar CNPJ com digito verificador incorreto no cadastro de fornecedores/empresas.
+- deveInvalidarCnpjComTodosOsDigitosIguais (parametrizado: "00000000000000", "11111111111111") — O que verifica: CNPJs com todos os digitos repetidos sao explicitamente invalidados. Bug que evita: aceitar CNPJs obviamente fraudulentos/placeholder como validos.
+- devePermitirCpfOuCnpjValidoConformeOComprimento — O que verifica: o metodo generico isCpfOuCnpjValido aceita corretamente tanto o CPF valido (11 digitos) quanto o CNPJ valido (14 digitos), delegando para a validacao certa conforme o tamanho. Bug que evita: funcao unificada de validacao de documento aplicar o algoritmo errado (CPF em CNPJ ou vice-versa) e rejeitar documentos validos.
+- deveInvalidarCpfOuCnpjComComprimentoQueNaoEDeNenhumDosDois — O que verifica: string de tamanho "123" (nem 11 nem 14 digitos) e invalidada pelo validador generico. Bug que evita: entrada de tamanho arbitrario cair em um dos dois validadores por engano e gerar excecao ou falso positivo.
+
+### SenhaUtilTest
+
+- deveConferirSenhaContraHashBCrypt — O que verifica: senha em texto puro confere como true contra seu proprio hash BCrypt, e uma senha errada confere como false contra o mesmo hash. Bug que evita: verificacao de senha BCrypt aceitar senha errada ou rejeitar a senha correta, quebrando o login padrao (atual) do sistema.
+- deveConferirSenhaContraHashSha256Legado — O que verifica: senha em texto puro confere como true contra um hash SHA-256 pre-calculado externamente (formato legado), e senha errada confere como false. Bug que evita: migracao de hashing bloquear login de usuarios antigos que ainda tem senha armazenada em SHA-256 (quebra de compatibilidade retroativa).
+- deveConferirSenhaContraTextoPuroLegado — O que verifica: senha informada confere como true quando o valor armazenado e a propria senha em texto puro (formato legado "123mudar"), e senha diferente confere como false. Bug que evita: usuarios com senha nunca migrada de texto puro (ex. senha padrao inicial) ficarem impossibilitados de logar apos alguma mudanca na logica de comparacao.
+- deveRetornarFalsoQuandoSenhaInformadaForNulaOuVazia — O que verifica: senha informada nula, vazia ou so espacos retorna false na comparacao, independente do hash armazenado, sem lancar excecao. Bug que evita: NPE/excecao ao tentar fazer login com campo de senha vazio, ou pior, uma comparacao que trate "vazio" como valido contra algum hash degenerado.
+- deveRetornarFalsoQuandoSenhaArmazenadaForNulaOuVazia — O que verifica: quando o hash/senha armazenada no banco e nulo ou vazio, a comparacao retorna false em vez de lancar excecao. Bug que evita: usuario com registro de senha corrompido/nulo no banco causar erro 500 no login em vez de falha de autenticacao tratada.
+
+### NfeXmlParserTest
+
+- ParseValido.deveExtrairTodosOsCamposQuandoXmlDaRacaoValido — O que verifica: parsing de uma NFe real de racao extrai corretamente chave de acesso (44 digitos), numero, serie, data de emissao, valor total e os dados do item (codigo, descricao, quantidade, valor unitario e total). Bug que evita: extracao incorreta de qualquer campo da NFe na importacao de notas fiscais reais, gerando lancamento de estoque/financeiro com dados errados.
+- ParseValido.deveExtrairMultiplosItensQuandoXmlDoMedicamentoValido — O que verifica: NFe com multiplos itens (vacina + medicamento) tem todos os itens extraidos na ordem correta, com valor total agregado correto. Bug que evita: parser processar so o primeiro item de uma NFe multi-item, perdendo produtos no lancamento de estoque.
+- ParseValido.deveAceitarDataDeEmissaoNoFormatoDEmiQuandoDhEmiAusente — O que verifica: quando a tag <dhEmi> (datetime com timezone) esta ausente, o parser usa a tag alternativa <dEmi> (apenas data) como fallback. Bug que evita: rejeitar NFes de versoes/emissores que so preenchem dEmi e nao dhEmi, bloqueando importacao de notas fiscais legitimas.
+- ParseValido.deveAssumirAVistaComVencimentoNaEmissaoQuandoCobrAusente — O que verifica: NFe sem a secao <cobr> (cobranca/duplicatas) e tratada como pagamento a vista, com vencimento igual a data de emissao, 1 parcela e valor de parcela nulo. Bug que evita: ausencia de dados de cobranca causar NullPointerException ou classificacao errada como parcelado.
+- ParseValido.deveExtrairUnicaDuplicataComoAVistaQuandoCobrTemUmaDup — O que verifica: secao <cobr> com uma unica <dup> e interpretada como pagamento a vista com a data de vencimento da duplicata, nao como parcelado. Bug que evita: tratar incorretamente uma NFe com 1 duplicata como "parcelado em 1x" em vez de a vista, afetando a classificacao financeira.
+- ParseValido.deveExtrairParceladoQuandoCobrTemMultiplasDup — O que verifica: secao <cobr> com tres duplicatas e interpretada como PARCELADO, usando o vencimento da primeira duplicata, contando 3 parcelas e extraindo o valor da primeira parcela (16.67). Bug que evita: calculo errado do numero de parcelas ou do valor de parcela ao importar NFe com pagamento parcelado real.
+- ParseInvalido.deveLancarExcecaoQuandoInfNFeAusente — O que verifica: XML sem a tag obrigatoria <infNFe> lanca IllegalArgumentException com mensagem mencionando "infNFe". Bug que evita: parser aceitar/processar um documento que nao e uma NFe (ex. XML generico) e gerar dados fantasmas/nulos ao inves de rejeitar explicitamente.
+- ParseInvalido.deveLancarExcecaoQuandoChaveDeAcessoNaoTem44Digitos — O que verifica: atributo Id do infNFe com chave de acesso curta ("NFe12345") e rejeitado com mensagem citando "chave de acesso". Bug que evita: aceitar chave de acesso malformada, que quebraria integracoes futuras (SEFAZ, consultas, deduplicacao) que exigem exatamente 44 digitos.
+- ParseInvalido.deveLancarExcecaoQuandoIdeAusente — O que verifica: NFe sem a secao <ide> lanca IllegalArgumentException mencionando "<ide>". Bug que evita: NullPointerException ao tentar ler numero/serie/data de uma secao inexistente.
+- ParseInvalido.deveLancarExcecaoQuandoNumeroDaNotaAusente — O que verifica: <ide> sem a tag <nNF> (numero da nota) lanca excecao mencionando "nNF". Bug que evita: importar NFe sem numero de documento, gerando registro financeiro/estoque sem chave de identificacao do documento fiscal.
+- ParseInvalido.deveLancarExcecaoQuandoSerieAusente — O que verifica: <ide> sem a tag <serie> lanca excecao mencionando "serie". Bug que evita: importar NFe com serie nula, quebrando a identificacao unica do documento (numero+serie).
+- ParseInvalido.deveLancarExcecaoQuandoDataDeEmissaoAusente — O que verifica: <ide> sem <dhEmi> e sem <dEmi> lanca excecao mencionando "dhEmi/dEmi". Bug que evita: NFe sem data de emissao ser importada com data nula, quebrando relatorios e ordenacao cronologica de lancamentos.
+- ParseInvalido.deveLancarExcecaoQuandoIcmsTotAusente — O que verifica: <total> sem a secao <ICMSTot> lanca excecao mencionando "ICMSTot". Bug que evita: NullPointerException ao buscar o valor total da nota numa secao de totais inexistente.
+- ParseInvalido.deveLancarExcecaoQuandoValorTotalNaoENumerico — O que verifica: tag <vNF> com valor nao numerico ("nao-e-numero") lanca IllegalArgumentException mencionando "vNF", em vez de deixar vazar uma NumberFormatException generica. Bug que evita: NFe corrompida/adulterada com valor total invalido causar erro nao tratado ou ser importada com valor zerado/nulo.
+- ParseInvalido.deveLancarExcecaoQuandoNenhumItemEncontrado — O que verifica: NFe sem nenhuma tag <det> (item) lanca excecao mencionando "nenhum item". Bug que evita: importar uma "nota fiscal" sem nenhum produto, criando lancamento de estoque vazio sem sentido.
+- ParseInvalido.deveLancarExcecaoQuandoQuantidadeDoItemNaoENumerica — O que verifica: item com <qCom> (quantidade comercial) contendo texto nao numerico ("abc") lanca excecao mencionando "qCom". Bug que evita: dado de quantidade corrompido causar NumberFormatException nao tratada ou gerar entrada de estoque com quantidade zero/nula.
+- ParseInvalido.deveLancarExcecaoQuandoXmlContemDoctype — injeta um payload classico de ataque XXE (<!DOCTYPE nfeProc [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>) num XML de NFe e confirma que o parser rejeita o documento — evidencia de que o parser desabilita DOCTYPE/entidades externas. Bug que evita: vulnerabilidade XXE que permitiria a um atacante, via upload de "NFe" maliciosa, ler arquivos arbitrarios do servidor (ex. /etc/passwd) ou fazer SSRF atraves de entidades externas.
+
+
+====================================================================
+LACUNAS (nao cobertas por esta lista, herdadas do relatorio anterior)
+====================================================================
+
+- Nenhum teste automatizado de frontend foi encontrado no repositorio — toda a cobertura listada acima e de backend.
+- Nenhuma ferramenta de cobertura de codigo (ex. JaCoCo) esta configurada no pom.xml.
+</content>
