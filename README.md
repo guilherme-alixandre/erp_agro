@@ -203,7 +203,11 @@ gado-backend/src/main/
 │   ├── services/       regras de negócio
 │   ├── repositories/   persistência JPA
 │   ├── entities/       modelo de dados
-│   ├── dtos/           entrada e saída da API
+│   ├── dto/            entrada e saída da API
+│   ├── mappers/        configuração do ModelMapper
+│   ├── converters/     conversão de enums para colunas JPA
+│   ├── enums/          enumerações de domínio (perfil, status, tipos)
+│   ├── util/           parser de NF-e, validação de CPF/CNPJ, hash de senha
 │   ├── security/       JWT e autenticação
 │   └── config/         CORS, erros globais e inicialização
 └── resources/
@@ -211,7 +215,7 @@ gado-backend/src/main/
     └── application.properties
 ```
 
-A API usa o prefixo `/api`. Os principais recursos são `/usuarios`, `/resumo`, `/animais`, `/racas`, `/lotes`, `/setores`, `/metas-setor`, `/tarefas`, `/insumos`, `/consumo-estoque`, `/vacinacoes-animal`, `/documentos-entrada`, `/documentos-saida`, `/financeiro/lancamentos`, `/parceiros` e `/folha-pagamento`.
+A API usa o prefixo `/api`. Os principais recursos são `/usuarios`, `/resumo`, `/animais`, `/racas`, `/lotes`, `/setores`, `/metas-setor`, `/tarefas`, `/insumos`, `/consumo-estoque`, `/consumos-insumo`, `/vacinacoes-animal`, `/documentos-entrada`, `/documentos-saida`, `/notas-fiscais`, `/financeiro/lancamentos`, `/financeiro/rentabilidade`, `/registroFinanceiro`, `/transacao`, `/categoria`, `/grupos-produto`, `/unidades-medida`, `/movimentacaoEstoque`, `/ocorrenciaAnimal`, `/listaTarefa`, `/parceiros` e `/folha-pagamento`.
 
 ## Validação antes de entregar
 
@@ -240,6 +244,16 @@ Também faça uma verificação manual nos seguintes tamanhos:
 - desktop: 1440 × 900.
 
 Confira login, troca de módulos, busca, filtros, tabelas com rolagem, abertura e fechamento de modais, operações de cadastro/edição e restrições por perfil.
+
+## CI/CD e deploy
+
+O workflow `.github/workflows/deploy.yml` roda a cada push em `main` ou `dev` que altere algo em `gado-backend/`:
+
+1. compila o backend e executa a suíte de testes (`mvn clean install`);
+2. em `main`, dispara o deploy hook de produção no Render;
+3. em `dev`, dispara o deploy hook do ambiente de desenvolvimento no Render.
+
+O `gado-backend/Dockerfile` faz o build em duas etapas (Maven sobre Eclipse Temurin 21 para compilar, depois uma imagem `eclipse-temurin:21-jre-alpine` só com o `.jar` final) e expõe a porta `8080`. Os segredos `RENDER_DEPLOY_HOOK` e `RENDER_DEPLOY_HOOK_DEV` ficam configurados nas settings do repositório no GitHub. O front-end ainda não tem pipeline de deploy automatizado.
 
 ## Solução de problemas
 
