@@ -4,6 +4,8 @@ const SENHA_MIN_LENGTH = 6
 
 const PERFIL_OPTIONS = ['ADMINISTRADOR', 'GERENTE', 'CUIDADOR', 'CUIDADOR_CHEFE', 'FINANCEIRO']
 
+const EMAIL_ADMIN_SEED = 'admin@erp.com'
+
 const PERFIL_LABELS = {
   ADMINISTRADOR: 'Administrador',
   GERENTE: 'Gerente',
@@ -22,6 +24,8 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
   const [showNova, setShowNova] = useState(false)
   const [showConfirmar, setShowConfirmar] = useState(false)
   const [senhaError, setSenhaError] = useState('')
+
+  const isAdminSeed = usuario.email?.toLowerCase() === EMAIL_ADMIN_SEED
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -86,13 +90,23 @@ function UsuarioEditModal({ usuario, isSaving, feedback, onClose, onSubmit }) {
             <span>
               Perfil <span className="required-marker" aria-hidden="true">*</span>
             </span>
-            <select name="perfil" value={form.perfil} onChange={handleChange}>
+            <select
+              name="perfil"
+              value={form.perfil}
+              onChange={handleChange}
+              disabled={isAdminSeed}
+            >
               {PERFIL_OPTIONS.map((p) => (
                 <option key={p} value={p}>
                   {PERFIL_LABELS[p] ?? p}
                 </option>
               ))}
             </select>
+            {isAdminSeed ? (
+              <p className="form-help">
+                Este é o administrador inicial do sistema e não pode ter o perfil alterado.
+              </p>
+            ) : null}
           </label>
 
           <fieldset className="senha-fieldset">
