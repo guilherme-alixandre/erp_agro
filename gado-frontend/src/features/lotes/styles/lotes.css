@@ -372,18 +372,57 @@
 }
 
 .lote-alocacao__animais {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: 4px;
 }
 
-.lote-alocacao__animais li {
+.animal-accordion-item {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 6px;
+  overflow: hidden;
+}
+
+.animal-accordion-item__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   padding: 6px 10px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.animal-accordion-item__toggle:hover {
+  background: var(--color-surface-soft);
+}
+
+.animal-accordion-item__arrow {
+  color: #6a6a6a;
+  font-size: 0.8rem;
+  width: 1em;
+}
+
+.animal-accordion-item__panel {
+  padding: 4px 10px 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.animal-accordion-item__panel .details-grid--compact {
+  margin: 8px 0;
+  gap: 6px;
+}
+
+.animal-accordion-item__panel .details-grid--compact dt {
+  font-size: 0.82rem;
+}
+
+.animal-accordion-item__panel .details-grid--compact dd {
   font-size: 0.9rem;
 }
 

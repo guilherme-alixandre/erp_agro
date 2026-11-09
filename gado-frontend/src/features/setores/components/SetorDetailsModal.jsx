@@ -5,7 +5,7 @@ const TIPO_LABEL = {
   PATIO: 'Pátio',
 }
 
-function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
+function SetorDetailsModal({ setor, onClose, onEdit, onDelete, onAbrirLote, isDeleting, canEdit = true, canDelete = true }) {
   const ocupacaoTotal = setor.lotes.reduce((acc, l) => acc + (l.quantidadeAnimais ?? 0), 0)
 
   return (
@@ -67,7 +67,14 @@ function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting, canEd
         ) : (
           <div className="setor-lotes">
             {setor.lotes.map((l) => (
-              <div key={l.loteSectorId ?? l.loteId} className="setor-lote-item">
+              <button
+                key={l.loteSectorId ?? l.loteId}
+                type="button"
+                className="setor-lote-item"
+                onClick={() => onAbrirLote?.(l.loteId)}
+                disabled={!onAbrirLote || l.loteId == null}
+                title="Ver detalhes do lote"
+              >
                 <div className="setor-lote-item__header">
                   <strong>{l.loteCodigo || `Lote #${l.loteId}`}</strong>
                   {l.loteCorBrinco ? (
@@ -76,8 +83,9 @@ function SetorDetailsModal({ setor, onClose, onEdit, onDelete, isDeleting, canEd
                   <span className="setor-lote-item__animais">
                     {l.quantidadeAnimais} {l.quantidadeAnimais === 1 ? 'animal' : 'animais'}
                   </span>
+                  <span className="setor-lote-item__arrow" aria-hidden="true">›</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

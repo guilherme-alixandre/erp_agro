@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { setAuthToken, setUnauthorizedHandler } from './integration/apiClient'
 import AnimalPage from './features/animais/pages/AnimaisPage'
 import PerfilPage from './features/perfil/pages/PerfilPage'
@@ -45,6 +45,16 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [sessionFeedback, setSessionFeedback] = useState('')
   const [visualPreferences, setVisualPreferences] = useState(loadVisualPreferences)
+  const [loteIdParaAbrir, setLoteIdParaAbrir] = useState(null)
+
+  const handleNavigate = useCallback((page, options) => {
+    setActivePage(page)
+    setLoteIdParaAbrir(page === 'lotes' ? options?.loteId ?? null : null)
+  }, [])
+
+  const limparLoteParaAbrir = useCallback(() => {
+    setLoteIdParaAbrir(null)
+  }, [])
 
   useEffect(() => {
     const root = document.documentElement
@@ -102,7 +112,7 @@ function App() {
       <ResumoPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -112,7 +122,7 @@ function App() {
       <PerfilPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
         onUpdateUser={handleUpdateUser}
         visualPreferences={visualPreferences}
         onVisualPreferencesChange={setVisualPreferences}
@@ -125,7 +135,7 @@ function App() {
       <InsumosPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -135,7 +145,7 @@ function App() {
       <FinanceiroPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -145,7 +155,7 @@ function App() {
       <MetasPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -155,7 +165,9 @@ function App() {
       <LotesPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
+        loteIdParaAbrir={loteIdParaAbrir}
+        onLoteAbertoTratado={limparLoteParaAbrir}
       />
       )
     }
@@ -165,7 +177,7 @@ function App() {
       <SetoresPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -175,7 +187,7 @@ function App() {
       <TarefasPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
       )
     }
@@ -185,7 +197,7 @@ function App() {
       <ConfiguracoesPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
         onUpdateUser={handleUpdateUser}
       />
       )
@@ -195,7 +207,7 @@ function App() {
       <AnimalPage
         currentUser={currentUser}
         onLogout={handleLogout}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
     )
   }
@@ -205,7 +217,7 @@ function App() {
       activePage={activePage}
       currentUser={currentUser}
       onLogout={handleLogout}
-      onNavigate={setActivePage}
+      onNavigate={handleNavigate}
     >
       {renderActivePage()}
     </AppShell>

@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react'
 import { buscarCustoRacaoLote, buscarCustoTotalLote, buscarPerdasAlimentacaoLote } from '../integration/loteApi'
-import { formatarData, formatarMoeda } from '../../../utils/formatters'
+import { buscarAnimalPorBrinco } from '../../animais/integration/animalApi'
+import { buscarCustoVidaAnimal } from '../../animais/integration/custoAnimalApi'
+import { formatarData, formatarMoeda, formatCm } from '../../../utils/formatters'
+
+const STATUS_ANIMAL_LABELS = {
+  ATIVO: 'Ativo',
+  OBSERVACAO: 'Em observação',
+  VENDIDO: 'Vendido',
+  OBITO: 'Óbito',
+  ABATIDO: 'Abatido',
+}
 
 function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit = true, canDelete = true }) {
   const [custoRacao, setCustoRacao] = useState(null)
   const [perdasAlimentacao, setPerdasAlimentacao] = useState(null)
   const [custoTotal, setCustoTotal] = useState(null)
+
+  const [expandedAnimalIds, setExpandedAnimalIds] = useState(() => new Set())
+  const [animalDetalhes, setAnimalDetalhes] = useState({})
 
   useEffect(() => {
     let cancelado = false
@@ -34,6 +47,50 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
       cancelado = true
     }
   }, [lote.id])
+
+  function carregarDetalheAnimal(animal) {
+    setAnimalDetalhes((atual) => ({ ...atual, [animal.id]: { status: 'loading' } }))
+
+    Promise.allSettled([
+      buscarAnimalPorBrinco(animal.codigoBrinco),
+      buscarCustoVidaAnimal(animal.id),
+    ]).then(([animalResult, custoResult]) => {
+      if (animalResult.status !== 'fulfilled') {
+        setAnimalDetalhes((atual) => ({
+          ...atual,
+          [animal.id]: {
+            status: 'error',
+            error: animalResult.reason?.message || 'Falha ao buscar dados do animal.',
+          },
+        }))
+        return
+      }
+
+      setAnimalDetalhes((atual) => ({
+        ...atual,
+        [animal.id]: {
+          status: 'loaded',
+          animal: animalResult.value,
+          custoVida: custoResult.status === 'fulfilled' ? custoResult.value : null,
+        },
+      }))
+    })
+  }
+
+  function toggleAnimal(animal) {
+    setExpandedAnimalIds((atual) => {
+      const next = new Set(atual)
+      if (next.has(animal.id)) {
+        next.delete(animal.id)
+      } else {
+        next.add(animal.id)
+        if (!animalDetalhes[animal.id]) {
+          carregarDetalheAnimal(animal)
+        }
+      }
+      return next
+    })
+  }
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -156,14 +213,110 @@ function LoteDetailsModal({ lote, onClose, onEdit, onDelete, isDeleting, canEdit
                 {aloc.animais.length === 0 ? (
                   <p className="vacinas-empty">Nenhum animal alocado neste setor.</p>
                 ) : (
-                  <ul className="lote-alocacao__animais">
-                    {aloc.animais.map((a) => (
-                      <li key={a.id}>
-                        <strong>{a.codigoBrinco}</strong>
-                        {a.racaNome ? <span> — {a.racaNome}</span> : null}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="lote-alocacao__animais">
+                    {aloc.animais.map((a) => {
+                      const expandido = expandedAnimalIds.has(a.id)
+                      const detalhe = animalDetalhes[a.id]
+                      return (
+                        <div key={a.id} className="animal-accordion-item">
+                          <button
+                            type="button"
+                            className="animal-accordion-item__toggle"
+                            onClick={() => toggleAnimal(a)}
+                            aria-expanded={expandido}
+                          >
+                            <span className="animal-accordion-item__arrow" aria-hidden="true">
+                              {expandido ? '▾' : '▸'}
+                            </span>
+                            <strong>{a.codigoBrinco}</strong>
+                            {a.racaNome ? <span> — {a.racaNome}</span> : null}
+                          </button>
+
+                          {expandido ? (
+                            <div className="animal-accordion-item__panel">
+                              {!detalhe || detalhe.status === 'loading' ? (
+                                <p className="vacinas-empty">Carregando...</p>
+                              ) : detalhe.status === 'error' ? (
+                                <p className="feedback feedback--error">{detalhe.error}</p>
+                              ) : (
+                                <>
+                                  <dl className="details-grid details-grid--compact">
+                                    <div>
+                                      <dt>Brinco</dt>
+                                      <dd>{detalhe.animal.codigoBrinco}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Data de nascimento</dt>
+                                      <dd>{formatarData(detalhe.animal.dataNascimento)}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Peso</dt>
+                                      <dd>{detalhe.animal.pesoAtual} kg</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Raça</dt>
+                                      <dd>{detalhe.animal.racaNome || '-'}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Cor</dt>
+                                      <dd>{detalhe.animal.cor || '-'}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Altura na cernelha</dt>
+                                      <dd>{formatCm(detalhe.animal.alturaCernelha)}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Perímetro torácico</dt>
+                                      <dd>{formatCm(detalhe.animal.perimetroToracico)}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Comprimento corporal</dt>
+                                      <dd>{formatCm(detalhe.animal.comprimentoCorporal)}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Sexo</dt>
+                                      <dd>{detalhe.animal.sexo === 'F' ? 'Fêmea' : 'Macho'}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Status</dt>
+                                      <dd>
+                                        {STATUS_ANIMAL_LABELS[detalhe.animal.statusAnimal] ?? detalhe.animal.statusAnimal}
+                                      </dd>
+                                    </div>
+                                  </dl>
+
+                                  {detalhe.custoVida ? (
+                                    <dl className="details-grid details-grid--compact">
+                                      <div>
+                                        <dt>Custo de aquisição</dt>
+                                        <dd>{formatarMoeda(detalhe.custoVida.totalAquisicao)}</dd>
+                                      </div>
+                                      <div>
+                                        <dt>Custo de alimentação</dt>
+                                        <dd>{formatarMoeda(detalhe.custoVida.totalAlimentacao)}</dd>
+                                      </div>
+                                      <div>
+                                        <dt>Custo de vacinação</dt>
+                                        <dd>{formatarMoeda(detalhe.custoVida.totalVacinacao)}</dd>
+                                      </div>
+                                      <div>
+                                        <dt>Custo total</dt>
+                                        <dd>{formatarMoeda(detalhe.custoVida.totalGeral)}</dd>
+                                      </div>
+                                    </dl>
+                                  ) : (
+                                    <p className="vacinas-empty">
+                                      Não foi possível carregar o custo de vida deste animal.
+                                    </p>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
             ))}

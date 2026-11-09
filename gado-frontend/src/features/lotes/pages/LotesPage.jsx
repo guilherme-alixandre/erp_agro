@@ -33,7 +33,7 @@ const defaultForm = {
 
 const ROWS_PER_PAGE = 10
 
-function LotesPage({ currentUser, onNavigate, onLogout }) {
+function LotesPage({ currentUser, onNavigate, onLogout, loteIdParaAbrir, onLoteAbertoTratado }) {
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -118,6 +118,15 @@ function LotesPage({ currentUser, onNavigate, onLogout }) {
       .then(setSetores)
       .catch(() => setSetores([]))
   }, [fetchLotes])
+
+  useEffect(() => {
+    if (!loteIdParaAbrir || lotes.length === 0) return
+    const lote = lotes.find((l) => l.id === loteIdParaAbrir)
+    if (lote) {
+      openDetailsModal(lote)
+    }
+    onLoteAbertoTratado?.()
+  }, [loteIdParaAbrir, lotes, onLoteAbertoTratado])
 
   async function carregarAnimaisParaLote() {
     try {

@@ -182,17 +182,7 @@ async function buscarAnimais(termo = '') {
 async function buscarAnimalPorBrinco(brinco) {
     const codigoBrinco = encodeURIComponent(brinco.trim())
     const payload = await request(`/animais/${codigoBrinco}`)
-
-    const mensagem = payload?.mensagem
-    if (!mensagem || typeof mensagem !== 'object' || Array.isArray(mensagem)) {
-        throw new Error(
-            typeof mensagem === 'string'
-                ? mensagem
-                : 'Animal não encontrado para o brinco informado.'
-        )
-    }
-
-    return normalizeAnimal(mensagem)
+    return normalizeAnimal(payload)
 }
 
 async function cadastrarAnimal(email, animal) {

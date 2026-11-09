@@ -172,6 +172,11 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
     setModal({ type: 'details', setor })
   }
 
+  function handleAbrirLote(loteId) {
+    closeModal()
+    onNavigate('lotes', { loteId })
+  }
+
   async function handleSubmitForm(event) {
     event.preventDefault()
     setFormFeedback('')
@@ -468,6 +473,7 @@ function SetoresPage({ currentUser, onNavigate, onLogout }) {
           onClose={closeModal}
           onEdit={() => openEditModal(modal.setor)}
           onDelete={handleDelete}
+          onAbrirLote={handleAbrirLote}
           isDeleting={isDeleting}
           canEdit={canEditSetor}
           canDelete={canDeleteSetor}

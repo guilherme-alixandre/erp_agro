@@ -78,10 +78,25 @@
 }
 
 .setor-lote-item {
+  display: block;
+  width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
   background: var(--color-surface-soft);
   border-radius: 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.setor-lote-item:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary, #4f7f2f);
+}
+
+.setor-lote-item:disabled {
+  cursor: default;
 }
 
 .setor-lote-item__header {
@@ -100,6 +115,15 @@
   font-size: 0.85rem;
   color: #4f7f2f;
   font-weight: 600;
+}
+
+.setor-lote-item__arrow {
+  color: #6a6a6a;
+  font-size: 1rem;
+}
+
+.setor-lote-item:disabled .setor-lote-item__arrow {
+  display: none;
 }
 
 /* ── Ocupação dos setores (barra empilhada, ver SetorOcupacaoBar) ────── */

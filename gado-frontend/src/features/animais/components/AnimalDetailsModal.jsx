@@ -8,7 +8,7 @@ import {
   TIPOS_OCORRENCIA,
 } from '../integration/ocorrenciaAnimalApi'
 import { buscarCustoVidaAnimal } from '../integration/custoAnimalApi'
-import { formatarData, formatarDataHora, formatarMoeda } from '../../../utils/formatters'
+import { formatarData, formatarDataHora, formatarMoeda, formatCm } from '../../../utils/formatters'
 
 const TIPO_CUSTO_LABELS = {
   AQUISICAO: 'Aquisição',
@@ -22,13 +22,6 @@ const STATUS_LABELS = {
   VENDIDO: 'Vendido',
   OBITO: 'Óbito',
   ABATIDO: 'Abatido',
-}
-
-function formatCm(value) {
-  if (value === null || value === undefined || value === '') return '—'
-  const num = Number(value)
-  if (!Number.isFinite(num)) return '—'
-  return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} cm`
 }
 
 const TIPO_OCORRENCIA_LABELS = TIPOS_OCORRENCIA.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {})

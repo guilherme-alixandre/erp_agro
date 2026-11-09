@@ -33,4 +33,12 @@ function hojeIso() {
   return `${agora.getFullYear()}-${mes}-${dia}`
 }
 
-export { formatarData, formatarDataHora, formatarMoeda, hojeIso }
+/** Medida em centímetros, ou travessão quando ausente/inválida. */
+function formatCm(valor) {
+  if (valor === null || valor === undefined || valor === '') return '—'
+  const num = Number(valor)
+  if (!Number.isFinite(num)) return '—'
+  return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} cm`
+}
+
+export { formatarData, formatarDataHora, formatarMoeda, formatCm, hojeIso }
