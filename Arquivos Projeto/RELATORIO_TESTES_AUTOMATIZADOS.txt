@@ -4,6 +4,19 @@ Gerado em 2026-11-08. Base: 64 arquivos de teste JUnit 5, ~580 metodos @Test/@Pa
 
 
 ====================================================================
+RESULTADO DA EXECUCAO (ultima rodada)
+====================================================================
+
+Execucao em 2026-11-11, ambiente local (Windows 11, Java 21.0.12, perfil Spring "test", banco H2 em memoria, sem Docker/Postgres).
+Comando: mvnw test (Maven Surefire, suite completa, sem filtro de classe).
+
+Resultado agregado (saida do Maven): Tests run: 592, Failures: 0, Errors: 0, Skipped: 0 — BUILD SUCCESS.
+A diferenca entre os ~580 metodos @Test/@ParameterizedTest contados no codigo-fonte e os 592 testes executados vem dos testes parametrizados, que geram mais de uma execucao por metodo (ex. DocumentoUtilTest e NfeXmlParserTest.ParseInvalido).
+
+Observacao: os relatorios individuais em target/surefire-reports/ (nao versionados, pois target/ esta no .gitignore) subestimam a contagem de classes com @Nested — a contagem de 592 acima vem do total agregado impresso pelo proprio Maven ao final da execucao, que e a fonte confiavel.
+
+
+====================================================================
 CAMADA: SERVICES (regras de negocio, testadas com mocks)
 ====================================================================
 
